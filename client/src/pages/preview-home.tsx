@@ -1,0 +1,900 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Search, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight, Send } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Tournament, Server, User } from "@shared/schema";
+import { format } from "date-fns";
+
+type FilterType = "prize" | "no-prize" | "free" | "paid";
+
+export default function PreviewHome() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set());
+  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
+  const [shareModal, setShareModal] = useState<{ id: string; title: string; game: string } | null>(null);
+  const [shareUsername, setShareUsername] = useState("");
+
+  const { data: tournaments, isLoading } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+  });
+
+  // Fetch servers to get real server names and icons
+  const { data: servers } = useQuery<Server[]>({
+    queryKey: ['/api/mobile-preview/servers'],
+  });
+
+  // Fetch friends list for share suggestions
+  const { data: friends = [] } = useQuery<User[]>({
+    queryKey: ["/api/friends"],
+    queryFn: async () => {
+      const res = await fetch("/api/friends", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Filter friends for suggestions based on input
+  const friendSuggestions = shareUsername.trim()
+    ? friends.filter((friend) =>
+        friend.username.toLowerCase().includes(shareUsername.toLowerCase().trim())
+      ).slice(0, 5)
+    : [];
+
+  // Helper function to join a server - shared by both mutations
+  const joinServerAPI = async (serverId: string) => {
+    const response = await apiRequest(
+      'POST',
+      `/api/servers/${serverId}/join`,
+      { userId: "user-demo-123" }
+    );
+    const data = await response.json();
+    return { ...data, serverId }; // Ensure serverId is included in response
+  };
+
+  // Shared join server mutation used by server modal (logo click path only)
+  const joinServerMutation = useMutation({
+    mutationFn: joinServerAPI,
+    onSuccess: (data) => {
+      // Invalidate cache
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      setServerModal(null);
+      
+      // Navigate to server after joining (logo click path always navigates)
+      if (data.serverId) {
+        if (data.alreadyMember) {
+          toast({
+            title: "Already a member",
+            description: "Taking you to the server...",
+          });
+        } else {
+          toast({
+            title: "Joined server!",
+            description: "Taking you to the server...",
+          });
+        }
+        setLocation(`/server/${data.serverId}`);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to join server",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+      setServerModal(null); // Close modal on error
+    },
+  });
+
+  const registerTournamentMutation = useMutation({
+    mutationFn: async ({ tournamentId, serverId }: { tournamentId: string; serverId?: string | null }) => {
+      // First join the server if serverId is provided (reuse shared helper)
+      let joinResult: { member: any; alreadyMember: boolean; serverId: string } | undefined;
+      if (serverId) {
+        try {
+          joinResult = await joinServerAPI(serverId);
+        } catch (error: any) {
+          throw new Error(`Failed to join server: ${error.message || 'Unknown error'}`);
+        }
+      }
+      
+      // Try to register for tournament
+      try {
+        const response = await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
+          teamName: "Demo Team", // Would come from user input
+          contactEmail: "demo@example.com",
+          participantNames: ["Player 1", "Player 2"],
+        });
+        const registration = await response.json();
+        return { joinResult, registration, alreadyRegistered: false };
+      } catch (error: any) {
+        // Check if error is 409 (conflict) with team name already exists message
+        // apiRequest throws errors in format "STATUS_CODE: error message"
+        if (error.message?.includes("409") && error.message?.includes("Team name already exists")) {
+          return { joinResult, registration: null, alreadyRegistered: true, serverId };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      // Invalidate cache for both tournaments and servers
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      
+      // Close modal
+      setJoinModal(null);
+      
+      // Determine serverId for navigation
+      const targetServerId = data.serverId || data.joinResult?.serverId;
+      
+      // Handle already registered case
+      if (data.alreadyRegistered) {
+        toast({
+          title: "Already registered!",
+          description: targetServerId ? "Taking you to the server..." : "You've already joined this tournament.",
+        });
+        if (targetServerId) {
+          setLocation(`/server/${targetServerId}`);
+        }
+      }
+      // Handle successful registration with server join
+      else if (data.joinResult) {
+        if (data.joinResult.alreadyMember) {
+          toast({
+            title: "Tournament registration successful!",
+            description: "You were already a server member. Taking you to the server...",
+          });
+        } else {
+          toast({
+            title: "Successfully registered!",
+            description: "You've joined the server and tournament. Taking you to the server...",
+          });
+        }
+        // Always navigate for green button flow
+        if (targetServerId) {
+          setLocation(`/server/${targetServerId}`);
+        }
+      } 
+      // No server involved, just tournament registration
+      else {
+        toast({
+          title: "Tournament registration successful!",
+          description: "You've been registered for the tournament.",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+      setJoinModal(null); // Close modal on error too
+    },
+  });
+
+  // Share tournament mutation
+  const shareTournamentMutation = useMutation({
+    mutationFn: async ({ username, tournamentId, tournamentTitle }: { username: string; tournamentId: string; tournamentTitle: string }) => {
+      // First look up the user by username
+      const userResponse = await fetch(`/api/users/username/${username}`);
+      if (!userResponse.ok) {
+        throw new Error("User not found");
+      }
+      const targetUser = await userResponse.json();
+      
+      // Create or find existing thread with this user
+      const threadResponse = await apiRequest('POST', '/api/message-threads', {
+        participantId: targetUser.id,
+        participantName: targetUser.displayName || targetUser.username,
+        participantAvatar: targetUser.avatarUrl || null,
+        lastMessage: "",
+        unreadCount: 0,
+      });
+      const thread = await threadResponse.json();
+      
+      // Send the tournament link message
+      const tournamentUrl = `${window.location.origin}/tournament/${tournamentId}/register`;
+      const message = `Check out this tournament: ${tournamentTitle}\n${tournamentUrl}`;
+      
+      await apiRequest('POST', `/api/message-threads/${thread.id}/messages`, {
+        message: message,
+      });
+      
+      return { targetUser, thread };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Tournament shared!",
+        description: `Sent to @${data.targetUser.username}`,
+      });
+      setShareModal(null);
+      setShareUsername("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to share",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Generate mock posters using real server data
+  const mockPostersWithRealServers = (servers || []).slice(0, 4).map((server, index) => {
+    const mockTournaments = [
+      {
+        title: "Summer Championship 2024",
+        game: "Valorant",
+        backgroundImage: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        prize: "$5,000",
+        entryFee: "$25",
+        format: "Single Elimination",
+      },
+      {
+        title: "Midnight Masters",
+        game: "League of Legends",
+        backgroundImage: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&h=1200&fit=crop",
+        prize: "$10,000",
+        entryFee: "Free",
+        format: "Best of 3",
+      },
+      {
+        title: "Winter Showdown",
+        game: "CS:GO",
+        backgroundImage: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&h=1200&fit=crop",
+        prize: "$2,500",
+        entryFee: "$10",
+        format: "Swiss System",
+      },
+      {
+        title: "Apex Legends Cup",
+        game: "Apex Legends",
+        backgroundImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=1200&fit=crop",
+        prize: "$7,500",
+        entryFee: "$15",
+        format: "Battle Royale",
+      },
+    ];
+    
+    const mockData = mockTournaments[index];
+    return {
+      id: `mock-${server.id}-${index}`,
+      serverId: server.id,
+      title: mockData.title,
+      game: mockData.game,
+      serverName: server.name,
+      serverLogo: server.iconUrl || null,
+      serverLogoFallback: server.name.charAt(0),
+      backgroundImage: mockData.backgroundImage,
+      prize: mockData.prize,
+      entryFee: mockData.entryFee,
+      startDate: "Dec 20, 2024",
+      startTime: "6:00 PM EST",
+      participants: "64/128",
+      format: mockData.format,
+      platform: "PC",
+      region: "Global",
+      rankReq: "Any Rank",
+    };
+  });
+
+  const tournamentPosters = (tournaments || [])
+    .filter((t) => {
+      // Only include tournaments with valid server references
+      const server = t.serverId ? servers?.find(s => s.id === t.serverId) : null;
+      return !!server;
+    })
+    .map((t) => {
+      // Look up server data (we know it exists because of filter)
+      const server = servers?.find(s => s.id === t.serverId!)!;
+      
+      return {
+        id: t.id,
+        serverId: t.serverId || undefined,
+        title: t.name,
+        game: t.game || "Tournament",
+        serverName: server.name,
+        // Use real server icon (null if not set, for proper Avatar handling)
+        serverLogo: server.iconUrl || null,
+        serverLogoFallback: server.name.charAt(0),
+        backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        prize: t.prizeReward || "TBD",
+        entryFee: t.entryFee || "Free",
+        startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
+        startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
+        participants: t.totalTeams === -1 ? "Unlimited" : `${t.totalTeams || 0}`,
+        format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+        platform: t.platform || "Any Platform",
+        region: t.region || "Global",
+        rankReq: "Any Rank",
+      };
+    });
+
+  const allPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
+  
+  // Filter posters based on search query and active filters (can be multiple at once)
+  const displayPosters = allPosters.filter(poster => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch = (
+        poster.title.toLowerCase().includes(query) ||
+        poster.game.toLowerCase().includes(query) ||
+        poster.serverName.toLowerCase().includes(query)
+      );
+      if (!matchesSearch) return false;
+    }
+    
+    // If no filters active, show all
+    if (activeFilters.size === 0) return true;
+    
+    // Normalize values for filtering
+    const prizeNormalized = (poster.prize || "").toLowerCase().trim();
+    const entryFeeNormalized = (poster.entryFee || "").toLowerCase().trim();
+    
+    // Helper to check if value matches "no prize" keywords (exact words only)
+    const isNoPrizeKeyword = (value: string) => {
+      const words = value.split(/[\s,;]+/);
+      const noPrizeTerms = ["no", "none", "n/a", "tbd", "na"];
+      return words.some(word => noPrizeTerms.includes(word));
+    };
+    
+    // Helper to check if value matches "free" keywords
+    const isFreeKeyword = (value: string) => {
+      // Check for keyword matches
+      const words = value.split(/[\s,;$]+/);
+      const freeTerms = ["free", "none", "n/a", "tbd", "na", "no"];
+      if (words.some(word => freeTerms.includes(word))) {
+        return true;
+      }
+      
+      // Check if value is numeric zero (handles 0, 0.00, 0,00, 0€, etc.)
+      const numericValue = value.replace(/[^0-9.,-]/g, '').replace(',', '.');
+      const parsed = parseFloat(numericValue);
+      if (!isNaN(parsed) && parsed === 0) {
+        return true;
+      }
+      
+      return false;
+    };
+    
+    // Check prize filters (at least one must match if any prize filter is active)
+    const prizeFiltersActive = activeFilters.has("prize") || activeFilters.has("no-prize");
+    if (prizeFiltersActive) {
+      const hasPrize = prizeNormalized && !isNoPrizeKeyword(prizeNormalized);
+      const noPrize = !prizeNormalized || isNoPrizeKeyword(prizeNormalized);
+      
+      let prizeMatches = false;
+      if (activeFilters.has("prize") && hasPrize) prizeMatches = true;
+      if (activeFilters.has("no-prize") && noPrize) prizeMatches = true;
+      
+      if (!prizeMatches) return false;
+    }
+    
+    // Check entry fee filters (at least one must match if any fee filter is active)
+    const feeFiltersActive = activeFilters.has("free") || activeFilters.has("paid");
+    if (feeFiltersActive) {
+      const isFree = !entryFeeNormalized || isFreeKeyword(entryFeeNormalized);
+      const isPaid = entryFeeNormalized && !isFreeKeyword(entryFeeNormalized);
+      
+      let feeMatches = false;
+      if (activeFilters.has("free") && isFree) feeMatches = true;
+      if (activeFilters.has("paid") && isPaid) feeMatches = true;
+      
+      if (!feeMatches) return false;
+    }
+    
+    return true;
+  });
+
+  // Helper to toggle a filter
+  const toggleFilter = (filter: FilterType) => {
+    const newFilters = new Set(activeFilters);
+    if (newFilters.has(filter)) {
+      newFilters.delete(filter);
+    } else {
+      newFilters.add(filter);
+    }
+    setActiveFilters(newFilters);
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background pb-20">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Tournaments</h1>
+            <Button size="icon" variant="ghost" data-testid="button-notifications">
+              <Trophy className="w-5 h-5" />
+            </Button>
+          </div>
+          
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tournaments..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="input-search-tournaments"
+            />
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto">
+            <Badge 
+              variant={activeFilters.size === 0 ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilters(new Set())}
+              data-testid="filter-all"
+            >
+              All
+            </Badge>
+            <Badge 
+              variant={activeFilters.has("prize") ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => toggleFilter("prize")}
+              data-testid="filter-prize"
+            >
+              Prize
+            </Badge>
+            <Badge 
+              variant={activeFilters.has("no-prize") ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => toggleFilter("no-prize")}
+              data-testid="filter-no-prize"
+            >
+              No Prize
+            </Badge>
+            <Badge 
+              variant={activeFilters.has("free") ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => toggleFilter("free")}
+              data-testid="filter-free"
+            >
+              Free Entry
+            </Badge>
+            <Badge 
+              variant={activeFilters.has("paid") ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => toggleFilter("paid")}
+              data-testid="filter-paid"
+            >
+              Paid Entry
+            </Badge>
+          </div>
+        </div>
+      </header>
+
+      <main className="px-3 py-4">
+        <div className="space-y-6 max-w-sm mx-auto">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading tournaments...</p>
+            </div>
+          ) : displayPosters.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground font-semibold">No tournaments available</p>
+              <p className="text-sm text-muted-foreground mt-2">Check back soon for upcoming events!</p>
+            </div>
+          ) : (
+            displayPosters.map((poster) => (
+            <Card
+              key={poster.id}
+              className="overflow-hidden hover-elevate cursor-pointer w-full"
+              data-testid={`tournament-poster-${poster.id}`}
+              onClick={() => setDetailsModal(poster)}
+            >
+              <div className="relative h-[600px] overflow-hidden">
+                <img
+                  src={poster.backgroundImage}
+                  alt={poster.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+                
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-4 right-4 z-10 bg-black/30 backdrop-blur-sm border border-white/20 text-white hover:bg-black/50"
+                  data-testid={`button-share-${poster.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareModal({ id: poster.id, title: poster.title, game: poster.game });
+                  }}
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+
+                <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
+                  <button
+                    className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
+                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId })}
+                    data-testid={`button-server-${poster.id}`}
+                  >
+                    <Avatar className="w-16 h-16 border-4 border-white/30">
+                      {poster.serverLogo && <AvatarImage src={poster.serverLogo} alt={poster.serverName} />}
+                      <AvatarFallback className="text-2xl bg-black/40 backdrop-blur-sm text-white">
+                        {poster.serverLogoFallback}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-xs font-semibold text-white/90 tracking-wider uppercase">
+                      {poster.serverName}
+                    </div>
+                  </button>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-3xl font-black mb-3 drop-shadow-2xl leading-tight">
+                        {poster.title}
+                      </h2>
+                      
+                      {poster.game && (
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-sm font-semibold">
+                          {poster.game}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-center gap-10">
+                      <div className="flex flex-col items-center">
+                        <Trophy className="w-6 h-6 mb-1" />
+                        <span className="text-2xl font-bold">{poster.prize}</span>
+                        <span className="text-xs text-white/70">Prize Pool</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <Coins className="w-6 h-6 mb-1" />
+                        <span className="text-2xl font-bold">{poster.entryFee}</span>
+                        <span className="text-xs text-white/70">Entry Fee</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1.5 mx-auto">
+                        {poster.participants} Players
+                      </Badge>
+                      <span className="text-white/80 text-sm">Starts {poster.startDate}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="lg" 
+                      className="bg-green-600 text-white hover:bg-green-700 font-bold px-6 flex-1"
+                      onClick={() => setJoinModal(poster)}
+                      data-testid={`button-join-${poster.id}`}
+                    >
+                      Join Tournament
+                    </Button>
+                    <Button 
+                      size="icon"
+                      variant="outline"
+                      className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailsModal(poster);
+                      }}
+                      data-testid={`button-details-${poster.id}`}
+                    >
+                      <Info className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))
+          )}
+        </div>
+      </main>
+
+      <BottomNavigation />
+
+      {/* Details Modal */}
+      <Dialog open={!!detailsModal} onOpenChange={() => setDetailsModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{detailsModal?.title}</DialogTitle>
+            <DialogDescription>{detailsModal?.game}</DialogDescription>
+          </DialogHeader>
+          
+          {detailsModal && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12">
+                  {detailsModal.serverLogo && <AvatarImage src={detailsModal.serverLogo} alt={detailsModal.serverName} />}
+                  <AvatarFallback className="text-2xl">{detailsModal.serverLogoFallback}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{detailsModal.serverName}</p>
+                  <p className="text-sm text-muted-foreground">Tournament Host</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Prize Pool</p>
+                  <p className="text-xl font-bold text-green-600">{detailsModal.prize}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Entry Fee</p>
+                  <p className="text-xl font-bold">{detailsModal.entryFee}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">Start Time</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.startDate} • {detailsModal.startTime}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm">Players</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.participants}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-sm">Format</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.format}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Monitor className="w-4 h-4" />
+                    <span className="text-sm">Platform</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.platform}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">Region</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.region}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm">Rank Requirement</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.rankReq}</span>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+                onClick={() => {
+                  setDetailsModal(null);
+                  setJoinModal(detailsModal);
+                }}
+                data-testid="button-join-from-details"
+              >
+                Join Tournament
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Join Options Modal */}
+      <Dialog open={!!joinModal} onOpenChange={() => setJoinModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join Tournament</DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to join {joinModal?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            <Button
+              className="w-full justify-between h-auto py-4 px-4"
+              variant="outline"
+              data-testid="button-join-server"
+              onClick={() => {
+                if (joinModal?.id && joinModal.serverId) {
+                  registerTournamentMutation.mutate({ 
+                    tournamentId: joinModal.id,
+                    serverId: joinModal.serverId 
+                  });
+                }
+              }}
+              disabled={registerTournamentMutation.isPending}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">{registerTournamentMutation.isPending ? "Joining..." : "Join Server & Tournament"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Join {joinModal?.serverName} and register
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </Button>
+
+            <Button
+              className="w-full justify-between h-auto py-4 px-4"
+              variant="outline"
+              data-testid="button-signup-page"
+              onClick={() => {
+                if (joinModal?.id) {
+                  setLocation(`/tournament/${joinModal.id}/register`);
+                  setJoinModal(null);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Go to Sign-Up Page</p>
+                  <p className="text-xs text-muted-foreground">
+                    View full tournament details & register
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Server Details Modal */}
+      <Dialog open={!!serverModal} onOpenChange={() => setServerModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="w-12 h-12">
+                {serverModal?.logo && <AvatarImage src={serverModal.logo} alt={serverModal.name} />}
+                <AvatarFallback className="text-2xl">{serverModal?.logoFallback}</AvatarFallback>
+              </Avatar>
+              <span>{serverModal?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Tournament Server
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Join this server to participate in tournaments, connect with other players, and stay updated on upcoming events.
+            </div>
+
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+              onClick={() => {
+                if (serverModal?.id) {
+                  joinServerMutation.mutate(serverModal.id);
+                }
+              }}
+              disabled={joinServerMutation.isPending}
+              data-testid="button-join-server-from-modal"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {joinServerMutation.isPending ? "Joining..." : "Join Server"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Tournament Dialog */}
+      <Dialog open={!!shareModal} onOpenChange={() => { setShareModal(null); setShareUsername(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5" />
+              Share Tournament
+            </DialogTitle>
+            <DialogDescription>
+              Send "{shareModal?.title}" to a user via direct message.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="share-username">Username</Label>
+              <div className="relative">
+                <Input
+                  id="share-username"
+                  placeholder="Enter username"
+                  value={shareUsername}
+                  onChange={(e) => setShareUsername(e.target.value)}
+                  data-testid="input-share-username"
+                  autoComplete="off"
+                />
+                {friendSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 overflow-hidden">
+                    {friendSuggestions.map((friend) => (
+                      <button
+                        key={friend.id}
+                        className="w-full px-3 py-2 flex items-center gap-2 hover-elevate active-elevate-2 text-left"
+                        onClick={() => setShareUsername(friend.username)}
+                        data-testid={`suggestion-${friend.username}`}
+                      >
+                        <Avatar className="w-6 h-6">
+                          {friend.avatarUrl && <AvatarImage src={friend.avatarUrl} />}
+                          <AvatarFallback className="text-xs">
+                            {friend.username.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{friend.username}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {friends.length > 0 && !shareUsername.trim() && (
+                <p className="text-xs text-muted-foreground">Start typing to see suggestions from your friends list</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShareModal(null); setShareUsername(""); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!shareUsername.trim()) {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a username",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                if (shareModal) {
+                  shareTournamentMutation.mutate({
+                    username: shareUsername.trim(),
+                    tournamentId: shareModal.id,
+                    tournamentTitle: shareModal.title,
+                  });
+                }
+              }}
+              disabled={shareTournamentMutation.isPending}
+              data-testid="button-confirm-share"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {shareTournamentMutation.isPending ? "Sending..." : "Send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

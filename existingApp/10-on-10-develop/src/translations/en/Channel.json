@@ -1,0 +1,16 @@
+{
+    "Admin": "Admin",
+    "ShowMore": "Show more...",
+    "Hide": "Hide",
+    "Refresh": "Refresh",
+    "YouAreBanned": "You are banned on this server",
+    "MostRecent": "Most recent",
+    "EmptyScreen": {
+        "Title": "No comments yet!",
+        "Description": "Start the conversation"
+    },
+    "CloseEmptyScreen": {
+        "Title": "No message yet!",
+        "Description": "Waiting for administrator messages"
+    }
+}

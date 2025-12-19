@@ -1,0 +1,253 @@
+import { nanoid } from 'nanoid';
+import type {
+  UserProfile,
+  Trophy,
+  ChatThread,
+  Message,
+  TournamentPoster,
+  Notification,
+  Friendship,
+} from '../types/domain';
+
+export const currentUserId = 'user-current-123';
+
+export const seedProfiles: UserProfile[] = [
+  {
+    id: currentUserId,
+    username: 'you',
+    displayName: 'You (Test User)',
+    avatarUri: 'https://i.pravatar.cc/150?img=1',
+    bio: 'Passionate gamer and tournament enthusiast. Always up for a challenge!',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user-alice-456',
+    username: 'alice_pro',
+    displayName: 'Alice Johnson',
+    avatarUri: 'https://i.pravatar.cc/150?img=5',
+    bio: 'Professional Valorant player. 3x tournament champion.',
+    createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+  },
+  {
+    id: 'user-bob-789',
+    username: 'bob_gamer',
+    displayName: 'Bob Smith',
+    avatarUri: 'https://i.pravatar.cc/150?img=12',
+    bio: 'CS:GO enthusiast. Love organizing community events!',
+    createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
+  },
+  {
+    id: 'user-carol-101',
+    username: 'carol_wins',
+    displayName: 'Carol Martinez',
+    avatarUri: 'https://i.pravatar.cc/150?img=9',
+    bio: 'Tournament organizer and streamer. Follow me on Twitch!',
+    createdAt: new Date(Date.now() - 86400000 * 45).toISOString(),
+  },
+];
+
+export const seedFriendships: Friendship[] = [
+  {
+    id: nanoid(),
+    user1Id: currentUserId,
+    user2Id: 'user-alice-456',
+    createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
+  },
+  {
+    id: nanoid(),
+    user1Id: currentUserId,
+    user2Id: 'user-bob-789',
+    createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+  },
+];
+
+export const seedTrophies: Trophy[] = [
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    tournamentId: 'tournament-1',
+    title: '🏆 Spring Champion',
+    description: '1st Place in Spring Tournament 2024',
+    iconUrl: '🏆',
+    awardedBy: 'Tournament Admin',
+    awardedAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+  },
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    tournamentId: 'tournament-2',
+    title: '🥈 Runner Up',
+    description: '2nd Place in Summer Championship',
+    iconUrl: '🥈',
+    awardedBy: 'Carol Martinez',
+    awardedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    tournamentId: 'tournament-3',
+    title: '🎯 Perfect Aim',
+    description: 'Best accuracy award in Valorant Cup',
+    iconUrl: '🎯',
+    awardedBy: 'Alice Johnson',
+    awardedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+];
+
+export const seedChatThreads: ChatThread[] = [
+  {
+    id: 'thread-1',
+    type: 'group',
+    name: 'Tournament Organizers',
+    avatarUri: 'https://i.pravatar.cc/150?img=20',
+    participantIds: [currentUserId, 'user-alice-456', 'user-bob-789', 'user-carol-101'],
+    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'thread-2',
+    type: 'direct',
+    participantIds: [currentUserId, 'user-alice-456'],
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    updatedAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'thread-3',
+    type: 'group',
+    name: 'Valorant Squad',
+    avatarUri: 'https://i.pravatar.cc/150?img=25',
+    participantIds: [currentUserId, 'user-alice-456', 'user-bob-789'],
+    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
+export const seedMessages: Message[] = [
+  {
+    id: nanoid(),
+    threadId: 'thread-1',
+    senderId: 'user-carol-101',
+    content: 'Hey everyone! The next tournament is scheduled for next weekend.',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+    readBy: [currentUserId, 'user-alice-456'],
+  },
+  {
+    id: nanoid(),
+    threadId: 'thread-1',
+    senderId: 'user-alice-456',
+    content: 'Sounds great! Count me in.',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    readBy: [currentUserId],
+  },
+  {
+    id: nanoid(),
+    threadId: 'thread-2',
+    senderId: 'user-alice-456',
+    content: 'Good game yesterday! Your Jett plays were insane.',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+    readBy: [currentUserId],
+  },
+  {
+    id: nanoid(),
+    threadId: 'thread-2',
+    senderId: currentUserId,
+    content: 'Thanks! You were amazing too. Let's team up for the next one.',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    readBy: ['user-alice-456'],
+  },
+];
+
+export const seedTournaments: TournamentPoster[] = [
+  {
+    id: 'tournament-upcoming-1',
+    name: 'Valorant Champions Cup 2024',
+    game: 'Valorant',
+    imageUrl: 'https://picsum.photos/400/300?random=1',
+    format: 'single_elimination',
+    prizeReward: '$5,000',
+    entryFee: 500,
+    organizerId: 'user-carol-101',
+    organizerName: 'Carol Martinez',
+    maxTeams: 16,
+    currentTeams: 8,
+    startDate: new Date(Date.now() + 86400000 * 7).toISOString(),
+    status: 'upcoming',
+  },
+  {
+    id: 'tournament-upcoming-2',
+    name: 'CS:GO Pro League',
+    game: 'CS:GO',
+    imageUrl: 'https://picsum.photos/400/300?random=2',
+    format: 'round_robin',
+    prizeReward: '$10,000',
+    entryFee: 1000,
+    organizerId: 'user-bob-789',
+    organizerName: 'Bob Smith',
+    maxTeams: 12,
+    currentTeams: 10,
+    startDate: new Date(Date.now() + 86400000 * 14).toISOString(),
+    status: 'upcoming',
+  },
+  {
+    id: 'tournament-in-progress-1',
+    name: 'League of Legends Spring Split',
+    game: 'League of Legends',
+    imageUrl: 'https://picsum.photos/400/300?random=3',
+    format: 'swiss',
+    prizeReward: '$15,000',
+    organizerId: 'user-alice-456',
+    organizerName: 'Alice Johnson',
+    maxTeams: 20,
+    currentTeams: 20,
+    startDate: new Date(Date.now() - 86400000 * 2).toISOString(),
+    status: 'in_progress',
+  },
+  {
+    id: 'tournament-upcoming-3',
+    name: 'Apex Legends Battle Royale',
+    game: 'Apex Legends',
+    imageUrl: 'https://picsum.photos/400/300?random=4',
+    format: 'single_elimination',
+    prizeReward: '$3,000',
+    entryFee: 250,
+    organizerId: 'user-carol-101',
+    organizerName: 'Carol Martinez',
+    maxTeams: 32,
+    currentTeams: 15,
+    startDate: new Date(Date.now() + 86400000 * 21).toISOString(),
+    status: 'upcoming',
+  },
+];
+
+export const seedNotifications: Notification[] = [
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    type: 'message',
+    title: 'New Message from Alice Johnson',
+    body: 'Good game yesterday! Your Jett plays were insane.',
+    data: { threadId: 'thread-2' },
+    isRead: false,
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    type: 'friend_request',
+    title: 'New Friend Request',
+    body: 'David Lee sent you a friend request',
+    data: { userId: 'user-david-999' },
+    isRead: false,
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: nanoid(),
+    userId: currentUserId,
+    type: 'tournament_invite',
+    title: 'Tournament Invitation',
+    body: 'You have been invited to Valorant Champions Cup 2024',
+    data: { tournamentId: 'tournament-upcoming-1' },
+    isRead: true,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];

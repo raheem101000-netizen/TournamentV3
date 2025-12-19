@@ -1,0 +1,96 @@
+Issue + Required Fixes (Tournament Registration + Match Chat System)
+
+1. Registration Steps Not Displayed Correctly
+When a user signs up for a tournament, the tournament dashboard always uses the first step as the team name, even when that first step isn’t meant to be the team name.
+Example:
+If the first registration field is “Number of players,” the dashboard incorrectly treats that value as the team name.
+
+This means the dashboard is not correctly understanding which field should represent the team name or participant identity.
+
+2. Registration Does Not Link to Real User Accounts
+When participants register, the tournament dashboard only shows the information they typed into the form.
+It does not show their actual @username from the app.
+
+Because of this, the participant is not being treated as a real user profile.
+The organiser cannot:
+
+Click their @username
+
+View their profile popup (with add friend / message / view bio options)
+
+Tag or reference them properly in the system
+
+Right now, registration only stores form data and never connects the participant to their actual user account.
+
+3. This Breaks Match Chat Functionality
+When the organiser creates a match:
+
+They select what they think are the participants
+
+A match chat is created
+
+BUT the participants are not actually invited into the match chat
+
+The chat never appears in their Messages inbox
+
+This is likely because the system is trying to invite “form data” instead of real user accounts.
+If the system doesn’t know which real users are participating, it can’t send them the match chat.
+
+4. Required Correct Behavior
+
+A. Registration must link to real user accounts
+When a user signs up for a tournament, the system must save:
+
+The real user ID
+
+The real @username
+
+Not just the custom text they typed in the form.
+
+B. Organiser dashboard must show:
+
+The participant’s @username
+
+Clickable profile popup (just like Discord)
+
+View profile
+
+Add friend
+
+Send message
+
+View bio
+
+C. Match creation workflow must use real user accounts
+When the organiser presses “Create Match,” they should be able to:
+
+Select actual tagged participants (@username)
+
+Press “Create Match Chat”
+
+This automatically invites the real user accounts into the chat
+
+D. Match chat visibility:
+
+Organiser sees the match chat from the tournament dashboard
+
+Participants see the match chat in their Messages inbox as a group chat named “Match Chat”
+
+Everyone can chat in the same thread
+
+Summary for Fix
+
+The core issue is that tournament registration does not connect participants to their actual app accounts.
+Fixing this should automatically solve:
+
+Incorrect team names
+
+Missing @usernames
+
+No profile access
+
+Match chats not appearing in inboxes
+
+Participants not receiving chat invitations
+
+The system must connect registration → real user profiles → match creation → match chat delivery.

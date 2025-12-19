@@ -1,0 +1,16 @@
+include:
+  - project: "ci/templates/node"
+    file: ["npm.yml"]
+  - project: "ci/templates/docker"
+    file: ["npm-monorepo.yml"]
+
+stages:
+  - build
+  - test
+  - deploy
+  - deploy production
+
+build deps:
+  variables:
+    DEPS_STAGE: deps
+  stage: build

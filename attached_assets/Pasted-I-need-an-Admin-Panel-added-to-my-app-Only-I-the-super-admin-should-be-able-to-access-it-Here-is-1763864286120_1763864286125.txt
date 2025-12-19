@@ -1,0 +1,94 @@
+I need an Admin Panel added to my app.
+Only I (the super admin) should be able to access it.
+Here is exactly what the Admin Panel needs to include:
+
+1. Achievement Control
+
+I need to see every tournament organizer.
+
+Next to each organizer, I need an ON/OFF switch that controls whether that organizer is allowed to give achievements.
+
+If the switch is OFF → that organizer cannot give achievements anywhere in the app.
+
+If the switch is ON → they can give achievements normally.
+
+I also need the ability to personally give achievements to users or teams.
+
+I need the ability to delete any achievements that were given.
+
+2. User and Organizer Management
+
+I need a list of all users in the app, showing:
+
+username
+
+email
+
+role (player, organizer, admin)
+
+I need the ability to:
+
+ban a user
+
+unban a user
+
+delete a user
+
+change a user’s role (for example: make someone an organizer or remove organizer status)
+
+3. Tournament Management
+
+Inside the admin panel, I need:
+
+a list of all tournaments
+
+the ability to delete any tournament
+
+the ability to freeze/lock a tournament if something goes wrong
+(when frozen, nobody can update the tournament until I unlock it)
+
+4. Reports and Customer Service Messages
+
+I need a section that shows:
+
+reports made by users
+
+customer service messages sent by users
+
+I must be able to read and manage both.
+
+5. Content Moderation
+
+I need the ability to delete user-uploaded content, including:
+
+tournament poster images
+
+server images
+
+any other images or media uploaded by users
+
+These actions must only be available to me.
+
+Summary
+
+The admin panel should allow me to control:
+
+who can give achievements
+
+giving and deleting achievements
+
+banning, unbanning, and deleting users
+
+viewing and managing user reports
+
+reading customer service messages
+
+deleting user-uploaded images
+
+deleting and freezing tournaments
+
+seeing all users, along with their username, email, and role
+
+controlling organizer permissions with an ON/OFF switch
+
+Only I should have access to these controls.

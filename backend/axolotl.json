@@ -1,0 +1,14 @@
+{
+    "schema": "schema.graphql",
+    "models": "src/models.ts",
+    "federation": [
+        {
+            "schema": "src/main/schema.graphql",
+            "models": "src/main/models.ts"
+        },
+        {
+            "models": "src/modules/users/models.ts",
+            "schema": "src/modules/users/schema.graphql"
+        }
+    ]
+}

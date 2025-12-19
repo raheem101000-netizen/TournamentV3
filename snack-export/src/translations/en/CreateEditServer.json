@@ -1,0 +1,32 @@
+{
+    "ExitModal": {
+        "Title": "Abandon Server Creation",
+        "Description": "You're about to leave this page. Any unsaved changes will be discarded.",
+        "ButtonConfirmTitle": "Discard & Exit"
+    },
+    "AllFieldsRequired": {
+        "FirstPart": "All fields marked with",
+        "SecondPart": "are required."
+    },
+    "Form": {
+        "Inputs": {
+            "serverTitle": {
+                "Label": "Server Title",
+                "Placeholder": "Server Title"
+            },
+            "serverDescription": {
+                "Label": "Server Description",
+                "Placeholder": "Description (max 250 charcaters)"
+            },
+            "category": {
+                "Label": "Server Category",
+                "Placeholder": "Select Server Category"
+            }
+        },
+        "Button": {
+            "Select": "Select",
+            "CreateServer": "Create Server",
+            "EditServer": "Update"
+        }
+    }
+}

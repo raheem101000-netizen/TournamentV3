@@ -1,0 +1,87 @@
+================================================================================
+HELP ME VIEW MY MOBILE APP - STEP BY STEP INSTRUCTIONS
+================================================================================
+
+Hi! I need your help to view my mobile app integration. 
+Please follow these steps exactly:
+
+================================================================================
+STEP 1: GET THE CODE
+================================================================================
+
+Open Command Prompt (Windows) or Terminal (Mac) and type:
+
+git clone https://github.com/YOUR_GITHUB_USERNAME/10-on-10-develop.git
+cd 10-on-10-develop
+
+IMPORTANT: Replace "YOUR_GITHUB_USERNAME" with the actual GitHub username!
+
+================================================================================
+STEP 2: INSTALL DEPENDENCIES
+================================================================================
+
+Type this command:
+
+npm install
+
+This will take 2-3 minutes and needs about 500 MB of disk space.
+Just wait for it to finish.
+
+================================================================================
+STEP 3: START THE APP WITH TUNNEL MODE
+================================================================================
+
+Type this command:
+
+npx expo start --tunnel
+
+================================================================================
+STEP 4: WAIT FOR THE QR CODE
+================================================================================
+
+You'll see something like this appear in the terminal:
+
+    Metro waiting on exp://ab-123.anonymous.exp.direct:80
+
+    ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+    █ ▄▄▄▄▄ █  QR   █
+    █ █   █ █ CODE  █
+    █ █▄▄▄█ █ HERE  █
+    ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+    Scan the QR code above with Expo Go
+
+================================================================================
+STEP 5: SEND ME THE QR CODE
+================================================================================
+
+Take a SCREENSHOT of the QR code that appears on your screen.
+
+Send me that screenshot via:
+- WhatsApp
+- Email  
+- Text message
+- Any messaging app
+
+================================================================================
+THAT'S IT!
+================================================================================
+
+Once I get the screenshot, I'll scan it with my phone and the app will open!
+
+Thank you so much for helping me!
+
+================================================================================
+TROUBLESHOOTING (if needed)
+================================================================================
+
+If you see errors:
+- Make sure you have Node.js installed (download from nodejs.org)
+- Make sure you have at least 500 MB free disk space
+- Try running "npm install" again if it fails
+
+If tunnel doesn't work:
+- Just try running the command again: npx expo start --tunnel
+- Wait a minute for it to connect
+
+================================================================================

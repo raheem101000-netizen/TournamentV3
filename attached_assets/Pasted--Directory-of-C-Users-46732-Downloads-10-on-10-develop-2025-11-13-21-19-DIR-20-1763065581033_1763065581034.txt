@@ -1,0 +1,45 @@
+ Directory of C:\Users\46732\Downloads\10-on-10-develop
+
+2025-11-13  21:19    <DIR>          .
+2025-11-13  21:18    <DIR>          ..
+2025-11-13  16:45             6 148 .DS_Store
+2025-04-01  12:25                39 .eslintignore
+2025-04-01  12:25             1 571 .eslintrc.json
+2025-04-01  12:25               310 .gitignore
+2025-04-01  12:25               437 .prettierrc.js
+2025-04-01  12:25             1 653 app.config.ts
+2025-04-01  12:25               397 babel.config.js
+2025-11-13  16:45               746 eas.json
+2025-04-01  12:25               168 metro.config.js
+2025-11-13  21:19    <DIR>          node_modules
+2025-04-01  12:25           840 990 package-lock.json
+2025-04-01  12:25             2 573 package.json
+2025-04-01  12:25                 8 README.md
+2025-11-13  17:48    <DIR>          src
+2025-11-13  17:51             7 707 TOURNAMENT_INTEGRATION.md
+2025-04-01  12:25               391 tsconfig.json
+              14 File(s)        863 138 bytes
+               4 Dir(s)               0 bytes free
+
+C:\Users\46732\Downloads\10-on-10-develop>cd 10-on-10-develop
+Det går inte att hitta sökvägen.
+
+C:\Users\46732\Downloads\10-on-10-develop>npm install
+npm error code ENOSPC
+npm error syscall rename
+npm error path C:\Users\46732\Downloads\10-on-10-develop\node_modules\fast-uri
+npm error dest C:\Users\46732\Downloads\10-on-10-develop\node_modules\.fast-uri-dP3Gple8
+npm error errno -4055
+npm error nospc ENOSPC: no space left on device, rename 'C:\Users\46732\Downloads\10-on-10-develop\node_modules\fast-uri' -> 'C:\Users\46732\Downloads\10-on-10-develop\node_modules\.fast-uri-dP3Gple8'
+npm error nospc There appears to be insufficient space on your system to finish.
+npm error nospc Clear up some disk space and try again.
+npm error A complete log of this run can be found in: C:\Users\46732\AppData\Local\npm-cache\_logs\2025-11-13T20_24_05_009Z-debug-0.log
+
+C:\Users\46732\Downloads\10-on-10-develop>npm start
+
+> 10-on-10@1.0.0 start
+> npx expo start
+
+Need to install the following packages:
+expo@54.0.23
+Ok to proceed? (y)

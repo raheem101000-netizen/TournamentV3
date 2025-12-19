@@ -1,0 +1,5 @@
+export const DEFAULT_PADDING_HORIZONTAL = 20
+export const DEFAULT_PADDING_VERTICAL = 20
+export const DEFAULT_PADDING_BOTTOM = 20
+export const DEFAULT_PADDING_TOP = 20
+export const DEFAULT_PADDING = 20

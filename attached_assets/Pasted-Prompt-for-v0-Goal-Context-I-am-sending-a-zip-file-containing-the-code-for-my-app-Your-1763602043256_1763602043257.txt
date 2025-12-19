@@ -1,0 +1,105 @@
+Prompt for v0
+
+
+
+Goal / Context:
+
+I am sending a zip file containing the code for my app. Your task is to improve the app by implementing the features and fixes described below. The goal is to make the app fully functional, user-friendly, and performant according to these specifications.
+
+
+
+Instructions / Improvements:
+
+	1.	Server Creation: Upload Profile and Background
+
+	•	When creating a server, allow users to upload a server profile image and a server background image.
+
+	•	Ensure uploaded images display immediately on the server after creation.
+
+	2.	Persistent Login
+
+	•	Users should stay logged in after closing the app.
+
+	•	Implement functionality to remember user sessions and only log out when manually chosen.
+
+	3.	Tournament Display
+
+	•	Ensure all upcoming tournaments are visible at the top of every server page, including newly created servers.
+
+	4.	Navigation Performance
+
+	•	Reduce lag when switching between the homepage and other sections of the app.
+
+	5.	Messaging
+
+	•	Enable real-time messaging so users can send and receive messages actively without delays or errors.
+
+	6.	Pop-Up Notifications
+
+	•	Only show pop-ups for tournament registration or entering a server.
+
+	•	Remove pop-ups for creating servers, tournaments, messages, or uploading files once the action is complete.
+
+	7.	Edit Profile
+
+	•	Users must be able to edit all profile details and upload a new profile picture from files or camera roll.
+
+	8.	Server Game Tags
+
+	•	Allow users to manually type game names when creating a server.
+
+	•	Support multiple game tags per server. (Example: type “FIFA”. Enter and it’s tagged. Then enter another game title manually. Enter and it’s tagged. 
+
+	•	Tags should be searchable in discovery so the server appears for those games.
+
+	9.	Poster Image Upload / Editor
+
+	•	Uploaded images (server background, profile pics, tournament posters) must be visible after upload.
+
+	•	Allow resizing, zooming in/out, and fit-to-frame adjustments.
+
+	•	Ensure images display correctly to other users.
+
+	10.	Game Selection Flexibility
+
+	•	Users should not be limited to a preset list of games.
+
+	•	Allow manual entry of any game and multiple game tags per server.
+
+	11.	Separate Server Lists
+
+	•	Split “My Servers” into two sections:
+
+	1.	Servers owned by the user
+
+	2.	Servers the user is a member of (show roles like admin, tournament manager, etc.)
+
+	•	Ensure the sections are not mixed.
+
+	12.	Performance Optimization
+
+	•	Reduce lag and improve responsiveness for:
+
+	•	Page navigation
+
+	•	Uploading images
+
+	•	Messaging
+
+	•	Accessing server and tournament features
+
+
+
+⸻
+
+
+
+Instructions to v0:
+
+	•	Review the uploaded code carefully.
+
+	•	Implement the above improvements systematically.
+
+	•	Ensure the app runs correctly after all updates.
+
+	•	Maintain the original design and core functionality unless it conflicts with the improvements.

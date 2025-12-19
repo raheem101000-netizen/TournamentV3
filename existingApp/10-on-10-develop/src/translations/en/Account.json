@@ -1,0 +1,38 @@
+{
+    "LogOut": "Log Out",
+    "Categories": {
+        "Role": "Role",
+        "App": "App"
+    },
+    "Role": {
+        "RegularUser": "Regular User",
+        "Organizer": "Organizer",
+        "Change": "Change"
+    },
+    "App": {
+        "PrivacyPolicy": "Privacy & Terms",
+        "Read": "Read",
+        "Delete": "Delete account",
+        "DeleteButton": "Delete"
+    },
+    "LogOutModal": {
+        "Title": "Log Out",
+        "Description": "You're about to log out. Do you want to continue?",
+        "LogOut": "Log Out"
+    },
+    "MakeMeOrganizeModal": {
+        "Title": "Change Role",
+        "Description": "By changing the role you accept our ",
+        "SubDescription": "Terms and Conditions",
+        "Confirm": "Confirm"
+    },
+    "BottomSheet": {
+        "Title": "Add avatar",
+        "ButtonTitle": "Add photo",
+        "AvatarChangeButtonTitle": "Save"
+    },
+    "DeleteEmail": {
+        "Title": "Please delete my account: {{username}}",
+        "Subject": "Delete account"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "ListHeader": {
+        "Servers": "servers",
+        "Filter": "Filter"
+    },
+    "Hosted": {
+        "Title": "Hosted",
+        "EmptyScreen": {
+            "Title": "Nothing here yet",
+            "Description": "Create your first server!",
+            "ButtonTitle": "Create a Server"
+        }
+    },
+    "Joined": {
+        "Title": "Joined",
+        "EmptyScreen": {
+            "Title": "No servers",
+            "Description": "Find one to check out!",
+            "ButtonTitle": "Explore Servers"
+        }
+    }
+}

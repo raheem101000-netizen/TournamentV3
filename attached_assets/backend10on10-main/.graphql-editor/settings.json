@@ -1,0 +1,23 @@
+{
+    "schemaPath": "src/main/schema.graphql",
+    "mainSchemaPath": "schema.graphql",
+    "hosts": {
+        "endpoints": [
+            {
+                "headers": [
+                    [
+                        "Authorization",
+                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzE3NWVmYWU2ZGMzNDA0OTNiYTk2NTciLCJpYXQiOjE3MzE0MDM3MjksImV4cCI6MTczMTQ5MDEyOX0.B7ilpFXJfeBCykmAmCLDKMatCx1vJAWfHEGpXeBWRVY"
+                    ]
+                ],
+                "name": "real",
+                "url": "http://localhost:4002/graphql",
+                "variables": [],
+                "disableProxy": true
+            }
+        ]
+    },
+    "ui": {
+        "currentEndpoint": 0
+    }
+}

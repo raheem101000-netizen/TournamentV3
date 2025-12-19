@@ -1,0 +1,27 @@
+{
+    "SearchPlaceholder": "Search",
+    "GamesCategoriesBar": {
+        "SectionTitle": "Games categories",
+        "FullList": "Full List",
+        "AllCategoriesButtonLabel": "All"
+    },
+    "ServerCards": {
+        "SectionTitle": "{{name}} servers",
+        "AllServers": "All",
+        "ServerCard": {
+            "HostedBy": "Hosted by: ",
+            "NoOnePlayer": "Be the first to Join!",
+            "OnePlayer": "1  member",
+            "MorePlayers": "  members"
+        },
+        "EmptyServersInformation": {
+            "Title": "No servers",
+            "Description": "Stay tuned for updates!",
+            "Button": "Create a server"
+        }
+    },
+    "BottomSheet": {
+        "title": "Games categories",
+        "button": "DONE"
+    }
+}

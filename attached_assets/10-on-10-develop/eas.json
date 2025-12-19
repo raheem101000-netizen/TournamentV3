@@ -1,0 +1,34 @@
+{
+  "cli": {
+    "version": ">= 10.0.2"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://10on10-api.aexol.work/graphql",
+        "EXPO_PUBLIC_CMS_API_URL": "https://10on10-cms.aexol.work/api/graphql/"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://10on10-api-prod.aexol.work/graphql",
+        "EXPO_PUBLIC_CMS_API_URL": "https://10on10-cms.aexol.work/api/graphql/"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleTeamId": ""
+      }
+    }
+  }
+}

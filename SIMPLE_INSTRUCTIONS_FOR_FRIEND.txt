@@ -1,0 +1,87 @@
+================================================================================
+HELP ME VIEW MY MOBILE APP - SUPER SIMPLE INSTRUCTIONS
+================================================================================
+
+Hi! I sent you a ZIP file called "10-on-10-develop.zip"
+Here's what to do:
+
+================================================================================
+STEP 1: EXTRACT THE ZIP FILE
+================================================================================
+
+- Right-click the ZIP file I sent you
+- Click "Extract All" or "Unzip"
+- Remember where you saved it (like Desktop or Downloads)
+
+================================================================================
+STEP 2: OPEN COMMAND PROMPT OR TERMINAL
+================================================================================
+
+Windows:
+- Press Windows key + R
+- Type: cmd
+- Press Enter
+
+Mac:
+- Press Command + Space
+- Type: terminal
+- Press Enter
+
+================================================================================
+STEP 3: GO TO THE FOLDER
+================================================================================
+
+Type this (change the path to where YOU extracted it):
+
+Windows example:
+cd C:\Users\YourName\Desktop\10-on-10-develop
+
+Mac example:
+cd /Users/YourName/Desktop/10-on-10-develop
+
+================================================================================
+STEP 4: INSTALL PACKAGES
+================================================================================
+
+Type:
+
+npm install
+
+Wait 2-3 minutes. You need about 500 MB free space.
+
+================================================================================
+STEP 5: START THE APP
+================================================================================
+
+Type:
+
+npx expo start --tunnel
+
+================================================================================
+STEP 6: WAIT FOR QR CODE
+================================================================================
+
+You'll see a QR code appear in the window.
+
+It looks like a square made of black and white blocks.
+
+================================================================================
+STEP 7: SEND ME A SCREENSHOT
+================================================================================
+
+Take a screenshot of the QR code.
+
+Send it to me via WhatsApp/Email/Text.
+
+THAT'S IT! THANK YOU!
+
+================================================================================
+IF YOU GET STUCK
+================================================================================
+
+Make sure you have Node.js installed:
+- Go to: nodejs.org
+- Download and install it
+- Then try again from Step 2
+
+================================================================================

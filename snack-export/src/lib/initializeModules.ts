@@ -1,0 +1,55 @@
+import { LocalStorage, StorageKeys } from './storage';
+import {
+  seedProfiles,
+  seedFriendships,
+  seedTrophies,
+  seedChatThreads,
+  seedMessages,
+  seedTournaments,
+  seedNotifications,
+  currentUserId,
+} from './seedData';
+import { ProfileStore } from '../modules/profiles/store/profileStore';
+
+let initialized = false;
+
+export async function initializeModules() {
+  if (initialized) {
+    return;
+  }
+
+  try {
+    const currentUser = await ProfileStore.getCurrentUser();
+    if (currentUser) {
+      console.log('Modules already initialized');
+      initialized = true;
+      return;
+    }
+
+    console.log('Initializing modules with seed data...');
+
+    await LocalStorage.setArray(StorageKeys.PROFILES, seedProfiles);
+    await LocalStorage.setArray(StorageKeys.FRIENDSHIPS, seedFriendships);
+    await LocalStorage.setArray(StorageKeys.TROPHIES, seedTrophies);
+    await LocalStorage.setArray(StorageKeys.CHAT_THREADS, seedChatThreads);
+    await LocalStorage.setArray(StorageKeys.MESSAGES, seedMessages);
+    await LocalStorage.setArray(StorageKeys.TOURNAMENTS, seedTournaments);
+    await LocalStorage.setArray(StorageKeys.NOTIFICATIONS, seedNotifications);
+
+    await ProfileStore.setCurrentUser(
+      seedProfiles.find(p => p.id === currentUserId)!
+    );
+
+    initialized = true;
+    console.log('Modules initialized successfully!');
+  } catch (error) {
+    console.error('Error initializing modules:', error);
+    initialized = true; // Don't retry on error
+    throw error;
+  }
+}
+
+export async function clearAllData() {
+  await LocalStorage.clear();
+  console.log('All data cleared');
+}

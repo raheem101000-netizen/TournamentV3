@@ -1,0 +1,20 @@
+{
+    "USERNAME_EXISTS": "Email already exists",
+    "PASSWORD_WEAK": "Password is too weak",
+    "INVITE_DOMAIN_INCORRECT": "Invite domain is incorrect",
+    "LINK_EXPIRED": "Link has expired",
+    "USERNAME_INVALID": "Invalid username",
+    "CONFIRM_EMAIL_BEFOR_LOGIN": "Please confirm your email before logging in",
+    "INVALID_LOGIN_OR_PASSWORD": "Invalid login or password",
+    "CANNOT_FIND_CONNECTED_USER": "Cannot find connected user",
+    "YOU_PROVIDED_OTHER_METHOD_OF_LOGIN_ON_THIS_EMAIL": "You provided a different login method for this email",
+    "UNEXPECTED_ERROR": "An unexpected error occurred",
+    "CANNOT_CHANGE_PASSWORD_FOR_USER_REGISTERED_VIA_SOCIAL": "Cannot change password for a user registered via social login",
+    "TOKEN_IS_INVALID": "The token is invalid",
+    "PASSWORD_IS_TOO_WEAK": "The password is too weak",
+    "USERNAME_ALREADY_TAKEN": "The email is already taken. Please choose a different one.",
+    "FAILED_MONGO_UPDATE": "Failed to update the database. Please try again later.",
+    "USER_DOES_NOT_EXIST": "The user does not exist. Please check your input and try again.",
+    "SOMETHING_WENT_WRONG": "Something went wrong, try again.",
+    "FULLNAME_EXISTS": "Username already exists"
+}

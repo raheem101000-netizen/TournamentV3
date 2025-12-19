@@ -1,0 +1,87 @@
+
+1. Tournament Creation Issues
+	•	When attempting to create a tournament, the system returns an error. This must be fixed.
+	•	The tournament creation form only allows tournaments with a prize amount.
+Requirement: Entry fee and prize fields must accept:
+	•	Numbers
+	•	“FREE” (string)
+	•	Zero (0)
+	•	“No Prize” option
+Organizers must be able to create free tournaments, paid tournaments, and no-prize tournaments.
+
+2. Tournament Poster Upload
+
+Users must be able to choose a poster image using any of the following sources:
+	•	Upload from device files
+	•	Upload from camera roll
+	•	Paste an image URL from the internet
+
+3. General Chat (Messaging System)
+
+Add the following features:
+	•	Ability to upload and send images and files in chat
+	•	Tap/long-press a message to reply directly to that message (similar to Discord’s reply feature)
+	•	Ability to edit messages after sending
+	•	Ability to delete messages
+
+4. Homepage Filters
+
+On the homepage, when the user presses any tag such as:
+	•	Prize
+	•	No prize
+	•	Free entry
+	•	Paid entry
+These tags must work as functional filters and update the tournament list accordingly.
+
+5. Achievement Awards
+
+A clear system is required for tournament organizers to assign or “gift” achievement awards to a player or team.
+Replit must define the workflow for how organizers grant these awards.
+
+6. Profile & Group Avatars
+
+Users must be able to upload profile pictures or group/server avatars using:
+	•	Camera roll
+	•	File upload
+They should not be restricted to default avatars only.
+
+7. Channel Organization (Servers)
+
+Server owners must be able to organize channels into custom categories, similar to Discord:
+	•	Example categories: “Announcements”, “News”, “Rules”, “Matches”, etc.
+	•	Categories are not default; the server owner creates and names them.
+	•	Channels can be moved into or reordered within categories.
+
+8. Settings (User Account)
+
+Add the following options under Account Settings:
+	•	Change username
+	•	Change profile picture
+	•	Change password
+	•	View current password
+	•	View logged-in email
+	•	Change language
+	•	Contact support
+	•	Disable account
+	•	Delete account
+
+9. Server Settings
+
+Under Server Settings include:
+	•	Server overview (bio, profile picture, banner/background image)
+	•	Owner tools:
+	•	Grant and remove admin privileges
+	•	Create and manage roles
+	•	Invite link management
+	•	Ban management
+	•	Ability for owners/admins to delete messages from other users
+	•	View/manage all channels
+
+10. Authentication Homepage
+
+Create a full authentication homepage with:
+	•	Login (username + password)
+	•	Email display
+	•	Account creation (sign up)
+	•	Password recovery / forgot password
+	•	Standard login UI flow

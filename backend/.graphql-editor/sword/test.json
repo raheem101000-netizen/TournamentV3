@@ -1,0 +1,63 @@
+{
+  "gql": "query test($categories_pageInput: PageInput!) {\n  users {\n    user {\n      categories(pageInput: $categories_pageInput) {\n        categories {\n          slug\n          image\n          image_thumbnail\n          name\n        }\n      }\n    }\n  }\n}\nquery servers($Servers_filter: ServersFilter!) {\n  users {\n    user {\n      Servers(filter: $Servers_filter) {\n        Servers {\n          _id\n          createdAt\n          title\n          description\n          interestedUsers {\n            username\n            _id\n            fullName\n            avatarUrl\n            banned\n          }\n        }\n      }\n    }\n  }\n}\nquery search($Servers_filter: ServersFilter!) {\n  users {\n    user {\n      Servers(filter: $Servers_filter) {\n        Servers {\n          title\n          interestedUsers {\n            username\n            _id\n            fullName\n            avatarUrl\n          }\n        }\n      }\n      me {\n        avatarUrl\n      }\n    }\n  }\n}\nquery myServers($followedServers_pageInput: PageInput!) {\n  users {\n    user {\n      me {\n        _id\n        username\n        followedServers(pageInput: $followedServers_pageInput) {\n          Servers {\n            _id\n            createdAt\n            title\n            description\n            category {\n              slug\n              image\n              image_thumbnail\n            }\n          }\n        }\n      }\n    }\n  }\n}\nmutation followServer(\n  $followServer__id: String!\n  $followServer_follow: Boolean\n) {\n  users {\n    user {\n      followServer(_id: $followServer__id, follow: $followServer_follow)\n    }\n  }\n}\n",
+  "variableValues": {
+    "categories_pageInput": {
+      "limit": 4,
+      "start": 4
+    },
+    "Servers_filter": {
+      "pageInput": {
+        "limit": 100
+      },
+      "search": "t"
+    },
+    "followedServers_pageInput": {
+      "limit": 11
+    },
+    "followServer__id": "6728a605fac6cbbb1bb6ded0",
+    "followServer_follow": true
+  },
+  "responses": {
+    "servers": {
+      "__typename": "success",
+      "data": {
+        "users": {
+          "user": {
+            "Servers": {
+              "Servers": [
+                {
+                  "_id": "6728a605fac6cbbb1bb6ded0",
+                  "createdAt": "2024-11-04T10:46:29.974Z",
+                  "title": "Server testowy Fortnite",
+                  "description": "Kamil test",
+                  "interestedUsers": [
+                    {
+                      "username": "kamil.charkiewicz@aexol.com",
+                      "_id": "67167583f23b606674f08417",
+                      "fullName": "kamil.charkiewicz",
+                      "avatarUrl": null,
+                      "banned": true
+                    },
+                    {
+                      "username": "kamil.charkiewicz2@aexol.com",
+                      "_id": "673c59cda9e8bce48e9049f8",
+                      "fullName": "kamil test",
+                      "avatarUrl": null,
+                      "banned": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "timeDelta": 174.69999998807907,
+      "status": 200,
+      "statusHealthy": true
+    }
+  },
+  "headers": {
+    "search": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "gql": "mutation register($register_user: RegisterInput!) {\n  users {\n    publicUsers {\n      register(user: $register_user) {\n        registered\n        hasError\n      }\n    }\n  }\n}\nquery login($password_user: LoginInput!) {\n  users {\n    publicUsers {\n      login {\n        password(user: $password_user) {\n          accessToken\n        }\n      }\n    }\n  }\n}\n",
+  "variableValues": {
+    "register_user": {
+      "username": "{{kamil}}",
+      "password": "{{kamilPass}}"
+    },
+    "password_user": {
+      "username": "{{kamil}}",
+      "password": "{{kamilPass}}"
+    }
+  },
+  "responses": {
+    "login": {
+      "__typename": "success",
+      "data": {
+        "users": {
+          "publicUsers": {
+            "login": {
+              "password": {
+                "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzNjNTljZGE5ZThiY2U0OGU5MDQ5ZjgiLCJpYXQiOjE3MzIwMjM2OTAsImV4cCI6MTczMjExMDA5MH0.32nmdColar3gKAkdVUgd-gMypCT21-MpgmW9JwHzNSg"
+              }
+            }
+          }
+        }
+      },
+      "timeDelta": 152.4000000357628,
+      "status": 200,
+      "statusHealthy": true
+    }
+  }
+}

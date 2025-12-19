@@ -1,0 +1,173 @@
+Navigation
+
+Add the bottom navigation bar (like the 10/10 app and Instagram).
+
+Buttons at the bottom: Homepage, Discovery, Messages, My Server, My Account.
+
+Messages
+
+Ability to create group chats.
+
+Group chats must have a group profile picture.
+
+Users must be able to send images and files.
+
+Server
+
+Unlimited channel creation.
+
+Each channel must have a logo/icon based on what kind of channel it is.
+
+Icons come from the following list:
+
+Text Channels
+
+📝 → Text channel default icon
+
+📢 → Announcement channel
+
+💬 → Chat general
+
+🗂️ → Threads
+
+Voice Channels
+
+🔊 → Voice channel
+
+🎤 → Stage channel
+
+🎧 → Listening/music channel
+
+Categories
+
+📁 → Folder/category
+
+📂 → Sub-category
+
+Bots & Automations
+
+🤖 → Bot channel
+
+🛠️ → Admin tools
+
+⚙️ → Settings
+
+Gaming Channels
+
+🎮 → Gaming channel
+
+🕹️ → Controller
+
+🏆 → Tournaments / ranking
+
+Media Channels
+
+🎨 → Art
+
+📸 → Photos
+
+🎥 → Videos
+
+🎵 → Music
+
+Information Channels
+
+📌 → Rules
+
+📜 → Guidelines
+
+📢 → Announcements
+
+❓ → Help / FAQ
+
+📣 → Updates
+
+Economy / Points / Tournament
+
+💰 → Money / economy
+
+🪙 → Coins / credits
+
+📊 → Stats
+
+📝 → Leaderboards
+
+Community
+
+👋 → Welcome
+
+🙋 → Introductions
+
+🗣️ → Discussion
+
+🎉 → Events
+
+Security / Staff
+
+🔐 → Staff-only
+
+🛡️ → Moderation
+
+🚨 → Reports
+
+Tournament dashboard feature must be at the top of the server page.
+
+Default channels that must always exist:
+
+Tournament channel
+
+Announcement channel
+
+Chat channel
+
+Owner chooses whether a channel is open (everyone can type) or closed (only owner can type).
+
+Dashboard
+
+When they create a tournament, they get a green Post button.
+
+When pressed:
+
+It publishes to the tournament channel inside the server.
+
+It also publishes the tournament poster to the public homepage.
+
+They can choose images for their posters.
+
+Poster builder system must exist.
+
+Default poster template should include:
+
+Background photo
+
+Prize reward
+
+Entry fee
+
+Tournament Poster (Homepage)
+
+Poster must show the server logo of the host server.
+
+Users should be able to forward posters to:
+
+Group chats
+
+Individuals
+
+Homepage must have search bars and filtering so users can find tournaments easily.
+
+Discovery
+
+Must have search + filtering as well.
+
+Text must be made more visible when the background image makes text hard to read.
+
+Account
+
+Profile picture
+
+Show number of friends
+
+Bio
+
+Achievements (single player + team achievements)

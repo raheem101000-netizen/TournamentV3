@@ -1,0 +1,62 @@
+Complete Match Chat Requirements + Problem Description
+1. Required Match Chat Behavior
+
+When a match chat is created, it must automatically become visible in the Messages inbox of every participant involved in that match.
+
+All participants on both teams must receive the match chat as a conversation in their Messages inbox as soon as they are added to the match.
+
+The match chat must function like a normal conversation: all participants can send and receive messages in real time from their inbox.
+
+The organiser does not need the chat delivered to their Messages inbox (the organiser will continue to access match chats via the tournament dashboard where they create and view match chats).
+
+The organiser must still be able to send and receive messages within the match chat from the tournament dashboard (same shared thread as participants).
+
+Any updates (e.g., a user being added to a match) must immediately appear in the participants’ inboxes without requiring manual refresh.
+
+2. Current Issue (Bug Description)
+
+I tested match chat creation and found that the system is generating duplicate match chats, and the chats do not appear in the users’ inboxes.
+
+Repro steps / how I know:
+
+I created a tournament and generated a match.
+
+I am the organiser and one of the participants.
+
+Another test user is the opponent participant.
+
+After creating the match chat, I checked my Messages inbox. No match chat appeared, even though a match chat (or duplicate match chats) exist in the system.
+
+The organiser can see match chats on the dashboard, but participants are not receiving the conversation in their inboxes.
+
+Implication:
+
+Match chats are being created in the backend but are not being linked/pushed to participant inboxes.
+
+Duplicate match chats with the same participant list should not be created.
+
+3. Acceptance Criteria / What Needs to be Fixed
+
+Single chat per match: Ensure the system creates exactly one match chat for each match. Prevent duplicates for the same participant set/match ID.
+
+Inbox delivery to participants: Guarantee that the match chat is automatically added to the Messages inbox of all participants on both teams as soon as the match is created or they are added.
+
+Dashboard access for organiser: The organiser continues to view and participate in the same match chat from the tournament dashboard (no inbox delivery required for organiser).
+
+Real-time availability: New match chats and updates must immediately appear in participants’ inboxes (no manual refresh required).
+
+Messaging parity: Messages sent from the organiser’s dashboard and from participants’ inboxes must appear in the same shared thread and be visible to everyone in that thread.
+
+4. Debugging checklist (suggested)
+
+Verify match chat creation workflow ties chat to the match ID and participant IDs (unique constraint).
+
+Add database uniqueness constraint/index to prevent duplicate chats for the same match/participant set.
+
+Confirm push/notification service or inbox-write logic runs after chat creation for each participant.
+
+Check permissions so participants can fetch/read the chat thread from their inbox.
+
+Add automated test: create match with participants → assert exactly one chat exists and appears in each participant inbox.
+
+Add monitoring/alerts for duplicate chat creation or failed inbox writes.

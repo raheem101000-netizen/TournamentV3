@@ -1,0 +1,11 @@
+{
+    "RegistrationSuccessful": "Registration successful",
+    "SeverCreated": "The server has been created",
+    "ServerUpdate": "The server has been updated",
+    "ServerDeleted": "The server has been deleted",
+    "ChannelCreated": "The channel has been created",
+    "ChannelUpdate": "The channel has been updated",
+    "ServerFollowed": "Server added to servers list",
+    "ServerUnFollowed": "Server removed from servers list",
+    "AvatarChanged": "The avatar has been changed"
+}
