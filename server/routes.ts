@@ -1220,6 +1220,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = await storage.createChatMessage(validatedData);
       console.log(`[DASHBOARD-MATCH-CHAT-POST] Created message:`, JSON.stringify(message));
 
+      // Get sender info for enriching
+      let senderUsername = "Unknown";
+      let senderDisplayName = "Unknown";
+      let senderAvatarUrl: string | undefined;
+      
+      if (message.userId) {
+        const sender = await storage.getUser(message.userId);
+        if (sender) {
+          senderUsername = sender.username || "Unknown";
+          senderDisplayName = sender.displayName?.trim() || sender.username || "Unknown";
+          senderAvatarUrl = sender.avatarUrl ?? undefined;
+        }
+      }
+
+      // SYNC TO INBOX: Get match to find both teams and sync to message_threads
+      try {
+        const match = await storage.getMatch(matchId);
+        if (match && match.team1Id && match.team2Id) {
+          console.log(`[MATCH-INBOX-SYNC] Found match with teams: ${match.team1Id}, ${match.team2Id}`);
+          
+          // Get team names for thread participant names
+          const team1 = await storage.getTeam(match.team1Id);
+          const team2 = await storage.getTeam(match.team2Id);
+          const matchName = `${team1?.name || 'Team 1'} vs ${team2?.name || 'Team 2'}`;
+          
+          // Get all members from both teams
+          const team1Members = await storage.getMembersByTeam(match.team1Id);
+          const team2Members = await storage.getMembersByTeam(match.team2Id);
+          const allMembers = [...team1Members, ...team2Members];
+          
+          console.log(`[MATCH-INBOX-SYNC] Found ${allMembers.length} total team members`);
+          
+          // For each member, create/update their message thread and add the message
+          for (const member of allMembers) {
+            try {
+              // Get or create thread for this user
+              const thread = await storage.getOrCreateMatchThread(
+                matchId,
+                member.userId,
+                matchName,
+                undefined // No specific avatar for match threads
+              );
+              
+              // Create the thread message
+              await storage.createThreadMessage({
+                threadId: thread.id,
+                userId: message.userId || "system",
+                username: senderUsername,
+                message: message.message || null,
+                imageUrl: message.imageUrl || null,
+                replyToId: message.replyToId || null,
+              });
+              
+              // Update thread's last message info
+              const isOwnMessage = member.userId === message.userId;
+              await storage.updateMessageThread(thread.id, {
+                lastMessage: message.message || "[Image]",
+                lastMessageSenderId: message.userId,
+                lastMessageTime: new Date(),
+                unreadCount: isOwnMessage ? thread.unreadCount : (thread.unreadCount || 0) + 1,
+              });
+              
+              console.log(`[MATCH-INBOX-SYNC] Synced message to user ${member.userId}'s inbox`);
+            } catch (memberError) {
+              console.error(`[MATCH-INBOX-SYNC] Error syncing to member ${member.userId}:`, memberError);
+            }
+          }
+        } else {
+          console.log(`[MATCH-INBOX-SYNC] Match not found or missing teams for matchId: ${matchId}`);
+        }
+      } catch (syncError) {
+        console.error("[MATCH-INBOX-SYNC] Error syncing to inbox:", syncError);
+        // Don't fail the request, just log the error
+      }
+
       // Enrich message with username, avatar, and displayName before returning
       const enrichedMessage: any = {
         id: message.id,
@@ -1231,25 +1306,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isSystem: message.isSystem,
         createdAt: message.createdAt,
         replyToId: message.replyToId || null,
+        username: senderUsername,
+        displayName: senderDisplayName,
       };
       
-      if (message.userId) {
-        console.log(`[DASHBOARD-MATCH-CHAT-POST] Fetching user data for userId: ${message.userId}`);
-        const sender = await storage.getUser(message.userId);
-        if (sender) {
-          enrichedMessage.username = sender.username || "Unknown";
-          enrichedMessage.displayName = sender.displayName?.trim() || sender.username || "Unknown";
-          if (sender.avatarUrl) {
-            enrichedMessage.avatarUrl = sender.avatarUrl;
-          }
-          console.log(`[DASHBOARD-MATCH-CHAT-POST] Enriched: username=${enrichedMessage.username}, displayName=${enrichedMessage.displayName}, avatarUrl=${enrichedMessage.avatarUrl}`);
-        } else {
-          enrichedMessage.username = "Unknown";
-          console.log(`[DASHBOARD-MATCH-CHAT-POST] Sender not found for userId: ${message.userId}`);
-        }
-      } else {
-        enrichedMessage.username = "Unknown";
-        console.log(`[DASHBOARD-MATCH-CHAT-POST] No userId in message`);
+      if (senderAvatarUrl) {
+        enrichedMessage.avatarUrl = senderAvatarUrl;
       }
 
       console.log(`[DASHBOARD-MATCH-CHAT-POST] Final enriched message:`, JSON.stringify(enrichedMessage));

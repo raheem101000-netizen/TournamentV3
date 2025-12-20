@@ -205,6 +205,8 @@ export interface IStorage {
   createNotification(data: InsertNotification): Promise<Notification>;
   deleteFriendRequestNotifications(userId: string, senderId: string): Promise<void>;
   findExistingThread(userId: string, participantId: string): Promise<MessageThread | undefined>;
+  getMatchThreadForUser(matchId: string, userId: string): Promise<MessageThread | undefined>;
+  getOrCreateMatchThread(matchId: string, userId: string, participantName: string, participantAvatar?: string): Promise<MessageThread>;
 
   // Poster template operations
   createPosterTemplate(data: InsertPosterTemplate): Promise<PosterTemplate>;
@@ -772,6 +774,35 @@ export class DatabaseStorage implements IStorage {
       )
     );
     return thread || undefined;
+  }
+
+  async getMatchThreadForUser(matchId: string, userId: string): Promise<MessageThread | undefined> {
+    const [thread] = await db.select().from(messageThreads).where(
+      and(
+        eq(messageThreads.matchId, matchId),
+        eq(messageThreads.userId, userId)
+      )
+    );
+    return thread || undefined;
+  }
+
+  async getOrCreateMatchThread(matchId: string, userId: string, participantName: string, participantAvatar?: string): Promise<MessageThread> {
+    // Check if thread already exists for this user and match
+    const existingThread = await this.getMatchThreadForUser(matchId, userId);
+    if (existingThread) {
+      return existingThread;
+    }
+    // Create new thread for this user
+    const thread = await this.createMessageThread({
+      userId: userId,
+      matchId: matchId,
+      participantName: participantName,
+      participantAvatar: participantAvatar || null,
+      lastMessage: "",
+      lastMessageSenderId: null,
+      unreadCount: 0,
+    });
+    return thread;
   }
 
   // Poster template operations
