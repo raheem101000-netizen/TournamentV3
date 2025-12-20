@@ -858,8 +858,8 @@ export default function PreviewMessages() {
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <Card className="flex flex-col min-h-0">
+        <main className="flex-1 flex flex-col overflow-hidden p-4">
+          <Card className="flex flex-col flex-1 min-h-0">
             {selectedChat?.matchId && (
               <CardHeader className="pb-4">
                 <CardTitle className="font-display flex items-center gap-2">
