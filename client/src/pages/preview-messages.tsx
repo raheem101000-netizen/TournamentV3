@@ -388,9 +388,9 @@ export default function PreviewMessages() {
             username: currentUser?.username,
             message,
             imageUrl,
-            replyToId: replyToId || null
+            replyToId: null
           }
-        : { message, imageUrl, replyToId: replyToId || null };
+        : { message, imageUrl, replyToId: null };
       
       const response = await fetch(url, {
         method: "POST",
