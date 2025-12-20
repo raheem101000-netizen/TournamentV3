@@ -222,7 +222,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const deleteTournamentMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('DELETE', `/api/tournaments/${selectedTournamentId}?userId=${user?.id}`);
+      console.log('[DELETE] Attempting to delete tournament:', selectedTournamentId);
+      console.log('[DELETE] User ID:', user?.id);
+      const url = `/api/tournaments/${selectedTournamentId}?userId=${user?.id}`;
+      console.log('[DELETE] URL:', url);
+      return apiRequest('DELETE', url);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
