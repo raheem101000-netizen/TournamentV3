@@ -123,17 +123,19 @@ const mockMessages = [
 ];
 
 function threadToChat(thread: MessageThread): Chat {
+  const isMatchChat = !!thread.matchId;
   return {
     id: thread.id,
     name: thread.participantName,
-    isGroup: true,
-    groupImage: thread.participantAvatar || "💬",
+    isGroup: isMatchChat,
+    avatar: thread.participantAvatar || undefined,
+    groupImage: isMatchChat ? (thread.participantAvatar || "💬") : undefined,
     lastMessage: thread.lastMessage,
     lastMessageSenderName: thread.lastMessageSenderName,
     timestamp: formatTime(thread.lastMessageTime),
     unread: thread.unreadCount,
     members: 0,
-    matchId: thread.matchId, // Pass through matchId if present
+    matchId: thread.matchId,
   };
 }
 
@@ -819,7 +821,12 @@ export default function PreviewMessages() {
                       {selectedChat.groupImage}
                     </AvatarFallback>
                   ) : (
-                    <AvatarImage src={selectedChat.avatar} />
+                    <>
+                      <AvatarImage src={selectedChat.avatar} />
+                      <AvatarFallback className="text-sm bg-primary/10">
+                        {selectedChat.name?.substring(0, 2).toUpperCase() || "??"}
+                      </AvatarFallback>
+                    </>
                   )}
                 </Avatar>
                 {selectedChat.isGroup && (
@@ -853,14 +860,16 @@ export default function PreviewMessages() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           <Card className="flex flex-col min-h-0">
-            <CardHeader className="pb-4">
-              <CardTitle className="font-display flex items-center gap-2">
-                {selectedChat?.matchId ? "Match Chat" : "Direct Message"}
-                <Badge variant="outline" className="font-normal">
-                  {threadMessages.length} messages
-                </Badge>
-              </CardTitle>
-            </CardHeader>
+            {selectedChat?.matchId && (
+              <CardHeader className="pb-4">
+                <CardTitle className="font-display flex items-center gap-2">
+                  Match Chat
+                  <Badge variant="outline" className="font-normal">
+                    {threadMessages.length} messages
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+            )}
             <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4">
