@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### December 20, 2025 (Match Chat to Inbox Sync - COMPLETE ✅)
+- **Match chats now sync to user's Messages inbox**:
+  - ✅ Messages sent in Tournament Dashboard match chat automatically appear in both teams' inboxes
+  - ✅ Per-user message threads created for each team member (linked via matchId)
+  - ✅ Thread title matches tournament dashboard format: "Match Chat: @username1 vs @username2"
+  - ✅ Unread counts properly tracked per user
+  - ✅ Storage methods: `getMatchThreadForUser()`, `getOrCreateMatchThread()`
+  - ✅ Fixed duplicate thread display issue by excluding match threads from direct threads query
+
 ### December 18, 2025 (Reply Feature Removed)
 - **Removed reply functionality from all chat interfaces** (user requested removal)
 
