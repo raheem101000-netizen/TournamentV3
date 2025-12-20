@@ -855,7 +855,7 @@ export default function PreviewMessages() {
           <Card className="flex flex-col min-h-0">
             <CardHeader className="pb-4">
               <CardTitle className="font-display flex items-center gap-2">
-                Match Chat
+                {selectedChat?.matchId ? "Match Chat" : "Direct Message"}
                 <Badge variant="outline" className="font-normal">
                   {threadMessages.length} messages
                 </Badge>
