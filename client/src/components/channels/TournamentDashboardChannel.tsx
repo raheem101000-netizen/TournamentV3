@@ -1189,6 +1189,41 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Tournament Confirmation Dialog - inside detail view */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Tournament</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{selectedTournament?.name}"? This action cannot be undone and will permanently remove all tournament data including matches, teams, and registrations.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  console.log('[DELETE] Confirm button clicked, calling mutation');
+                  deleteTournamentMutation.mutate();
+                }}
+                disabled={deleteTournamentMutation.isPending}
+                data-testid="button-confirm-delete-tournament"
+              >
+                {deleteTournamentMutation.isPending ? "Deleting..." : "Delete Tournament"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <EditTournamentDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          tournament={selectedTournament}
+          onSubmit={(data) => updateTournamentMutation.mutate(data)}
+        />
       </div>
     );
   }
