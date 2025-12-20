@@ -1,4 +1,4 @@
-import { eq, and, or, sql, ilike } from "drizzle-orm";
+import { eq, and, or, sql, ilike, isNull } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import {
@@ -629,9 +629,11 @@ export class DatabaseStorage implements IStorage {
             eq(messageThreads.userId, userId),
             eq(messageThreads.participantId, userId)
           ),
-          sql`${messageThreads.matchId} IS NULL`
+          isNull(messageThreads.matchId)
         )
       );
+    
+    console.log("[MSG-THREADS] Direct threads query result:", directThreads.map(t => ({ id: t.id, userId: t.userId, participantId: t.participantId, matchId: t.matchId })));
 
     console.log("[MSG-THREADS] Direct threads found:", directThreads.length);
 
