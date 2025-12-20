@@ -66,6 +66,82 @@ import {
   generateSwissSystemRound,
 } from "./bracket-generator";
 
+/**
+ * PERMANENT: Creates match chat threads for all team members when a match is created.
+ * This ensures the match chat appears in all participants' Messages inbox immediately.
+ * Called automatically after every match creation.
+ */
+async function createMatchThreadsForAllMembers(
+  matchId: string,
+  team1Id: string | null,
+  team2Id: string | null
+): Promise<void> {
+  try {
+    // Get team info for match name
+    const team1 = team1Id ? await storage.getTeam(team1Id) : null;
+    const team2 = team2Id ? await storage.getTeam(team2Id) : null;
+    
+    // Get first member usernames for match name (same format as dashboard)
+    let team1Username = "TBD";
+    let team2Username = "TBD";
+    
+    if (team1Id) {
+      const team1Members = await storage.getTeamMembers(team1Id);
+      if (team1Members.length > 0) {
+        const firstMember = await storage.getUser(team1Members[0].userId);
+        if (firstMember) {
+          team1Username = firstMember.username;
+        }
+      }
+    }
+    
+    if (team2Id) {
+      const team2Members = await storage.getTeamMembers(team2Id);
+      if (team2Members.length > 0) {
+        const firstMember = await storage.getUser(team2Members[0].userId);
+        if (firstMember) {
+          team2Username = firstMember.username;
+        }
+      }
+    }
+    
+    // Match name format: "Match Chat: @username1 vs @username2"
+    const matchName = `Match Chat: @${team1Username} vs @${team2Username}`;
+    
+    // Collect all members from both teams
+    const allMembers: { userId: string }[] = [];
+    
+    if (team1Id) {
+      const team1Members = await storage.getTeamMembers(team1Id);
+      allMembers.push(...team1Members);
+    }
+    
+    if (team2Id) {
+      const team2Members = await storage.getTeamMembers(team2Id);
+      allMembers.push(...team2Members);
+    }
+    
+    // Create thread for each member
+    for (const member of allMembers) {
+      try {
+        await storage.getOrCreateMatchThread(
+          matchId,
+          member.userId,
+          matchName,
+          undefined
+        );
+        console.log(`[MATCH-THREAD-CREATE] Created thread for user ${member.userId} in match ${matchId}`);
+      } catch (memberError) {
+        console.error(`[MATCH-THREAD-CREATE] Error creating thread for ${member.userId}:`, memberError);
+      }
+    }
+    
+    console.log(`[MATCH-THREAD-CREATE] Successfully created threads for ${allMembers.length} members in match ${matchId}`);
+  } catch (error) {
+    console.error(`[MATCH-THREAD-CREATE] Error creating match threads:`, error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/expo-app', createProxyMiddleware({
     target: 'http://127.0.0.1:8081',
@@ -562,7 +638,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (matches) {
-          await Promise.all(matches.map((match) => storage.createMatch(match)));
+          const createdMatches = await Promise.all(matches.map((match) => storage.createMatch(match)));
+          // PERMANENT: Create match threads for all team members immediately
+          for (const createdMatch of createdMatches) {
+            await createMatchThreadsForAllMembers(createdMatch.id, createdMatch.team1Id, createdMatch.team2Id);
+          }
         }
       }
 
@@ -1097,6 +1177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
+        
+        // PERMANENT: Create match threads for all team members immediately
+        await createMatchThreadsForAllMembers(matchToReturn.id, team1Id, team2Id);
       }
 
       res.status(201).json(matchToReturn);
@@ -1563,7 +1646,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             if (matches && matches.length > 0) {
               // Create all matches
-              await Promise.all(matches.map((match) => storage.createMatch(match)));
+              const createdMatches = await Promise.all(matches.map((match) => storage.createMatch(match)));
+              // PERMANENT: Create match threads for all team members immediately
+              for (const createdMatch of createdMatches) {
+                await createMatchThreadsForAllMembers(createdMatch.id, createdMatch.team1Id, createdMatch.team2Id);
+              }
             }
           }
         } catch (error) {
@@ -1672,7 +1759,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               if (matches && matches.length > 0) {
                 // Create all matches
-                await Promise.all(matches.map((match) => storage.createMatch(match)));
+                const createdMatches = await Promise.all(matches.map((match) => storage.createMatch(match)));
+                // PERMANENT: Create match threads for all team members immediately
+                for (const createdMatch of createdMatches) {
+                  await createMatchThreadsForAllMembers(createdMatch.id, createdMatch.team1Id, createdMatch.team2Id);
+                }
               }
             }
           }
