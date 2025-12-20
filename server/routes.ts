@@ -1240,14 +1240,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (match && match.team1Id && match.team2Id) {
           console.log(`[MATCH-INBOX-SYNC] Found match with teams: ${match.team1Id}, ${match.team2Id}`);
           
-          // Get team names for match thread title (same as tournament dashboard)
-          const team1 = await storage.getTeam(match.team1Id);
-          const team2 = await storage.getTeam(match.team2Id);
-          const matchName = `${team1?.name || 'Team 1'} vs ${team2?.name || 'Team 2'}`;
-          
-          // Get all members from both teams
+          // Get team members for match thread title (same format as tournament dashboard)
+          // Format: "Match Chat: @username1 vs @username2"
           const team1Members = await storage.getMembersByTeam(match.team1Id);
           const team2Members = await storage.getMembersByTeam(match.team2Id);
+          
+          // Get first member's username from each team (with @ prefix)
+          let team1Display = "TBD";
+          let team2Display = "TBD";
+          
+          if (team1Members.length > 0) {
+            const member1 = await storage.getUser(team1Members[0].userId);
+            team1Display = member1?.username ? `@${member1.username}` : "TBD";
+          }
+          if (team2Members.length > 0) {
+            const member2 = await storage.getUser(team2Members[0].userId);
+            team2Display = member2?.username ? `@${member2.username}` : "TBD";
+          }
+          
+          const matchName = `Match Chat: ${team1Display} vs ${team2Display}`;
+          
+          // Combine all members from both teams
           const allMembers = [...team1Members, ...team2Members];
           
           console.log(`[MATCH-INBOX-SYNC] Found ${allMembers.length} total team members`);
