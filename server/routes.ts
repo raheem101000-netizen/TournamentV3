@@ -1097,23 +1097,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
-        
-        // Create ONE shared message thread per match (not per participant)
-        const sharedThreadData = {
-          userId: undefined, // No userId - this is a shared thread
-          matchId: matchToReturn.id,
-          participantName: matchMessage,
-          lastMessage: threadMessage,
-          lastMessageTime: new Date(),
-          unreadCount: 0,
-        };
-        
-        try {
-          await storage.createMessageThread(sharedThreadData);
-          console.log("[MATCH-CREATION] Shared thread created for matchId:", matchToReturn.id);
-        } catch (error) {
-          console.error("[MATCH-CREATION] Failed to create shared thread for matchId:", matchToReturn.id, error);
-        }
       }
 
       res.status(201).json(matchToReturn);
@@ -1505,39 +1488,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (matches && matches.length > 0) {
               // Create all matches
               await Promise.all(matches.map((match) => storage.createMatch(match)));
-              
-              // Create message threads for each match
-              for (const match of matches) {
-                const team1 = allTeams.find(t => t.id === match.team1Id);
-                const team2 = allTeams.find(t => t.id === match.team2Id);
-                
-                // Skip bye matches
-                if (!team1 || !team2) continue;
-                
-                // Get usernames from team members instead of team names
-                const team1Members = await storage.getTeamMembers(team1.id);
-                const team2Members = await storage.getTeamMembers(team2.id);
-                let team1Username = team1.name;
-                let team2Username = team2.name;
-                
-                if (team1Members.length > 0 && team1Members[0].userId) {
-                  const user1 = await storage.getUser(team1Members[0].userId);
-                  if (user1) team1Username = `@${user1.username}`;
-                }
-                if (team2Members.length > 0 && team2Members[0].userId) {
-                  const user2 = await storage.getUser(team2Members[0].userId);
-                  if (user2) team2Username = `@${user2.username}`;
-                }
-                
-                const threadName = `${team1Username} vs ${team2Username}`;
-                await storage.createMessageThread({
-                  userId: tournament.organizerId || 'system',
-                  participantName: threadName,
-                  participantAvatar: null,
-                  lastMessage: `Match created: ${threadName}`,
-                  unreadCount: 0,
-                });
-              }
             }
           }
         } catch (error) {
@@ -1647,39 +1597,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (matches && matches.length > 0) {
                 // Create all matches
                 await Promise.all(matches.map((match) => storage.createMatch(match)));
-                
-                // Create message threads for each match
-                for (const match of matches) {
-                  const team1 = allTeams.find(t => t.id === match.team1Id);
-                  const team2 = allTeams.find(t => t.id === match.team2Id);
-                  
-                  // Skip bye matches
-                  if (!team1 || !team2) continue;
-                  
-                  // Get usernames from team members instead of team names
-                  const team1Members = await storage.getTeamMembers(team1.id);
-                  const team2Members = await storage.getTeamMembers(team2.id);
-                  let team1Username = team1.name;
-                  let team2Username = team2.name;
-                  
-                  if (team1Members.length > 0 && team1Members[0].userId) {
-                    const user1 = await storage.getUser(team1Members[0].userId);
-                    if (user1) team1Username = `@${user1.username}`;
-                  }
-                  if (team2Members.length > 0 && team2Members[0].userId) {
-                    const user2 = await storage.getUser(team2Members[0].userId);
-                    if (user2) team2Username = `@${user2.username}`;
-                  }
-                  
-                  const threadName = `${team1Username} vs ${team2Username}`;
-                  await storage.createMessageThread({
-                    userId: tournament.organizerId || 'system',
-                    participantName: threadName,
-                    participantAvatar: null,
-                    lastMessage: `Match created: ${threadName}`,
-                    unreadCount: 0,
-                  });
-                }
               }
             }
           }
