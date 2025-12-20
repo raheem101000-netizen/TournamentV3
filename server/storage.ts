@@ -619,13 +619,17 @@ export class DatabaseStorage implements IStorage {
     console.log("[MSG-THREADS] User tournaments found:", userTournaments.length, userTournaments);
 
     // Get direct message threads for this user (where they are creator OR participant)
+    // Exclude match threads (matchId IS NOT NULL) as they are fetched separately
     const directThreads = await db
       .select()
       .from(messageThreads)
       .where(
-        or(
-          eq(messageThreads.userId, userId),
-          eq(messageThreads.participantId, userId)
+        and(
+          or(
+            eq(messageThreads.userId, userId),
+            eq(messageThreads.participantId, userId)
+          ),
+          sql`${messageThreads.matchId} IS NULL`
         )
       );
 
