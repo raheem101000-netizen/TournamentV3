@@ -37,8 +37,8 @@ const createServerSchema = z.object({
   category: z.string().optional(),
   gameTags: z.array(z.string()).optional(),
   isPublic: z.number().default(1),
-  iconUrl: z.string().optional(),
-  backgroundUrl: z.string().optional(),
+  iconUrl: z.string().min(1, "Server icon is required"),
+  backgroundUrl: z.string().min(1, "Server background image is required"),
 });
 
 type CreateServerForm = z.infer<typeof createServerSchema>;
@@ -113,7 +113,7 @@ export default function CreateServer() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Server Name</FormLabel>
+                    <FormLabel>Server Name <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="My Awesome Server"
@@ -150,7 +150,7 @@ export default function CreateServer() {
                 name="welcomeMessage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Welcome Page Message</FormLabel>
+                    <FormLabel>Welcome Page Message <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Welcome to our server! Here you'll find..."
@@ -244,10 +244,11 @@ export default function CreateServer() {
                 render={({ field }) => (
                   <FormItem>
                     <ImageUploadField
-                      label="Server Icon (Optional)"
+                      label="Server Icon"
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="https://example.com/icon.jpg"
+                      placeholder="Upload your server icon"
+                      required
                     />
                     <FormMessage />
                   </FormItem>
@@ -260,10 +261,11 @@ export default function CreateServer() {
                 render={({ field }) => (
                   <FormItem>
                     <ImageUploadField
-                      label="Server Background (Optional)"
+                      label="Server Background"
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="https://example.com/background.jpg"
+                      placeholder="Upload your server background image"
+                      required
                     />
                     <FormMessage />
                   </FormItem>

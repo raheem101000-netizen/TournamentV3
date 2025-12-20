@@ -10,13 +10,15 @@ interface ImageUploadFieldProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  required?: boolean;
 }
 
 export default function ImageUploadField({ 
   label = "Image",
   value, 
   onChange,
-  placeholder = "Enter image URL"
+  placeholder = "Enter image URL",
+  required = false
 }: ImageUploadFieldProps) {
   const [preview, setPreview] = useState<string | null>(value || null);
   const [isUploading, setIsUploading] = useState(false);
@@ -117,7 +119,10 @@ export default function ImageUploadField({
 
   return (
     <div className="space-y-3">
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
       
       <div className="space-y-2">
         <Input
