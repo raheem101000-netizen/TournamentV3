@@ -1240,6 +1240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (match && match.team1Id && match.team2Id) {
           console.log(`[MATCH-INBOX-SYNC] Found match with teams: ${match.team1Id}, ${match.team2Id}`);
           
+          // Get team names for match thread title (same as tournament dashboard)
+          const team1 = await storage.getTeam(match.team1Id);
+          const team2 = await storage.getTeam(match.team2Id);
+          const matchName = `${team1?.name || 'Team 1'} vs ${team2?.name || 'Team 2'}`;
+          
           // Get all members from both teams
           const team1Members = await storage.getMembersByTeam(match.team1Id);
           const team2Members = await storage.getMembersByTeam(match.team2Id);
@@ -1250,28 +1255,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For each member, create/update their message thread and add the message
           for (const member of allMembers) {
             try {
-              // Determine opponent info based on which team this member is on
-              const isTeam1Member = team1Members.some(m => m.userId === member.userId);
-              const opponentMembers = isTeam1Member ? team2Members : team1Members;
-              
-              // Get opponent's display name (for 1v1) or first opponent's name
-              let opponentName = "Opponent";
-              let opponentAvatar: string | undefined;
-              
-              if (opponentMembers.length > 0) {
-                const firstOpponent = await storage.getUser(opponentMembers[0].userId);
-                if (firstOpponent) {
-                  opponentName = firstOpponent.displayName?.trim() || firstOpponent.username || "Opponent";
-                  opponentAvatar = firstOpponent.avatarUrl ?? undefined;
-                }
-              }
-              
-              // Get or create thread for this user with opponent's name
+              // Get or create thread for this user with match name (same as dashboard)
               const thread = await storage.getOrCreateMatchThread(
                 matchId,
                 member.userId,
-                opponentName,
-                opponentAvatar
+                matchName,
+                undefined
               );
               
               // Create the thread message
