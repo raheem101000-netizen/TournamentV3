@@ -109,62 +109,6 @@ export default function CreateServer() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="iconUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <ImageUploadField
-                      label="Server Icon"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      placeholder="Upload your server icon"
-                      required
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="backgroundUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <ImageUploadField
-                      label="Server Background"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      placeholder="Upload your server background image"
-                      required
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="welcomeMessage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Welcome Page Message <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Welcome to our server! Here you'll find..."
-                        rows={6}
-                        data-testid="input-welcome-message"
-                        {...field}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This message will be displayed to everyone who previews or joins your server.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -202,6 +146,80 @@ export default function CreateServer() {
 
               <FormField
                 control={form.control}
+                name="gameTags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Game Tags</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        tags={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="Type a game name and press Enter (e.g., FIFA, Valorant)"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="welcomeMessage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Welcome Page Message <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Welcome to our server! Here you'll find..."
+                        rows={6}
+                        data-testid="input-welcome-message"
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This message will be displayed to everyone who previews or joins your server.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="iconUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <ImageUploadField
+                      label="Server Icon"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="Upload your server icon"
+                      required
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="backgroundUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <ImageUploadField
+                      label="Server Background"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="Upload your server background image"
+                      required
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
@@ -223,24 +241,6 @@ export default function CreateServer() {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="gameTags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Game Tags</FormLabel>
-                    <FormControl>
-                      <TagInput
-                        tags={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="Type a game name and press Enter (e.g., FIFA, Valorant)"
-                      />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
