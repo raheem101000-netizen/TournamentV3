@@ -10,14 +10,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### December 20, 2025 (Match Chat to Inbox Sync - COMPLETE ✅)
-- **Match chats now sync to user's Messages inbox**:
-  - ✅ Messages sent in Tournament Dashboard match chat automatically appear in both teams' inboxes
-  - ✅ Per-user message threads created for each team member (linked via matchId)
-  - ✅ Thread title matches tournament dashboard format: "Match Chat: @username1 vs @username2"
-  - ✅ Unread counts properly tracked per user
-  - ✅ Storage methods: `getMatchThreadForUser()`, `getOrCreateMatchThread()`
-  - ✅ Fixed duplicate thread display issue by excluding match threads from direct threads query
+### December 20, 2025 (Match Chat System - PERMANENT IMPLEMENTATION ✅)
+- **PERMANENT: Match chats automatically appear in ALL participants' Messages inbox**:
+  - ✅ `createMatchThreadsForAllMembers()` helper function automatically creates threads for all team members when a match is created
+  - ✅ Called automatically at ALL 4 match creation points in routes.ts
+  - ✅ Thread title format: "Match Chat: @username1 vs @username2" (matches dashboard)
+  - ✅ Messages synced to inbox via `getOrCreateMatchThread()` on every message send
+  
+- **PERMANENT: Message send validation prevents silent failures**:
+  - ✅ Match message endpoint validates userId is present
+  - ✅ Both endpoints validate message content or image is provided
+  - ✅ Fixed undefined `replyToId` variable in preview-messages.tsx (set to null)
+  
+- **Storage methods for match threads**:
+  - ✅ `getMatchThreadForUser()` - Get existing thread for user/match
+  - ✅ `getOrCreateMatchThread()` - Create or return existing thread
+  - ✅ Fixed duplicate display by excluding match threads from direct threads query (matchId IS NULL)
 
 ### December 18, 2025 (Reply Feature Removed)
 - **Removed reply functionality from all chat interfaces** (user requested removal)

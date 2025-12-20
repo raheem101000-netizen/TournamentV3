@@ -1001,7 +1001,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const nextRound = currentRound + 1;
             const newMatches = generateSwissSystemRound(tournament.id, teams, nextRound, allMatches).matches;
 
-            await Promise.all(newMatches.map((m) => storage.createMatch(m)));
+            const createdMatches = await Promise.all(newMatches.map((m) => storage.createMatch(m)));
+            // PERMANENT: Create match threads for all team members immediately
+            for (const createdMatch of createdMatches) {
+              await createMatchThreadsForAllMembers(createdMatch.id, createdMatch.team1Id, createdMatch.team2Id);
+            }
             await storage.updateTournament(tournament.id, { currentRound: nextRound });
           }
         }
@@ -1153,6 +1157,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update existing match and its message thread
         matchToReturn = existingMatch;
         
+        // PERMANENT: Ensure match threads exist for all team members (in case they're missing)
+        await createMatchThreadsForAllMembers(existingMatch.id, team1Id, team2Id);
+        
         // Find and update the message thread for this match
         const allThreads = await storage.getAllMessageThreads();
         const matchThread = allThreads.find(t => t.matchId === existingMatch.id);
@@ -1293,6 +1300,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchId = req.params.matchId;
       console.log(`[DASHBOARD-MATCH-CHAT-POST] Received message for match: ${matchId}`, JSON.stringify(req.body));
+      
+      // PERMANENT: Validate userId is provided to prevent send failures
+      if (!req.body.userId) {
+        console.error(`[DASHBOARD-MATCH-CHAT-POST] Missing userId in request body`);
+        return res.status(400).json({ error: "userId is required to send a message" });
+      }
+      
+      // PERMANENT: Validate message content exists
+      if (!req.body.message?.trim() && !req.body.imageUrl) {
+        console.error(`[DASHBOARD-MATCH-CHAT-POST] Empty message content`);
+        return res.status(400).json({ error: "Message content or image is required" });
+      }
       
       const validatedData = insertChatMessageSchema.parse({
         ...req.body,
@@ -2887,6 +2906,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(401).json({ error: "User not found" });
+      }
+      
+      // PERMANENT: Validate message content exists
+      if (!req.body.message?.trim() && !req.body.imageUrl) {
+        console.error(`[THREAD-MSG-POST] Empty message content from user ${req.session.userId}`);
+        return res.status(400).json({ error: "Message content or image is required" });
       }
       
       const validatedData = insertThreadMessageSchema.parse({
