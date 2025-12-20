@@ -661,9 +661,9 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    // Get all shared match threads (where userId IS NULL and matchId IS NOT NULL)
-    // These are shared conversations accessible to all match participants
-    console.log("[MSG-THREADS] Querying for shared match threads");
+    // Get all match threads for this user (where matchId IS NOT NULL)
+    // These include both shared threads (userId IS NULL) and per-user threads (userId = current user)
+    console.log("[MSG-THREADS] Querying for match threads");
     
     try {
       const matchThreads = await db
@@ -672,11 +672,14 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             sql`${messageThreads.matchId} IS NOT NULL`,
-            sql`${messageThreads.userId} IS NULL`
+            or(
+              sql`${messageThreads.userId} IS NULL`,
+              eq(messageThreads.userId, userId)
+            )
           )
         );
 
-      console.log("[MSG-THREADS] Shared match threads found:", matchThreads.length);
+      console.log("[MSG-THREADS] Match threads found:", matchThreads.length);
 
       // Combine direct threads + shared match threads
       const allThreads = [...directThreads, ...matchThreads];

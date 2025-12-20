@@ -1275,11 +1275,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Update thread's last message info
               const isOwnMessage = member.userId === message.userId;
+              const currentUnread = thread.unreadCount || 0;
               await storage.updateMessageThread(thread.id, {
                 lastMessage: message.message || "[Image]",
                 lastMessageSenderId: message.userId,
                 lastMessageTime: new Date(),
-                unreadCount: isOwnMessage ? thread.unreadCount : (thread.unreadCount || 0) + 1,
+                unreadCount: isOwnMessage ? currentUnread : currentUnread + 1,
               });
               
               console.log(`[MATCH-INBOX-SYNC] Synced message to user ${member.userId}'s inbox`);
