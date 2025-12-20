@@ -469,7 +469,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
               Edit
             </Button>
-            <Button variant="destructive" size="icon" onClick={() => setIsDeleteDialogOpen(true)} data-testid="button-delete-tournament">
+            <Button variant="destructive" size="icon" onClick={() => {
+              console.log('[DELETE] Trash button clicked, opening dialog');
+              setIsDeleteDialogOpen(true);
+            }} data-testid="button-delete-tournament">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -1296,7 +1299,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => deleteTournamentMutation.mutate()}
+              onClick={() => {
+                console.log('[DELETE] Confirm button clicked, calling mutation');
+                deleteTournamentMutation.mutate();
+              }}
               disabled={deleteTournamentMutation.isPending}
               data-testid="button-confirm-delete-tournament"
             >
