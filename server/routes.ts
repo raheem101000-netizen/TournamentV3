@@ -2990,7 +2990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete thread message
+  // Delete thread message (legacy route)
   app.delete("/api/thread-messages/:id", async (req, res) => {
     try {
       if (!req.session.userId) {
@@ -2998,6 +2998,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       await storage.deleteThreadMessage(req.params.id);
       res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting thread message:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete thread message (new route pattern matching frontend)
+  app.delete("/api/message-threads/:threadId/messages/:messageId", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await storage.deleteThreadMessage(req.params.messageId);
+      res.json({ success: true });
     } catch (error: any) {
       console.error("Error deleting thread message:", error);
       res.status(500).json({ error: error.message });
