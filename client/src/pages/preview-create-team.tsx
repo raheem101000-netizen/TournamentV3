@@ -60,7 +60,30 @@ export default function PreviewCreateTeam() {
       const response = await apiRequest("POST", "/api/team-profiles", teamData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (createdTeam: any) => {
+      // Add owner as a team member
+      try {
+        await apiRequest("POST", `/api/team-profiles/${createdTeam.id}/members`, {
+          userId: user?.id,
+          role: "Owner",
+        });
+        
+        // Add all players as team members
+        for (const player of players) {
+          // Find the friend's user ID by username
+          const friend = friends.find((f: any) => f.username === player.username);
+          if (friend) {
+            await apiRequest("POST", `/api/team-profiles/${createdTeam.id}/members`, {
+              userId: friend.id,
+              role: "Member",
+              position: player.position || null,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to add team members:", err);
+      }
+      
       // Invalidate all team-profiles queries to ensure refresh
       queryClient.invalidateQueries({ 
         predicate: (query) => 
