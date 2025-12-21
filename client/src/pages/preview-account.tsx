@@ -26,111 +26,11 @@ const mockUser = {
   level: 42,
 };
 
-const mockTeams = [
-  {
-    id: "1",
-    name: "Shadow Wolves",
-    logo: "🐺",
-    playerCount: 5,
-    owner: "@ProGamer2024",
-    game: "Valorant",
-    bio: "Competitive Valorant team looking to dominate the esports scene. We practice daily and compete in major tournaments.",
-    players: [
-      { username: "ProGamer2024", position: "IGL", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer" },
-      { username: "NinjaKid", position: "Duelist", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ninja" },
-      { username: "SniperElite", position: "Sentinel", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sniper" },
-      { username: "FlashBang", position: "Controller", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=flash" },
-      { username: "TacticalG", position: "Initiator", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=tactical" },
-    ],
-    achievements: [
-      { title: "Regional Champions" },
-      { title: "Top 5 Finish" },
-      { title: "Undefeated Streak" },
-    ],
-    tournaments: [
-      { name: "Summer Championship 2024", result: "1st Place - $5,000" },
-      { name: "Midnight Masters", result: "3rd Place - $1,000" },
-      { name: "Winter Showdown", result: "Semifinals" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Storm Breakers",
-    logo: "⚡",
-    playerCount: 4,
-    owner: "@ProGamer2024",
-    game: "CS:GO",
-    bio: "CS:GO squad focused on tactical gameplay and team coordination.",
-    players: [
-      { username: "ProGamer2024", position: "AWPer", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer" },
-      { username: "QuickShot", position: "Entry Fragger", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=quick" },
-      { username: "CalmPlay", position: "Support", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=calm" },
-      { username: "BombMaster", position: "Lurker", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bomb" },
-    ],
-    achievements: [
-      { title: "Runner Up" },
-      { title: "Best Team Coordination" },
-    ],
-    tournaments: [
-      { name: "Winter Showdown", result: "2nd Place - $1,500" },
-    ],
-  },
-];
-
-const mockAchievements = [
-  {
-    id: "ach-1",
-    title: "Tournament Champion",
-    iconUrl: "champion",
-    description: "Won first place in a major tournament",
-    serverName: "Valorant Esports League",
-    serverId: "server-1",
-  },
-  {
-    id: "ach-2",
-    title: "Runner Up",
-    iconUrl: "runner-up",
-    description: "Finished second in a competitive tournament",
-    serverName: "Counter Strike Pro League",
-    serverId: "server-2",
-  },
-  {
-    id: "ach-3",
-    title: "Third Place Finisher",
-    iconUrl: "third-place",
-    description: "Achieved third place in a regional competition",
-    serverName: "Fighting Game Championship",
-    serverId: "server-3",
-  },
-  {
-    id: "ach-4",
-    title: "MVP Award",
-    iconUrl: "mvp",
-    description: "Voted Most Valuable Player in a tournament",
-    serverName: "Valorant Esports League",
-    serverId: "server-1",
-  },
-  {
-    id: "ach-5",
-    title: "Rising Star",
-    iconUrl: "rising-star",
-    description: "Recognized as an emerging competitive talent",
-    serverName: null,
-    serverId: null,
-  },
-  {
-    id: "ach-6",
-    title: "Best Defender",
-    iconUrl: "best-defense",
-    description: "Awarded best defensive player in tournament",
-    serverName: "Counter Strike Pro League",
-    serverId: "server-2",
-  },
-];
+import type { TeamProfile } from "@shared/schema";
 
 export default function PreviewAccount() {
   const [, setLocation] = useLocation();
-  const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<TeamProfile | null>(null);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
   const [serverNotFound, setServerNotFound] = useState(false);
@@ -166,8 +66,15 @@ export default function PreviewAccount() {
     enabled: !!achievementsUserId, // Enable if we have a userId
   });
 
-  // Use mock achievements when viewing a visitor profile, real achievements for own profile
-  const userAchievements = !isOwnProfile ? mockAchievements : dbAchievements;
+  // Only show real achievements from the database
+  const userAchievements = dbAchievements;
+
+  // Fetch user's teams
+  const teamsUserId = isOwnProfile ? authUser?.id : viewedUserData?.id;
+  const { data: userTeams = [] } = useQuery<TeamProfile[]>({
+    queryKey: [`/api/users/${teamsUserId}/team-profiles`],
+    enabled: !!teamsUserId,
+  });
 
   // Fetch friends list (only for own profile)
   const { data: friends = [] } = useQuery<any[]>({
@@ -367,27 +274,46 @@ export default function PreviewAccount() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {mockTeams.map((team) => (
-              <Card
-                key={team.id}
-                className="hover-elevate cursor-pointer"
-                onClick={() => setSelectedTeam(team)}
-                data-testid={`team-card-${team.id}`}
-              >
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="text-5xl mb-2">{team.logo}</div>
-                    <h4 className="font-semibold text-sm line-clamp-1">{team.name}</h4>
-                  </div>
-                  <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                    <Users className="w-3 h-3" />
-                    <span>{team.playerCount} players</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {userTeams.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">
+                  No teams yet. {isOwnProfile ? "Create your first team!" : ""}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {userTeams.map((team) => (
+                <Card
+                  key={team.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => setSelectedTeam(team)}
+                  data-testid={`team-card-${team.id}`}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex flex-col items-center text-center">
+                      {team.logoUrl ? (
+                        <Avatar className="w-12 h-12 mb-2">
+                          <AvatarImage src={team.logoUrl} alt={team.name} />
+                          <AvatarFallback>{team.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <div className="w-12 h-12 mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
+                      <h4 className="font-semibold text-sm line-clamp-1">{team.name}</h4>
+                    </div>
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <Users className="w-3 h-3" />
+                      <span>{team.totalMembers || 1} members</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {userAchievements && userAchievements.length > 0 && (
@@ -569,92 +495,53 @@ export default function PreviewAccount() {
             <div className="space-y-6">
               <DialogHeader className="space-y-4">
                 <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="text-7xl">{selectedTeam.logo}</div>
+                  {selectedTeam.logoUrl ? (
+                    <Avatar className="w-20 h-20">
+                      <AvatarImage src={selectedTeam.logoUrl} alt={selectedTeam.name} />
+                      <AvatarFallback className="text-2xl">{selectedTeam.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="w-10 h-10 text-primary" />
+                    </div>
+                  )}
                   <div>
                     <DialogTitle className="text-2xl mb-1">{selectedTeam.name}</DialogTitle>
-                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                      <Crown className="w-4 h-4" />
-                      <span>{selectedTeam.owner}</span>
-                    </div>
+                    {selectedTeam.tag && (
+                      <Badge variant="secondary" className="mt-1">[{selectedTeam.tag}]</Badge>
+                    )}
                   </div>
                 </div>
               </DialogHeader>
 
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Bio</h4>
-                  <p className="text-sm">{selectedTeam.bio}</p>
-                </div>
-
-                {selectedTeam.game && (
+                {selectedTeam.bio && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-muted-foreground">Game</h4>
-                    <p className="text-sm">{selectedTeam.game}</p>
+                    <h4 className="text-sm font-semibold text-muted-foreground">Bio</h4>
+                    <p className="text-sm">{selectedTeam.bio}</p>
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Player Roster</h4>
-                  <div className="space-y-2">
-                    {selectedTeam.players.map((player, idx) => (
-                      <Card 
-                        key={idx} 
-                        className="p-3 hover-elevate cursor-pointer"
-                        onClick={() => {
-                          setSelectedTeam(null);
-                          setViewingUser(player.username);
-                        }}
-                        data-testid={`player-${player.username}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={player.avatar} />
-                              <AvatarFallback>{player.username[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-semibold text-sm">@{player.username}</p>
-                              <p className="text-xs text-muted-foreground">{player.position}</p>
-                            </div>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </Card>
-                    ))}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{selectedTeam.totalMembers || 1}</p>
+                    <p className="text-xs text-muted-foreground">Members</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{selectedTeam.totalTournaments || 0}</p>
+                    <p className="text-xs text-muted-foreground">Tournaments</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{selectedTeam.totalWins || 0}</p>
+                    <p className="text-xs text-muted-foreground">Wins</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Team Achievements</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedTeam.achievements.map((achievement, idx) => {
-                      const Icon = achievement.icon;
-                      return (
-                        <Card key={idx} className="p-3">
-                          <div className="flex flex-col items-center text-center space-y-2">
-                            <Icon className={`w-8 h-8 ${achievement.color}`} />
-                            <p className="text-xs font-medium line-clamp-2">
-                              {achievement.title}
-                            </p>
-                          </div>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Tournaments Played</h4>
-                  <div className="space-y-2">
-                    {selectedTeam.tournaments.map((tournament, idx) => (
-                      <Card key={idx} className="p-3">
-                        <div className="space-y-1">
-                          <p className="font-semibold text-sm">{tournament.name}</p>
-                          <p className="text-xs text-muted-foreground">{tournament.result}</p>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground">Created</h4>
+                  <p className="text-sm">
+                    {new Date(selectedTeam.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             </div>
