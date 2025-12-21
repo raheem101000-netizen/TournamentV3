@@ -1,4 +1,4 @@
-import { eq, and, or, sql, ilike, isNull } from "drizzle-orm";
+import { eq, and, or, sql, ilike, isNull, desc } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import {
@@ -753,6 +753,40 @@ export class DatabaseStorage implements IStorage {
 
   async deleteThreadMessage(id: string): Promise<void> {
     await db.delete(threadMessages).where(eq(threadMessages.id, id));
+  }
+
+  async deleteThreadMessageAndSyncPreview(threadId: string, messageId: string): Promise<void> {
+    // Delete the message first
+    await db.delete(threadMessages).where(eq(threadMessages.id, messageId));
+    
+    // Query for the latest remaining message directly (fresh query after delete)
+    const [latestMessage] = await db
+      .select()
+      .from(threadMessages)
+      .where(eq(threadMessages.threadId, threadId))
+      .orderBy(desc(threadMessages.createdAt))
+      .limit(1);
+    
+    if (latestMessage) {
+      // Update thread with the latest remaining message
+      await db
+        .update(messageThreads)
+        .set({
+          lastMessage: latestMessage.message || "[Image]",
+          lastMessageSenderId: latestMessage.userId,
+          lastMessageTime: new Date(latestMessage.createdAt),
+        })
+        .where(eq(messageThreads.id, threadId));
+    } else {
+      // No messages left, clear the preview
+      await db
+        .update(messageThreads)
+        .set({
+          lastMessage: "",
+          lastMessageSenderId: null,
+        })
+        .where(eq(messageThreads.id, threadId));
+    }
   }
 
   async getAllNotifications(): Promise<Notification[]> {

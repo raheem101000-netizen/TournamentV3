@@ -3012,30 +3012,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const { threadId, messageId } = req.params;
       
-      // Delete the message
-      await storage.deleteThreadMessage(messageId);
-      
-      // Get remaining messages to update thread preview
-      const remainingMessages = await storage.getThreadMessages(threadId);
-      
-      if (remainingMessages.length > 0) {
-        // Sort by date descending to get the latest
-        const latestMessage = remainingMessages.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
-        
-        await storage.updateMessageThread(threadId, {
-          lastMessage: latestMessage.message || "[Image]",
-          lastMessageSenderId: latestMessage.userId,
-          lastMessageTime: new Date(latestMessage.createdAt),
-        });
-      } else {
-        // No messages left, clear the preview
-        await storage.updateMessageThread(threadId, {
-          lastMessage: "",
-          lastMessageSenderId: null,
-        });
-      }
+      // Use transactional delete that also updates thread preview
+      await storage.deleteThreadMessageAndSyncPreview(threadId, messageId);
       
       res.json({ success: true });
     } catch (error: any) {
