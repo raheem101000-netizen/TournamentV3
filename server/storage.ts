@@ -851,6 +851,22 @@ export class DatabaseStorage implements IStorage {
     return thread;
   }
 
+  async getTotalUnreadCount(userId: string): Promise<number> {
+    const threads = await db.select().from(messageThreads).where(
+      or(
+        eq(messageThreads.userId, userId),
+        eq(messageThreads.participantId, userId)
+      )
+    );
+    return threads.reduce((sum, thread) => sum + (thread.unreadCount || 0), 0);
+  }
+
+  async markThreadAsRead(threadId: string): Promise<void> {
+    await db.update(messageThreads)
+      .set({ unreadCount: 0 })
+      .where(eq(messageThreads.id, threadId));
+  }
+
   // Poster template operations
   async createPosterTemplate(data: InsertPosterTemplate): Promise<PosterTemplate> {
     const [template] = await db.insert(posterTemplates).values(data).returning();

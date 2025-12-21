@@ -2956,6 +2956,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/message-threads/unread-count", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const count = await storage.getTotalUnreadCount(req.session.userId);
+      res.json({ count });
+    } catch (error: any) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/message-threads/:id/mark-read", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await storage.markThreadAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error marking thread as read:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/message-threads/:id", async (req, res) => {
     try {
       const thread = await storage.getMessageThread(req.params.id);

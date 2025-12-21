@@ -1,6 +1,8 @@
 import { Home, Compass, MessageCircle, Server, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { path: "/", icon: Home, label: "Home" },
@@ -12,6 +14,15 @@ const navItems = [
 
 export function BottomNavigation() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["/api/message-threads/unread-count"],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = unreadData?.count || 0;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -19,6 +30,7 @@ export function BottomNavigation() {
         {navItems.map((item) => {
           const isActive = location === item.path;
           const Icon = item.icon;
+          const showBadge = item.path === "/messages" && unreadCount > 0;
           
           return (
             <Link
@@ -30,7 +42,17 @@ export function BottomNavigation() {
               )}
               data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
             >
-              <Icon className={cn("w-5 h-5", isActive && "fill-current")} />
+              <div className="relative">
+                <Icon className={cn("w-5 h-5", isActive && "fill-current")} />
+                {showBadge && (
+                  <span 
+                    className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full"
+                    data-testid="badge-unread-messages"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </div>
               <span className="text-xs font-medium">{item.label}</span>
             </Link>
           );

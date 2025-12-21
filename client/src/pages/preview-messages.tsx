@@ -403,6 +403,18 @@ export default function PreviewMessages() {
     }
   }, [profileModalOpen]);
 
+  // Mark thread as read when opened
+  useEffect(() => {
+    if (selectedChat?.id) {
+      fetch(`/api/message-threads/${selectedChat.id}/mark-read`, {
+        method: "POST",
+        credentials: "include",
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/message-threads/unread-count"] });
+      }).catch(() => {});
+    }
+  }, [selectedChat?.id, queryClient]);
+
   const handleAddFriend = async () => {
     if (!previewProfileData || !currentUser) return;
     
