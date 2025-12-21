@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -12,12 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import type { User, TeamMember } from "@shared/schema";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 import UserProfileModal from "@/components/UserProfileModal";
 import { Gamepad2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -37,8 +41,18 @@ export default function PreviewAccount() {
   const [serverNotFound, setServerNotFound] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [showAllFriends, setShowAllFriends] = useState(false);
+  
+  // Team edit state
+  const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [editTeamName, setEditTeamName] = useState("");
+  const [editTeamBio, setEditTeamBio] = useState("");
+  const [editTeamGame, setEditTeamGame] = useState("");
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editMemberPosition, setEditMemberPosition] = useState("");
+  const [editMemberRole, setEditMemberRole] = useState("");
 
   const { user: authUser } = useAuth();
+  const { toast } = useToast();
 
   const currentUser = authUser ? {
     username: authUser.username,
@@ -93,6 +107,82 @@ export default function PreviewAccount() {
     queryKey: [`/api/team-profiles/${selectedTeam?.id}/members`],
     enabled: !!selectedTeam,
   });
+
+  // Check if current user is the team owner
+  const isTeamOwner = selectedTeam && authUser?.id === selectedTeam.ownerId;
+
+  // Mutation to update team profile
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ teamId, data }: { teamId: string; data: any }) => {
+      const response = await apiRequest("PATCH", `/api/team-profiles/${teamId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("team-profiles"),
+      });
+      toast({ title: "Team updated successfully" });
+      setIsEditingTeam(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update team", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation to update team member
+  const updateMemberMutation = useMutation({
+    mutationFn: async ({ memberId, data }: { memberId: string; data: any }) => {
+      const response = await apiRequest("PATCH", `/api/team-members/${memberId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("members"),
+      });
+      toast({ title: "Member updated successfully" });
+      setEditingMemberId(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update member", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const startEditingTeam = () => {
+    if (selectedTeam) {
+      setEditTeamName(selectedTeam.name);
+      setEditTeamBio(selectedTeam.bio || "");
+      setEditTeamGame(selectedTeam.game || "");
+      setIsEditingTeam(true);
+    }
+  };
+
+  const saveTeamChanges = () => {
+    if (selectedTeam) {
+      updateTeamMutation.mutate({
+        teamId: selectedTeam.id,
+        data: { name: editTeamName, bio: editTeamBio || null, game: editTeamGame || null },
+      });
+    }
+  };
+
+  const startEditingMember = (member: TeamMember & { user: User | null }) => {
+    setEditingMemberId(member.id);
+    setEditMemberPosition(member.position || "");
+    setEditMemberRole(member.role || "Member");
+  };
+
+  const saveMemberChanges = () => {
+    if (editingMemberId) {
+      updateMemberMutation.mutate({
+        memberId: editingMemberId,
+        data: { position: editMemberPosition || null, role: editMemberRole || "Member" },
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -496,7 +586,7 @@ export default function PreviewAccount() {
       </Dialog>
 
       {/* Team Modal */}
-      <Dialog open={!!selectedTeam} onOpenChange={() => setSelectedTeam(null)}>
+      <Dialog open={!!selectedTeam} onOpenChange={() => { setSelectedTeam(null); setIsEditingTeam(false); setEditingMemberId(null); }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           {selectedTeam && (
             <div className="space-y-6">
@@ -512,22 +602,56 @@ export default function PreviewAccount() {
                       <Users className="w-10 h-10 text-primary" />
                     </div>
                   )}
-                  <div>
-                    <DialogTitle className="text-2xl mb-1">{selectedTeam.name}</DialogTitle>
+                  <div className="w-full">
+                    {isEditingTeam ? (
+                      <Input
+                        value={editTeamName}
+                        onChange={(e) => setEditTeamName(e.target.value)}
+                        className="text-center text-xl font-bold"
+                        data-testid="input-edit-team-name"
+                      />
+                    ) : (
+                      <DialogTitle className="text-2xl mb-1">{selectedTeam.name}</DialogTitle>
+                    )}
                     {selectedTeam.tag && (
                       <Badge variant="secondary" className="mt-1">[{selectedTeam.tag}]</Badge>
                     )}
                   </div>
                 </div>
+                {isTeamOwner && !isEditingTeam && (
+                  <Button size="sm" variant="outline" onClick={startEditingTeam} data-testid="button-edit-team">
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Team
+                  </Button>
+                )}
+                {isEditingTeam && (
+                  <div className="flex gap-2 justify-center">
+                    <Button size="sm" onClick={saveTeamChanges} disabled={updateTeamMutation.isPending} data-testid="button-save-team">
+                      <Check className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setIsEditingTeam(false)} data-testid="button-cancel-edit-team">
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </DialogHeader>
 
               <div className="space-y-6">
-                {selectedTeam.bio && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-muted-foreground">Bio</h4>
-                    <p className="text-sm">{selectedTeam.bio}</p>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Bio</h4>
+                  {isEditingTeam ? (
+                    <Textarea
+                      value={editTeamBio}
+                      onChange={(e) => setEditTeamBio(e.target.value)}
+                      rows={3}
+                      data-testid="input-edit-team-bio"
+                    />
+                  ) : (
+                    <p className="text-sm">{selectedTeam.bio || "No bio yet"}</p>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="space-y-1">
@@ -544,15 +668,22 @@ export default function PreviewAccount() {
                   </div>
                 </div>
 
-                {selectedTeam.game && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                      <Gamepad2 className="w-3 h-3" />
-                      Game
-                    </h4>
-                    <p className="text-sm">{selectedTeam.game}</p>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Gamepad2 className="w-3 h-3" />
+                    Game
+                  </h4>
+                  {isEditingTeam ? (
+                    <Input
+                      value={editTeamGame}
+                      onChange={(e) => setEditTeamGame(e.target.value)}
+                      placeholder="Enter game name..."
+                      data-testid="input-edit-team-game"
+                    />
+                  ) : (
+                    <p className="text-sm">{selectedTeam.game || "Not specified"}</p>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">Created</h4>
@@ -576,37 +707,77 @@ export default function PreviewAccount() {
                       {teamMembers.map((member) => (
                         <div 
                           key={member.id} 
-                          className="flex items-center gap-3 p-2 rounded-md bg-muted/50"
+                          className="p-2 rounded-md bg-muted/50"
                           data-testid={`team-member-${member.id}`}
                         >
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={member.user?.avatarUrl || undefined} />
-                            <AvatarFallback>
-                              {member.user?.username?.substring(0, 2).toUpperCase() || "??"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              @{member.user?.username || "unknown"}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {member.position && (
-                                <span className="truncate">{member.position}</span>
+                          {editingMemberId === member.id ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="w-8 h-8">
+                                  <AvatarImage src={member.user?.avatarUrl || undefined} />
+                                  <AvatarFallback>
+                                    {member.user?.username?.substring(0, 2).toUpperCase() || "??"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">@{member.user?.username || "unknown"}</span>
+                              </div>
+                              <Input
+                                placeholder="Position (e.g., IGL, Support, AWPer)"
+                                value={editMemberPosition}
+                                onChange={(e) => setEditMemberPosition(e.target.value)}
+                                data-testid="input-edit-member-position"
+                              />
+                              <Input
+                                placeholder="Role (e.g., Owner, Captain, Member)"
+                                value={editMemberRole}
+                                onChange={(e) => setEditMemberRole(e.target.value)}
+                                data-testid="input-edit-member-role"
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={saveMemberChanges} disabled={updateMemberMutation.isPending} data-testid="button-save-member">
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setEditingMemberId(null)} data-testid="button-cancel-edit-member">
+                                  <X className="w-4 h-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={member.user?.avatarUrl || undefined} />
+                                <AvatarFallback>
+                                  {member.user?.username?.substring(0, 2).toUpperCase() || "??"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  @{member.user?.username || "unknown"}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {member.position && (
+                                    <span className="truncate">{member.position}</span>
+                                  )}
+                                  {member.position && member.role && member.role !== "Member" && <span>-</span>}
+                                  {member.role && member.role !== "Member" && (
+                                    <span>{member.role}</span>
+                                  )}
+                                  {!member.position && (!member.role || member.role === "Member") && (
+                                    <span>Member</span>
+                                  )}
+                                </div>
+                              </div>
+                              {member.role === "Owner" && (
+                                <Crown className="w-4 h-4 text-yellow-500" />
                               )}
-                              {member.position && member.game && <span>-</span>}
-                              {member.game && (
-                                <span className="flex items-center gap-1 truncate">
-                                  <Gamepad2 className="w-3 h-3" />
-                                  {member.game}
-                                </span>
-                              )}
-                              {!member.position && !member.game && member.role && (
-                                <span>{member.role}</span>
+                              {isTeamOwner && (
+                                <Button size="icon" variant="ghost" onClick={() => startEditingMember(member)} data-testid={`button-edit-member-${member.id}`}>
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
                               )}
                             </div>
-                          </div>
-                          {member.role === "Owner" && (
-                            <Crown className="w-4 h-4 text-yellow-500" />
                           )}
                         </div>
                       ))}

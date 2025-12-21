@@ -2316,10 +2316,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/team-profiles/:id", async (req, res) => {
     try {
-      const teamProfile = await storage.updateTeamProfile(req.params.id, req.body);
-      if (!teamProfile) {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Check authorization - only owner can edit
+      const existingTeam = await storage.getTeamProfile(req.params.id);
+      if (!existingTeam) {
         return res.status(404).json({ error: "Team profile not found" });
       }
+      if (existingTeam.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the team owner can edit this team" });
+      }
+      
+      const teamProfile = await storage.updateTeamProfile(req.params.id, req.body);
       res.json(teamProfile);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -2353,6 +2364,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const members = await storage.getTeamMembersWithUsers(req.params.teamId);
       res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/team-members/:memberId", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Get the member to find the team
+      const existingMember = await storage.getTeamMember(req.params.memberId);
+      if (!existingMember) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      
+      // Check authorization - only team owner can edit members
+      const team = await storage.getTeamProfile(existingMember.teamId);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      if (team.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the team owner can edit team members" });
+      }
+      
+      const { position, role, game } = req.body;
+      const member = await storage.updateTeamMember(req.params.memberId, { position, role, game });
+      res.json(member);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -242,9 +242,11 @@ export interface IStorage {
 
   // Team member operations
   createTeamMember(data: InsertTeamMember): Promise<TeamMember>;
+  getTeamMember(memberId: string): Promise<TeamMember | undefined>;
   getMembersByTeam(teamId: string): Promise<TeamMember[]>;
   getTeamMembers(teamId: string): Promise<TeamMember[]>;
   getTeamMembersWithUsers(teamId: string): Promise<(TeamMember & { user: User | null })[]>;
+  updateTeamMember(memberId: string, data: Partial<TeamMember>): Promise<TeamMember | undefined>;
   deleteMemberFromTeam(teamId: string, userId: string): Promise<void>;
 
   // Server member operations
@@ -1033,6 +1035,11 @@ export class DatabaseStorage implements IStorage {
     return member;
   }
 
+  async getTeamMember(memberId: string): Promise<TeamMember | undefined> {
+    const [member] = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId));
+    return member || undefined;
+  }
+
   async getMembersByTeam(teamId: string): Promise<TeamMember[]> {
     return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
@@ -1050,6 +1057,15 @@ export class DatabaseStorage implements IStorage {
       })
     );
     return result;
+  }
+
+  async updateTeamMember(memberId: string, data: Partial<TeamMember>): Promise<TeamMember | undefined> {
+    const [member] = await db
+      .update(teamMembers)
+      .set(data)
+      .where(eq(teamMembers.id, memberId))
+      .returning();
+    return member || undefined;
   }
 
   async deleteMemberFromTeam(teamId: string, userId: string): Promise<void> {
