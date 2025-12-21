@@ -438,6 +438,7 @@ export const teamProfiles = pgTable("team_profiles", {
   name: text("name").notNull(),
   tag: text("tag"),
   bio: text("bio"),
+  game: text("game"),
   logoUrl: text("logo_url"),
   ownerId: varchar("owner_id").notNull(),
   totalMembers: integer("total_members").default(1),

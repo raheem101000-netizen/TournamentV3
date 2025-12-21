@@ -99,6 +99,7 @@ export default function PreviewCreateTeam() {
       name: teamName,
       tag: teamTag || null,
       bio: teamBio || null,
+      game: teamGame || null,
       logoUrl: teamLogoImage || null,
       ownerId: user.id,
     });

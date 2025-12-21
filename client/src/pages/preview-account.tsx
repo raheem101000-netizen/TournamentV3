@@ -544,6 +544,16 @@ export default function PreviewAccount() {
                   </div>
                 </div>
 
+                {selectedTeam.game && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      <Gamepad2 className="w-3 h-3" />
+                      Game
+                    </h4>
+                    <p className="text-sm">{selectedTeam.game}</p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">Created</h4>
                   <p className="text-sm">
@@ -577,7 +587,7 @@ export default function PreviewAccount() {
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">
-                              {member.user?.displayName || member.user?.username || "Unknown"}
+                              @{member.user?.username || "unknown"}
                             </p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {member.position && (
