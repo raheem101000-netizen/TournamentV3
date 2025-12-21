@@ -258,7 +258,7 @@ export default function MobilePreviewServerDetail() {
                 </>
               )}
               {selectedChannel.type === "announcements" && (
-                <AnnouncementsChannel />
+                <AnnouncementsChannel channelId={selectedChannel.id} />
               )}
               {selectedChannel.type === "chat" && (
                 <ChatChannel channelId={selectedChannel.id} />

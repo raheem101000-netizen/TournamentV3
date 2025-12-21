@@ -1,31 +1,23 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone } from "lucide-react";
+import { Megaphone, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { ChannelMessage } from "@shared/schema";
 
-export default function AnnouncementsChannel() {
-  const announcements = [
-    {
-      id: "1",
-      title: "Welcome to the Server!",
-      content: "Thanks for joining! Check out the tournament dashboard for upcoming competitions.",
-      date: "2024-11-14",
-      author: "Server Admin",
-    },
-    {
-      id: "2",
-      title: "Tournament Schedule Updated",
-      content: "New tournaments have been added for next month. Visit the Tournament Dashboard to register your team.",
-      date: "2024-11-13",
-      author: "Tournament Manager",
-    },
-    {
-      id: "3",
-      title: "Server Rules",
-      content: "Please be respectful to all members. No spam, harassment, or cheating will be tolerated.",
-      date: "2024-11-10",
-      author: "Moderator",
-    },
-  ];
+interface AnnouncementsChannelProps {
+  channelId: string;
+}
+
+export default function AnnouncementsChannel({ channelId }: AnnouncementsChannelProps) {
+  const { data: messages = [], isLoading } = useQuery<ChannelMessage[]>({
+    queryKey: [`/api/channels/${channelId}/messages`],
+    enabled: !!channelId,
+  });
+
+  // Sort messages by date (newest first)
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  );
 
   return (
     <div className="space-y-4">
@@ -34,26 +26,46 @@ export default function AnnouncementsChannel() {
         <h2 className="text-lg font-semibold">Server Announcements</h2>
       </div>
 
-      {announcements.map((announcement) => (
-        <Card key={announcement.id} data-testid={`announcement-${announcement.id}`}>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <CardTitle className="text-base">{announcement.title}</CardTitle>
-                <CardDescription className="text-xs mt-1">
-                  Posted by {announcement.author} on {new Date(announcement.date).toLocaleDateString()}
-                </CardDescription>
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                Announcement
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{announcement.content}</p>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : sortedMessages.length === 0 ? (
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-center text-muted-foreground">
+              No announcements yet. Check back later!
+            </p>
           </CardContent>
         </Card>
-      ))}
+      ) : (
+        sortedMessages.map((message) => (
+          <Card key={message.id} data-testid={`announcement-${message.id}`}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <CardTitle className="text-base">{message.message}</CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    Posted by {message.username} on {new Date(message.createdAt || Date.now()).toLocaleDateString()}
+                  </CardDescription>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  Announcement
+                </Badge>
+              </div>
+            </CardHeader>
+            {message.imageUrl && (
+              <CardContent>
+                <img 
+                  src={message.imageUrl} 
+                  alt="Announcement" 
+                  className="rounded-md max-w-full h-auto"
+                />
+              </CardContent>
+            )}
+          </Card>
+        ))
+      )}
     </div>
   );
 }

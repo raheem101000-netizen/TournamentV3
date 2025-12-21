@@ -350,7 +350,7 @@ export default function ServerPreview() {
                   </Card>
                 )}
                 {selectedChannel.type === "announcements" && (
-                  <AnnouncementsChannel />
+                  <AnnouncementsChannel channelId={selectedChannel.id} />
                 )}
                 {selectedChannel.type === "chat" && (
                   <ChatChannel channelId={selectedChannel.id} isPreview={true} />
