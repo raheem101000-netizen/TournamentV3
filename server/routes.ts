@@ -2979,6 +2979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: req.body.message,
         imageUrl: req.body.imageUrl || null,
         replyToId: req.body.replyToId || null,
+        tournamentId: req.body.tournamentId || null,
       });
       
       const message = await storage.createThreadMessage(validatedData);
