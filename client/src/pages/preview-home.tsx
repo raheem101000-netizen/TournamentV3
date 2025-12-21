@@ -838,12 +838,17 @@ export default function PreviewHome() {
                   autoComplete="off"
                 />
                 {friendSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[100] overflow-hidden">
                     {friendSuggestions.map((friend) => (
                       <button
                         key={friend.id}
-                        className="w-full px-3 py-2 flex items-center gap-2 hover-elevate active-elevate-2 text-left"
-                        onClick={() => setShareUsername(friend.username)}
+                        type="button"
+                        className="w-full px-3 py-2 flex items-center gap-2 hover:bg-accent text-left cursor-pointer"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShareUsername(friend.username);
+                        }}
                         data-testid={`suggestion-${friend.username}`}
                       >
                         <Avatar className="w-6 h-6">
