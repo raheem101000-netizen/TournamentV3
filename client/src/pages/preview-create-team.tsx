@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, X, Plus, Search, Users } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Search, Users, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +32,19 @@ export default function PreviewCreateTeam() {
   const [teamLogo, setTeamLogo] = useState("🐺");
   const [teamLogoImage, setTeamLogoImage] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
+  const [teamTag, setTeamTag] = useState("");
   const [teamBio, setTeamBio] = useState("");
   const [teamGame, setTeamGame] = useState("");
   const [players, setPlayers] = useState<TeamPlayer[]>([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [playerSearch, setPlayerSearch] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch current user session
+  const { data: session } = useQuery<any>({
+    queryKey: ["/api/session"],
+  });
 
   // Fetch friends from API
   const { data: friends = [] } = useQuery<any[]>({
@@ -48,6 +56,51 @@ export default function PreviewCreateTeam() {
     friend.username?.toLowerCase().includes(playerSearch.toLowerCase()) ||
     friend.displayName?.toLowerCase().includes(playerSearch.toLowerCase())
   );
+
+  // Mutation to create team
+  const createTeamMutation = useMutation({
+    mutationFn: async (teamData: any) => {
+      const response = await apiRequest("POST", "/api/team-profiles", teamData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", session?.user?.id, "team-profiles"] });
+      toast({
+        title: "Team created!",
+        description: `${teamName} has been created successfully.`,
+      });
+      setLocation("/account");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create team",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    },
+  });
+
+  const handleCreateTeam = async () => {
+    if (!session?.user?.id) {
+      toast({
+        title: "Not logged in",
+        description: "Please log in to create a team",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    createTeamMutation.mutate({
+      name: teamName,
+      tag: teamTag || null,
+      bio: teamBio || null,
+      logoUrl: teamLogoImage || null,
+      ownerId: session.user.id,
+    });
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -199,6 +252,18 @@ export default function PreviewCreateTeam() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="team-tag">Team Tag (optional)</Label>
+              <Input
+                id="team-tag"
+                placeholder="e.g., TSM, FaZe, C9..."
+                value={teamTag}
+                onChange={(e) => setTeamTag(e.target.value)}
+                maxLength={10}
+                data-testid="input-team-tag"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="team-bio">Team Bio</Label>
               <Textarea
                 id="team-bio"
@@ -285,11 +350,18 @@ export default function PreviewCreateTeam() {
         <Button 
           className="w-full" 
           size="lg"
-          disabled={!teamName || players.length === 0}
-          onClick={() => setLocation("/account")}
+          disabled={!teamName || isSubmitting}
+          onClick={handleCreateTeam}
           data-testid="button-create-team-submit"
         >
-          Create Team
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            "Create Team"
+          )}
         </Button>
       </main>
 
