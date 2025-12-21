@@ -2308,7 +2308,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:ownerId/team-profiles", async (req, res) => {
     try {
       const teamProfiles = await storage.getTeamProfilesByOwner(req.params.ownerId);
-      res.json(teamProfiles);
+      // Add actual member count for each team
+      const profilesWithCounts = await Promise.all(
+        teamProfiles.map(async (profile) => {
+          const members = await storage.getTeamMembers(profile.id);
+          return { ...profile, totalMembers: members.length };
+        })
+      );
+      res.json(profilesWithCounts);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

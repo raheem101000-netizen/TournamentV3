@@ -657,7 +657,7 @@ export default function PreviewAccount() {
 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="space-y-1">
-                    <p className="text-2xl font-bold">{selectedTeam.totalMembers || 1}</p>
+                    <p className="text-2xl font-bold">{teamMembers.length || selectedTeam.totalMembers || 1}</p>
                     <p className="text-xs text-muted-foreground">Members</p>
                   </div>
                   <div className="space-y-1">
