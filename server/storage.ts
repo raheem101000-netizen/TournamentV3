@@ -244,6 +244,7 @@ export interface IStorage {
   createTeamMember(data: InsertTeamMember): Promise<TeamMember>;
   getMembersByTeam(teamId: string): Promise<TeamMember[]>;
   getTeamMembers(teamId: string): Promise<TeamMember[]>;
+  getTeamMembersWithUsers(teamId: string): Promise<(TeamMember & { user: User | null })[]>;
   deleteMemberFromTeam(teamId: string, userId: string): Promise<void>;
 
   // Server member operations
@@ -1038,6 +1039,17 @@ export class DatabaseStorage implements IStorage {
 
   async getTeamMembers(teamId: string): Promise<TeamMember[]> {
     return await this.getMembersByTeam(teamId);
+  }
+
+  async getTeamMembersWithUsers(teamId: string): Promise<(TeamMember & { user: User | null })[]> {
+    const members = await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+    const result = await Promise.all(
+      members.map(async (member) => {
+        const [user] = await db.select().from(users).where(eq(users.id, member.userId));
+        return { ...member, user: user || null };
+      })
+    );
+    return result;
   }
 
   async deleteMemberFromTeam(teamId: string, userId: string): Promise<void> {

@@ -88,30 +88,10 @@ export default function PreviewAccount() {
     },
   });
 
-  // Fetch team members when a team is selected
-  const { data: teamMembers = [] } = useQuery<(TeamMember & { user?: User })[]>({
+  // Fetch team members when a team is selected (backend returns user data)
+  const { data: teamMembers = [], isLoading: teamMembersLoading } = useQuery<(TeamMember & { user: User | null })[]>({
     queryKey: [`/api/team-profiles/${selectedTeam?.id}/members`],
     enabled: !!selectedTeam,
-    queryFn: async () => {
-      if (!selectedTeam) return [];
-      const res = await fetch(`/api/team-profiles/${selectedTeam.id}/members`, { credentials: "include" });
-      if (!res.ok) return [];
-      const members = await res.json();
-      // Fetch user details for each member
-      const membersWithUsers = await Promise.all(
-        members.map(async (member: TeamMember) => {
-          try {
-            const userRes = await fetch(`/api/users/${member.userId}`, { credentials: "include" });
-            if (userRes.ok) {
-              const user = await userRes.json();
-              return { ...member, user };
-            }
-          } catch {}
-          return member;
-        })
-      );
-      return membersWithUsers;
-    },
   });
 
   return (
@@ -577,7 +557,9 @@ export default function PreviewAccount() {
                     <Users className="w-4 h-4" />
                     Team Members
                   </h4>
-                  {teamMembers.length === 0 ? (
+                  {teamMembersLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading members...</p>
+                  ) : teamMembers.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No members added yet</p>
                   ) : (
                     <div className="space-y-2">
