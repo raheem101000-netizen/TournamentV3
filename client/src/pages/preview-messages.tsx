@@ -65,6 +65,7 @@ interface ThreadMessage {
   imageUrl?: string;
   avatarUrl?: string;
   displayName?: string;
+  tournamentId?: string;
 }
 
 interface User {
@@ -181,6 +182,110 @@ function formatTime(dateString: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   
   return date.toLocaleDateString();
+}
+
+interface Tournament {
+  id: string;
+  name: string;
+  game: string;
+  posterUrl?: string | null;
+  startDate?: string | null;
+  prize?: string | null;
+  entryFee?: string | null;
+  maxTeams?: number | null;
+}
+
+function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
+  const [, setLocation] = useLocation();
+  
+  const { data: tournament, isLoading } = useQuery<Tournament>({
+    queryKey: ['/api/tournaments', tournamentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/tournaments/${tournamentId}`);
+      if (!response.ok) throw new Error('Tournament not found');
+      return response.json();
+    },
+  });
+  
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-[280px] overflow-hidden">
+        <div className="h-32 bg-muted animate-pulse" />
+        <CardContent className="p-3 space-y-2">
+          <div className="h-4 bg-muted animate-pulse rounded" />
+          <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!tournament) {
+    return (
+      <Card className="w-full max-w-[280px] p-3">
+        <p className="text-sm text-muted-foreground">Tournament not found</p>
+      </Card>
+    );
+  }
+  
+  return (
+    <Card 
+      className="w-full max-w-[280px] overflow-hidden hover-elevate cursor-pointer"
+      onClick={(e) => {
+        e.stopPropagation();
+        setLocation(`/tournament/${tournamentId}/register`);
+      }}
+      data-testid={`tournament-embed-${tournamentId}`}
+    >
+      {tournament.posterUrl ? (
+        <div className="relative h-36 overflow-hidden">
+          <img 
+            src={tournament.posterUrl} 
+            alt={tournament.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <div className="absolute bottom-2 left-2 right-2">
+            <h4 className="font-semibold text-white text-sm line-clamp-1">{tournament.name}</h4>
+            <p className="text-white/80 text-xs">{tournament.game}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="h-24 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <Trophy className="w-8 h-8 text-primary/50" />
+        </div>
+      )}
+      <CardContent className="p-3 space-y-2">
+        {!tournament.posterUrl && (
+          <>
+            <h4 className="font-semibold text-sm line-clamp-1">{tournament.name}</h4>
+            <p className="text-muted-foreground text-xs">{tournament.game}</p>
+          </>
+        )}
+        <div className="flex items-center justify-between text-xs">
+          {tournament.prize && (
+            <Badge variant="secondary" className="text-xs">
+              {tournament.prize}
+            </Badge>
+          )}
+          {tournament.entryFee && (
+            <span className="text-muted-foreground">{tournament.entryFee === "0" || tournament.entryFee === "$0" ? "Free" : tournament.entryFee}</span>
+          )}
+        </div>
+        <Button 
+          size="sm" 
+          className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            setLocation(`/tournament/${tournamentId}/register`);
+          }}
+          data-testid={`button-register-embed-${tournamentId}`}
+        >
+          <Trophy className="w-3 h-3 mr-1" />
+          View Tournament
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function PreviewMessages() {
@@ -1050,6 +1155,8 @@ export default function PreviewMessages() {
                                     <X className="h-4 w-4" />
                                   </Button>
                                 </div>
+                              ) : msg.tournamentId ? (
+                                <TournamentEmbed tournamentId={msg.tournamentId} />
                               ) : msg.message ? (
                                 <p className="text-sm text-foreground whitespace-pre-wrap">{renderMessageWithLinks(msg.message)}</p>
                               ) : null}

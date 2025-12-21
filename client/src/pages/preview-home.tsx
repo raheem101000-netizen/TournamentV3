@@ -213,12 +213,10 @@ export default function PreviewHome() {
       });
       const thread = await threadResponse.json();
       
-      // Send the tournament link message
-      const tournamentUrl = `${window.location.origin}/tournament/${tournamentId}/register`;
-      const message = `Check out this tournament: ${tournamentTitle}\n${tournamentUrl}`;
-      
+      // Send tournament share as a rich embed (with tournamentId)
       await apiRequest('POST', `/api/message-threads/${thread.id}/messages`, {
-        message: message,
+        message: `Shared a tournament: ${tournamentTitle}`,
+        tournamentId: tournamentId,
       });
       
       return { targetUser, thread };

@@ -275,6 +275,7 @@ export const threadMessages = pgTable("thread_messages", {
   message: text("message"),
   imageUrl: text("image_url"),
   replyToId: varchar("reply_to_id"),
+  tournamentId: varchar("tournament_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -338,6 +339,7 @@ export const insertThreadMessageSchema = createInsertSchema(threadMessages).omit
   message: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
   replyToId: z.string().optional().nullable(),
+  tournamentId: z.string().optional().nullable(),
 });
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
