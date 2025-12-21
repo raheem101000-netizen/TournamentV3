@@ -4,7 +4,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -50,6 +50,7 @@ export default function PreviewAccount() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editMemberPosition, setEditMemberPosition] = useState("");
   const [editMemberRole, setEditMemberRole] = useState("");
+  const [deleteTeamConfirm, setDeleteTeamConfirm] = useState(false);
 
   const { user: authUser } = useAuth();
   const { toast } = useToast();
@@ -150,6 +151,26 @@ export default function PreviewAccount() {
     },
     onError: (error: any) => {
       toast({ title: "Failed to update member", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation to delete team
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      await apiRequest("DELETE", `/api/team-profiles/${teamId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("team-profiles"),
+      });
+      toast({ title: "Team deleted successfully" });
+      setSelectedTeam(null);
+      setDeleteTeamConfirm(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete team", description: error.message, variant: "destructive" });
     },
   });
 
@@ -588,7 +609,7 @@ export default function PreviewAccount() {
       </Dialog>
 
       {/* Team Modal */}
-      <Dialog open={!!selectedTeam} onOpenChange={() => { setSelectedTeam(null); setIsEditingTeam(false); setEditingMemberId(null); }}>
+      <Dialog open={!!selectedTeam} onOpenChange={() => { setSelectedTeam(null); setIsEditingTeam(false); setEditingMemberId(null); setDeleteTeamConfirm(false); }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           {selectedTeam && (
             <div className="space-y-6">
@@ -693,6 +714,48 @@ export default function PreviewAccount() {
                     {new Date(selectedTeam.createdAt).toLocaleDateString()}
                   </p>
                 </div>
+
+                {/* Delete Team Section - Owner Only */}
+                {isTeamOwner && (
+                  <div className="pt-4 border-t">
+                    {deleteTeamConfirm ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-destructive font-medium">Are you sure you want to delete this team? This cannot be undone.</p>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => deleteTeamMutation.mutate(selectedTeam.id)}
+                            disabled={deleteTeamMutation.isPending}
+                            data-testid="button-confirm-delete-team"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {deleteTeamMutation.isPending ? "Deleting..." : "Yes, Delete Team"}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setDeleteTeamConfirm(false)}
+                            data-testid="button-cancel-delete-team"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTeamConfirm(true)}
+                        data-testid="button-delete-team"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Team
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 {/* Team Members Section */}
                 <div className="space-y-3">

@@ -2346,6 +2346,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/team-profiles/:id", async (req, res) => {
     try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Check authorization - only owner can delete
+      const existingTeam = await storage.getTeamProfile(req.params.id);
+      if (!existingTeam) {
+        return res.status(404).json({ error: "Team profile not found" });
+      }
+      if (existingTeam.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the team owner can delete this team" });
+      }
+      
       await storage.deleteTeamProfile(req.params.id);
       res.status(204).send();
     } catch (error: any) {
