@@ -1259,6 +1259,28 @@ export default function PreviewMessages() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete confirmation dialog - Inside conversation view */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Message</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this message? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete-conv">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete} 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete-conv"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
