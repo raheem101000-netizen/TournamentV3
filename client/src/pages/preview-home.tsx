@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight, Send } from "lucide-react";
+import { Search, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -16,10 +16,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Tournament, Server, User } from "@shared/schema";
+import type { Tournament, Server } from "@shared/schema";
 import { format } from "date-fns";
 
 type FilterType = "prize" | "no-prize" | "free" | "paid";
@@ -32,8 +31,6 @@ export default function PreviewHome() {
   const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
-  const [shareModal, setShareModal] = useState<{ id: string; title: string; game: string } | null>(null);
-  const [shareUsername, setShareUsername] = useState("");
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
@@ -43,23 +40,6 @@ export default function PreviewHome() {
   const { data: servers } = useQuery<Server[]>({
     queryKey: ['/api/mobile-preview/servers'],
   });
-
-  // Fetch friends list for share suggestions
-  const { data: friends = [] } = useQuery<User[]>({
-    queryKey: ["/api/friends"],
-    queryFn: async () => {
-      const res = await fetch("/api/friends", { credentials: "include" });
-      if (!res.ok) return [];
-      return res.json();
-    },
-  });
-
-  // Filter friends for suggestions based on input
-  const friendSuggestions = shareUsername.trim()
-    ? friends.filter((friend) =>
-        friend.username.toLowerCase().includes(shareUsername.toLowerCase().trim())
-      ).slice(0, 5)
-    : [];
 
   // Helper function to join a server - shared by both mutations
   const joinServerAPI = async (serverId: string) => {
@@ -190,51 +170,6 @@ export default function PreviewHome() {
         variant: "destructive",
       });
       setJoinModal(null); // Close modal on error too
-    },
-  });
-
-  // Share tournament mutation
-  const shareTournamentMutation = useMutation({
-    mutationFn: async ({ username, tournamentId, tournamentTitle }: { username: string; tournamentId: string; tournamentTitle: string }) => {
-      // First look up the user by username
-      const userResponse = await fetch(`/api/users/username/${username}`);
-      if (!userResponse.ok) {
-        throw new Error("User not found");
-      }
-      const targetUser = await userResponse.json();
-      
-      // Create or find existing thread with this user
-      const threadResponse = await apiRequest('POST', '/api/message-threads', {
-        participantId: targetUser.id,
-        participantName: targetUser.displayName || targetUser.username,
-        participantAvatar: targetUser.avatarUrl || null,
-        lastMessage: "",
-        unreadCount: 0,
-      });
-      const thread = await threadResponse.json();
-      
-      // Send tournament share as a rich embed (with tournamentId)
-      await apiRequest('POST', `/api/message-threads/${thread.id}/messages`, {
-        message: `Shared a tournament: ${tournamentTitle}`,
-        tournamentId: tournamentId,
-      });
-      
-      return { targetUser, thread };
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Tournament shared!",
-        description: `Sent to @${data.targetUser.username}`,
-      });
-      setShareModal(null);
-      setShareUsername("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to share",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
-      });
     },
   });
 
@@ -511,19 +446,6 @@ export default function PreviewHome() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
-                
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-4 right-4 z-10 bg-black/30 backdrop-blur-sm border border-white/20 text-white hover:bg-black/50"
-                  data-testid={`button-share-${poster.id}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShareModal({ id: poster.id, title: poster.title, game: poster.game });
-                  }}
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
 
                 <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
                   <button
@@ -807,95 +729,6 @@ export default function PreviewHome() {
               {joinServerMutation.isPending ? "Joining..." : "Join Server"}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Share Tournament Dialog */}
-      <Dialog open={!!shareModal} onOpenChange={() => { setShareModal(null); setShareUsername(""); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5" />
-              Share Tournament
-            </DialogTitle>
-            <DialogDescription>
-              Send "{shareModal?.title}" to a user via direct message.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="share-username">Username</Label>
-              <div className="relative">
-                <Input
-                  id="share-username"
-                  placeholder="Enter username"
-                  value={shareUsername}
-                  onChange={(e) => setShareUsername(e.target.value)}
-                  data-testid="input-share-username"
-                  autoComplete="off"
-                />
-                {friendSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[100] overflow-hidden">
-                    {friendSuggestions.map((friend) => (
-                      <button
-                        key={friend.id}
-                        type="button"
-                        className="w-full px-3 py-2 flex items-center gap-2 hover:bg-accent text-left cursor-pointer"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShareUsername(friend.username);
-                        }}
-                        data-testid={`suggestion-${friend.username}`}
-                      >
-                        <Avatar className="w-6 h-6">
-                          {friend.avatarUrl && <AvatarImage src={friend.avatarUrl} />}
-                          <AvatarFallback className="text-xs">
-                            {friend.username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{friend.username}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {friends.length > 0 && !shareUsername.trim() && (
-                <p className="text-xs text-muted-foreground">Start typing to see suggestions from your friends list</p>
-              )}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShareModal(null); setShareUsername(""); }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!shareUsername.trim()) {
-                  toast({
-                    title: "Error",
-                    description: "Please enter a username",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                if (shareModal) {
-                  shareTournamentMutation.mutate({
-                    username: shareUsername.trim(),
-                    tournamentId: shareModal.id,
-                    tournamentTitle: shareModal.title,
-                  });
-                }
-              }}
-              disabled={shareTournamentMutation.isPending}
-              data-testid="button-confirm-share"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              {shareTournamentMutation.isPending ? "Sending..." : "Send"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
