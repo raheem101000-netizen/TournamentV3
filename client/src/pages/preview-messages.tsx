@@ -858,8 +858,8 @@ export default function PreviewMessages() {
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col overflow-hidden p-4">
-          <Card className="flex flex-col flex-1 min-h-0">
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <Card className="flex flex-col min-h-0">
             {selectedChat?.matchId && (
               <CardHeader className="pb-4">
                 <CardTitle className="font-display flex items-center gap-2">
@@ -871,8 +871,8 @@ export default function PreviewMessages() {
               </CardHeader>
             )}
             <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
-                <ScrollArea className="flex-1 pr-4" viewportClassName="flex flex-col">
-                  <div className="mt-auto flex flex-col gap-4">
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-4">
                     {messagesLoading ? (
                       <div className="flex justify-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
