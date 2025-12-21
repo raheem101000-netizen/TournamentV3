@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import type { User } from "@shared/schema";
+import type { User, TeamMember } from "@shared/schema";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 import UserProfileModal from "@/components/UserProfileModal";
+import { Gamepad2 } from "lucide-react";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -84,6 +85,32 @@ export default function PreviewAccount() {
       const res = await fetch("/api/friends", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
+    },
+  });
+
+  // Fetch team members when a team is selected
+  const { data: teamMembers = [] } = useQuery<(TeamMember & { user?: User })[]>({
+    queryKey: [`/api/team-profiles/${selectedTeam?.id}/members`],
+    enabled: !!selectedTeam,
+    queryFn: async () => {
+      if (!selectedTeam) return [];
+      const res = await fetch(`/api/team-profiles/${selectedTeam.id}/members`, { credentials: "include" });
+      if (!res.ok) return [];
+      const members = await res.json();
+      // Fetch user details for each member
+      const membersWithUsers = await Promise.all(
+        members.map(async (member: TeamMember) => {
+          try {
+            const userRes = await fetch(`/api/users/${member.userId}`, { credentials: "include" });
+            if (userRes.ok) {
+              const user = await userRes.json();
+              return { ...member, user };
+            }
+          } catch {}
+          return member;
+        })
+      );
+      return membersWithUsers;
     },
   });
 
@@ -542,6 +569,57 @@ export default function PreviewAccount() {
                   <p className="text-sm">
                     {new Date(selectedTeam.createdAt).toLocaleDateString()}
                   </p>
+                </div>
+
+                {/* Team Members Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Team Members
+                  </h4>
+                  {teamMembers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No members added yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {teamMembers.map((member) => (
+                        <div 
+                          key={member.id} 
+                          className="flex items-center gap-3 p-2 rounded-md bg-muted/50"
+                          data-testid={`team-member-${member.id}`}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={member.user?.avatarUrl || undefined} />
+                            <AvatarFallback>
+                              {member.user?.username?.substring(0, 2).toUpperCase() || "??"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.user?.displayName || member.user?.username || "Unknown"}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {member.position && (
+                                <span className="truncate">{member.position}</span>
+                              )}
+                              {member.position && member.game && <span>-</span>}
+                              {member.game && (
+                                <span className="flex items-center gap-1 truncate">
+                                  <Gamepad2 className="w-3 h-3" />
+                                  {member.game}
+                                </span>
+                              )}
+                              {!member.position && !member.game && member.role && (
+                                <span>{member.role}</span>
+                              )}
+                            </div>
+                          </div>
+                          {member.role === "Owner" && (
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

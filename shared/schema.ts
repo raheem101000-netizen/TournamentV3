@@ -451,6 +451,8 @@ export const teamMembers = pgTable("team_members", {
   teamId: varchar("team_id").notNull(),
   userId: varchar("user_id").notNull(),
   role: text("role").default("Member"),
+  position: text("position"),
+  game: text("game"),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
