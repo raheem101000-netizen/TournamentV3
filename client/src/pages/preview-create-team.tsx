@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, X, Plus, Search } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Search, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -17,16 +18,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
-const mockFollowers = [
-  { username: "NinjaKid", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ninja" },
-  { username: "SniperElite", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sniper" },
-  { username: "FlashBang", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=flash" },
-  { username: "TacticalG", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=tactical" },
-  { username: "QuickShot", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=quick" },
-  { username: "CalmPlay", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=calm" },
-  { username: "BombMaster", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bomb" },
-];
 
 interface TeamPlayer {
   username: string;
@@ -44,7 +35,19 @@ export default function PreviewCreateTeam() {
   const [teamGame, setTeamGame] = useState("");
   const [players, setPlayers] = useState<TeamPlayer[]>([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [playerSearch, setPlayerSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch friends from API
+  const { data: friends = [] } = useQuery<any[]>({
+    queryKey: ["/api/friends"],
+  });
+
+  // Filter friends based on search query
+  const filteredFriends = friends.filter((friend: any) =>
+    friend.username?.toLowerCase().includes(playerSearch.toLowerCase()) ||
+    friend.displayName?.toLowerCase().includes(playerSearch.toLowerCase())
+  );
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,7 +301,7 @@ export default function PreviewCreateTeam() {
           <DialogHeader>
             <DialogTitle>Add Player</DialogTitle>
             <DialogDescription>
-              Search and add players from your followers
+              Search and add players from your friends list
             </DialogDescription>
           </DialogHeader>
 
@@ -306,37 +309,55 @@ export default function PreviewCreateTeam() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search followers..."
+                placeholder="Search friends..."
                 className="pl-9"
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
                 data-testid="input-search-players"
               />
             </div>
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {mockFollowers.map((follower) => {
-                const alreadyAdded = players.find(p => p.username === follower.username);
-                return (
-                  <Card
-                    key={follower.username}
-                    className={`p-3 ${alreadyAdded ? 'opacity-50' : 'hover-elevate cursor-pointer'}`}
-                    onClick={() => !alreadyAdded && addPlayer(follower.username, follower.avatar)}
-                    data-testid={`follower-${follower.username}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={follower.avatar} />
-                          <AvatarFallback>{follower.username[0]}</AvatarFallback>
-                        </Avatar>
-                        <p className="font-semibold text-sm">@{follower.username}</p>
+              {filteredFriends.length === 0 ? (
+                <div className="py-8 text-center">
+                  <Users className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {friends.length === 0 
+                      ? "No friends yet. Add friends to invite them to your team!" 
+                      : "No friends match your search."}
+                  </p>
+                </div>
+              ) : (
+                filteredFriends.map((friend: any) => {
+                  const alreadyAdded = players.find(p => p.username === friend.username);
+                  return (
+                    <Card
+                      key={friend.id}
+                      className={`p-3 ${alreadyAdded ? 'opacity-50' : 'hover-elevate cursor-pointer'}`}
+                      onClick={() => !alreadyAdded && addPlayer(friend.username, friend.avatarUrl || "")}
+                      data-testid={`friend-${friend.username}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={friend.avatarUrl} />
+                            <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-sm">@{friend.username}</p>
+                            {friend.displayName && (
+                              <p className="text-xs text-muted-foreground">{friend.displayName}</p>
+                            )}
+                          </div>
+                        </div>
+                        {alreadyAdded && (
+                          <Badge variant="secondary" className="text-xs">Added</Badge>
+                        )}
                       </div>
-                      {alreadyAdded && (
-                        <Badge variant="secondary" className="text-xs">Added</Badge>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
+                    </Card>
+                  );
+                })
+              )}
             </div>
           </div>
         </DialogContent>
