@@ -117,7 +117,9 @@ export default function PreviewAccount() {
       const response = await apiRequest("PATCH", `/api/team-profiles/${teamId}`, data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedTeam) => {
+      // Update selectedTeam with the new data from the server
+      setSelectedTeam(updatedTeam);
       queryClient.invalidateQueries({
         predicate: (query) =>
           typeof query.queryKey[0] === "string" &&
@@ -757,12 +759,18 @@ export default function PreviewAccount() {
                                   @{member.user?.username || "unknown"}
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {member.role === "Owner" && (
+                                    <span className="font-medium text-yellow-600 dark:text-yellow-500">Owner</span>
+                                  )}
+                                  {member.role === "Owner" && member.position && <span>-</span>}
                                   {member.position && (
                                     <span className="truncate">{member.position}</span>
                                   )}
-                                  {member.position && member.role && member.role !== "Member" && <span>-</span>}
-                                  {member.role && member.role !== "Member" && (
-                                    <span>{member.role}</span>
+                                  {member.role && member.role !== "Owner" && member.role !== "Member" && (
+                                    <>
+                                      {member.position && <span>-</span>}
+                                      <span>{member.role}</span>
+                                    </>
                                   )}
                                   {!member.position && (!member.role || member.role === "Member") && (
                                     <span>Member</span>
