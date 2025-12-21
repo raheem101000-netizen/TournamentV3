@@ -61,7 +61,12 @@ export default function PreviewCreateTeam() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "team-profiles"] });
+      // Invalidate all team-profiles queries to ensure refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          typeof query.queryKey[0] === 'string' && 
+          query.queryKey[0].includes('team-profiles')
+      });
       toast({
         title: "Team created!",
         description: `${teamName} has been created successfully.`,
