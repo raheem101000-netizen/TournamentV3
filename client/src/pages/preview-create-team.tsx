@@ -12,6 +12,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ interface TeamPlayer {
 export default function PreviewCreateTeam() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [teamLogo, setTeamLogo] = useState("🐺");
   const [teamLogoImage, setTeamLogoImage] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
@@ -40,11 +42,6 @@ export default function PreviewCreateTeam() {
   const [playerSearch, setPlayerSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch current user session
-  const { data: session } = useQuery<any>({
-    queryKey: ["/api/session"],
-  });
 
   // Fetch friends from API
   const { data: friends = [] } = useQuery<any[]>({
@@ -64,7 +61,7 @@ export default function PreviewCreateTeam() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", session?.user?.id, "team-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "team-profiles"] });
       toast({
         title: "Team created!",
         description: `${teamName} has been created successfully.`,
@@ -82,7 +79,7 @@ export default function PreviewCreateTeam() {
   });
 
   const handleCreateTeam = async () => {
-    if (!session?.user?.id) {
+    if (!user?.id) {
       toast({
         title: "Not logged in",
         description: "Please log in to create a team",
@@ -98,7 +95,7 @@ export default function PreviewCreateTeam() {
       tag: teamTag || null,
       bio: teamBio || null,
       logoUrl: teamLogoImage || null,
-      ownerId: session.user.id,
+      ownerId: user.id,
     });
   };
 
