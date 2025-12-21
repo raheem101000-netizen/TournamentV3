@@ -75,6 +75,34 @@ interface User {
   avatarUrl?: string;
 }
 
+function renderMessageWithLinks(text: string): JSX.Element {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (urlRegex.test(part)) {
+          urlRegex.lastIndex = 0;
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline break-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part}
+            </a>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 const mockMessageRequests: Chat[] = [
   {
     id: "req-1",
@@ -1023,7 +1051,7 @@ export default function PreviewMessages() {
                                   </Button>
                                 </div>
                               ) : msg.message ? (
-                                <p className="text-sm text-foreground">{msg.message}</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">{renderMessageWithLinks(msg.message)}</p>
                               ) : null}
                             </div>
                           </div>
