@@ -871,8 +871,8 @@ export default function PreviewMessages() {
               </CardHeader>
             )}
             <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4 min-h-full flex flex-col justify-end">
+                <ScrollArea className="flex-1 pr-4" viewportClassName="flex flex-col">
+                  <div className="mt-auto flex flex-col gap-4">
                     {messagesLoading ? (
                       <div className="flex justify-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
