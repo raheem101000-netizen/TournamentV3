@@ -253,7 +253,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
         <h2 className="text-lg font-semibold">Chat</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+      <div className="flex-1 overflow-y-auto space-y-4 pt-2 mb-4">
         {messages.map((message) => {
           const initials = message.username.substring(0, 2).toUpperCase();
           const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
