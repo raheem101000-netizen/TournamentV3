@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import UserProfileModal from "@/components/UserProfileModal";
 
 interface ChatChannelProps {
   channelId: string;
@@ -72,6 +73,8 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const [messageToDelete, setMessageToDelete] = useState<ChannelMessage | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -282,7 +285,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
                 const initials = message.username?.substring(0, 2).toUpperCase() || 'U';
                 const isOwnMessage = message.userId === user?.id;
                 const isEditing = editingMessage?.id === message.id;
-                const senderName = isOwnMessage ? 'You' : (message.username || 'Unknown User');
+                const senderName = message.username || 'Unknown User';
                 const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
                   hour: 'numeric',
                   minute: '2-digit',
@@ -299,12 +302,31 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
                       setLongPressMessageId(longPressMessageId === message.id ? null : message.id);
                     }}
                   >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    {message.userId ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProfileId(message.userId);
+                          setProfileModalOpen(true);
+                        }}
+                        className="p-0 border-0 bg-transparent cursor-pointer"
+                        data-testid={`button-avatar-${message.id}`}
+                      >
+                        <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                          <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
+                    ) : (
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                     {/* Message action menu */}
                     {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
                       <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
@@ -332,9 +354,23 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
                     )}
                     <div className="flex flex-col gap-1 max-w-[70%]">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs ${isOwnMessage ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                          {senderName}
-                        </span>
+                        {message.userId ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProfileId(message.userId);
+                              setProfileModalOpen(true);
+                            }}
+                            className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
+                            data-testid={`user-link-${message.id}`}
+                          >
+                            {senderName}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {senderName}
+                          </span>
+                        )}
                         <span className="text-xs text-muted-foreground">{timestamp}</span>
                       </div>
                       {(message as any).imageUrl && (
@@ -502,6 +538,13 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        userId={selectedProfileId}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+      />
     </div>
   );
 }
