@@ -2249,22 +2249,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Achievement routes
   app.post("/api/achievements", async (req, res) => {
     try {
-      const validatedData = insertAchievementSchema.parse(req.body);
+      let data = { ...req.body };
+      console.log("[ACHIEVEMENT] Received request body:", data);
+      
+      // If userId looks like a username (starts with @, contains no hyphens typical of UUID), look up the user
+      if (data.userId && (data.userId.startsWith("@") || data.userId.length < 20)) {
+        const username = data.userId.startsWith("@") ? data.userId.substring(1) : data.userId;
+        console.log("[ACHIEVEMENT] Looking up user by username:", username);
+        const allUsers = await storage.getAllUsers();
+        const user = allUsers.find(u => u.username === username);
+        if (user) {
+          data.userId = user.id;
+          console.log("[ACHIEVEMENT] Found user, setting userId to:", user.id);
+        } else {
+          throw new Error(`User not found: ${username}`);
+        }
+      }
+      
+      const validatedData = insertAchievementSchema.parse(data);
+      console.log("[ACHIEVEMENT] Validated data:", validatedData);
       const achievement = await storage.createAchievement(validatedData);
+      console.log("[ACHIEVEMENT] Created achievement:", achievement);
       
       // Create notification to deliver the achievement to the user
       const achievementTitle = validatedData.title || "New Achievement";
-      await storage.createNotification({
+      const notificationData = {
         userId: validatedData.userId,
         senderId: validatedData.awardedBy || "system",
-        type: "system",
+        type: "system" as const,
         title: "Achievement Unlocked!",
         message: `You've earned the achievement: ${achievementTitle}`,
         actionUrl: `/achievements/${achievement.id}`,
-      });
+      };
+      console.log("[ACHIEVEMENT] Creating notification:", notificationData);
+      await storage.createNotification(notificationData);
+      console.log("[ACHIEVEMENT] Notification created successfully");
       
       res.status(201).json(achievement);
     } catch (error: any) {
+      console.error("[ACHIEVEMENT] Error:", error.message);
       res.status(400).json({ error: error.message });
     }
   });

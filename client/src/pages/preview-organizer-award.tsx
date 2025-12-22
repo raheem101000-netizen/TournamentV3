@@ -106,13 +106,16 @@ export default function PreviewOrganizerAward() {
   });
 
   const handleAward = () => {
-    awardMutation.mutate({
+    const achievementData = achievementTypes.find(a => a.id === selectedAchievement);
+    const payload = {
       userId: selectedRecipientId,
-      title: achievementTypes.find(a => a.id === selectedAchievement)?.name,
-      description: message || achievementTypes.find(a => a.id === selectedAchievement)?.description,
+      title: achievementData?.name || "Achievement",
+      description: message || achievementData?.description || "",
       type: recipientType === "player" ? "solo" : "team",
       awardedBy: "organizer",
-    });
+    };
+    console.log("[AWARD-ACHIEVEMENT] Sending payload:", payload);
+    awardMutation.mutate(payload);
   };
 
   const selectedAchievementData = achievementTypes.find(a => a.id === selectedAchievement);
