@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Shield, Trophy, Medal, Star, Award, Users, Search, Check } from "lucide-react";
+import { ArrowLeft, Shield, Trophy, Medal, Star, Award, Users, Search, Check, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Select,
   SelectContent,
@@ -25,18 +28,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-const mockPlayers = [
-  { username: "ProGamer2024", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer" },
-  { username: "NinjaKid", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ninja" },
-  { username: "SniperElite", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sniper" },
-  { username: "FlashBang", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=flash" },
-];
-
-const mockTeams = [
-  { id: "1", name: "Shadow Wolves", logo: "🐺" },
-  { id: "2", name: "Storm Breakers", logo: "⚡" },
-  { id: "3", name: "Fire Dragons", logo: "🔥" },
-];
+interface User {
+  id: string;
+  username: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
 
 const achievementTypes = [
   { id: "champion", name: "Champion", icon: Trophy, rarity: "legendary", description: "Tournament Winner" },
@@ -55,26 +52,72 @@ const rarityColors: Record<string, string> = {
 
 export default function PreviewOrganizerAward() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [recipientType, setRecipientType] = useState<"player" | "team">("player");
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [message, setMessage] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Fetch users based on search query
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
+    queryKey: ["/api/users/search", searchQuery],
+    queryFn: async () => {
+      if (!searchQuery || searchQuery.length < 1) return [];
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error("Failed to search users");
+      return response.json() as Promise<User[]>;
+    },
+    enabled: recipientType === "player",
+  });
+
+  // Award achievement mutation
+  const awardMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/achievements", data);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Achievement awarded successfully!",
+      });
+      setShowConfirm(false);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedRecipient("");
+        setSelectedRecipientId("");
+        setSearchQuery("");
+        setSelectedAchievement("");
+        setMessage("");
+      }, 2000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to award achievement",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAward = () => {
-    setShowConfirm(false);
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setSelectedRecipient("");
-      setSelectedAchievement("");
-      setMessage("");
-    }, 2000);
+    awardMutation.mutate({
+      userId: selectedRecipientId,
+      title: achievementTypes.find(a => a.id === selectedAchievement)?.name,
+      description: message || achievementTypes.find(a => a.id === selectedAchievement)?.description,
+      type: recipientType === "player" ? "solo" : "team",
+      awardedBy: "organizer",
+    });
   };
 
   const selectedAchievementData = achievementTypes.find(a => a.id === selectedAchievement);
-  const isFormValid = selectedRecipient && selectedAchievement;
+  const isFormValid = selectedRecipientId && selectedAchievement;
+  const players = searchResults || [];
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -125,27 +168,80 @@ export default function PreviewOrganizerAward() {
               </div>
 
               <div className="space-y-2">
-                <Label>{recipientType === "player" ? "Select Player" : "Select Team"}</Label>
-                <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
-                  <SelectTrigger data-testid="select-recipient">
-                    <SelectValue placeholder={`Choose a ${recipientType}...`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recipientType === "player" ? (
-                      mockPlayers.map((player) => (
-                        <SelectItem key={player.username} value={player.username}>
-                          @{player.username}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      mockTeams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.logo} {team.name}
-                        </SelectItem>
-                      ))
+                <Label>{recipientType === "player" ? "Search & Select Player" : "Select Team"}</Label>
+                {recipientType === "player" ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Type player name..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setSelectedRecipient("");
+                          setSelectedRecipientId("");
+                        }}
+                        className="pl-10"
+                        data-testid="input-search-player"
+                      />
+                    </div>
+                    {(searchQuery || selectedRecipient) && (
+                      <div className="border rounded-lg max-h-48 overflow-y-auto">
+                        {searchLoading ? (
+                          <div className="p-3 text-center text-muted-foreground flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Searching...
+                          </div>
+                        ) : players.length > 0 ? (
+                          players.map((player) => (
+                            <button
+                              key={player.id}
+                              onClick={() => {
+                                setSelectedRecipient(player.username);
+                                setSelectedRecipientId(player.id);
+                                setSearchQuery("");
+                              }}
+                              className="w-full px-3 py-2 text-left hover:bg-accent border-b last:border-b-0 flex items-center gap-2 transition-colors"
+                              data-testid={`player-option-${player.id}`}
+                            >
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage src={player.avatarUrl} />
+                                <AvatarFallback>{player.username.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">@{player.username}</p>
+                                {player.displayName && (
+                                  <p className="text-xs text-muted-foreground">{player.displayName}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-sm text-muted-foreground">
+                            No players found
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </SelectContent>
-                </Select>
+                    {selectedRecipient && (
+                      <div className="p-3 bg-accent rounded-lg flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span className="text-sm font-medium">Selected: @{selectedRecipient}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                    <SelectTrigger data-testid="select-recipient">
+                      <SelectValue placeholder="Choose a team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="team-1">Shadow Wolves</SelectItem>
+                      <SelectItem value="team-2">Storm Breakers</SelectItem>
+                      <SelectItem value="team-3">Fire Dragons</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -211,12 +307,21 @@ export default function PreviewOrganizerAward() {
           <Button
             className="w-full"
             size="lg"
-            disabled={!isFormValid}
+            disabled={!isFormValid || awardMutation.isPending}
             onClick={() => setShowConfirm(true)}
             data-testid="button-award"
           >
-            <Shield className="w-4 h-4 mr-2" />
-            Award Achievement
+            {awardMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Awarding...
+              </>
+            ) : (
+              <>
+                <Shield className="w-4 h-4 mr-2" />
+                Award Achievement
+              </>
+            )}
           </Button>
 
           <Card className="p-4 border-amber-500/50 bg-amber-500/10">
@@ -267,7 +372,7 @@ export default function PreviewOrganizerAward() {
                       <span className="font-medium">
                         {recipientType === "player" 
                           ? `@${selectedRecipient}` 
-                          : mockTeams.find(t => t.id === selectedRecipient)?.name}
+                          : "Team"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -290,9 +395,18 @@ export default function PreviewOrganizerAward() {
             <Button variant="outline" onClick={() => setShowConfirm(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAward} data-testid="button-confirm-award">
-              <Shield className="w-4 h-4 mr-2" />
-              Confirm Award
+            <Button onClick={handleAward} disabled={awardMutation.isPending} data-testid="button-confirm-award">
+              {awardMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Awarding...
+                </>
+              ) : (
+                <>
+                  <Shield className="w-4 h-4 mr-2" />
+                  Confirm Award
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

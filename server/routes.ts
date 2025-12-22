@@ -2251,6 +2251,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertAchievementSchema.parse(req.body);
       const achievement = await storage.createAchievement(validatedData);
+      
+      // Create notification to deliver the achievement to the user
+      const achievementTitle = validatedData.title || "New Achievement";
+      await storage.createNotification({
+        userId: validatedData.userId,
+        senderId: validatedData.awardedBy || "system",
+        type: "system",
+        title: "Achievement Unlocked!",
+        message: `You've earned the achievement: ${achievementTitle}`,
+        actionUrl: `/achievements/${achievement.id}`,
+      });
+      
       res.status(201).json(achievement);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -3368,6 +3380,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =============== ADMIN PANEL ROUTES ===============
+
+  // Search registered users for achievement awarding
+  app.get("/api/users/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 1) {
+        return res.json([]);
+      }
+      const allUsers = await storage.getAllUsers();
+      const filtered = allUsers.filter(user =>
+        user.username.toLowerCase().includes(query.toLowerCase()) ||
+        user.displayName?.toLowerCase().includes(query.toLowerCase())
+      );
+      res.json(filtered.map(u => ({
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+      })));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Admin - Get all users
   app.get("/api/admin/users", async (req, res) => {
