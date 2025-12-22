@@ -4,9 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Send, X, Image as ImageIcon, Paperclip, Loader2, Pencil, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ChannelMessage } from "@shared/schema";
 import {
@@ -34,7 +34,7 @@ interface ChatChannelProps {
 export default function ChatChannel({ channelId, isPreview = false }: ChatChannelProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<ChannelMessage[]>([]);
+  const queryClient = useQueryClient();
   const [messageInput, setMessageInput] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [stagedImage, setStagedImage] = useState<{ file: File; preview: string } | null>(null);
@@ -47,18 +47,13 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch initial messages from API
-  const { data: initialMessages } = useQuery<ChannelMessage[]>({
-    queryKey: [`/api/channels/${channelId}/messages`],
+  // Fetch messages from API with polling for real-time updates
+  const { data: messages = [] } = useQuery<ChannelMessage[]>({
+    queryKey: ["/api/channels", channelId, "messages"],
     enabled: !!channelId,
+    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    staleTime: 1000,
   });
-
-  // Initialize messages when data is fetched
-  useEffect(() => {
-    if (initialMessages) {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -71,13 +66,10 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       const response = await apiRequest("POST", `/api/channels/${channelId}/messages`, messageData);
       return response.json();
     },
-    onSuccess: (newMessage) => {
-      setMessages(prev => [...prev, newMessage]);
+    onSuccess: () => {
+      // Invalidate to refetch messages immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
       setMessageInput("");
-      toast({
-        title: "Message sent!",
-        description: "Your message has been posted",
-      });
     },
     onError: (error) => {
       console.error("Error sending message:", error);
@@ -95,8 +87,8 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       const response = await apiRequest("PATCH", `/api/messages/${id}`, { message });
       return response.json();
     },
-    onSuccess: (updatedMessage) => {
-      setMessages(prev => prev.map(m => m.id === updatedMessage.id ? { ...m, message: updatedMessage.message } : m));
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
       setEditingMessage(null);
       setEditText("");
       toast({ title: "Message updated" });
@@ -113,9 +105,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       await apiRequest("DELETE", `/api/messages/${id}`);
     },
     onSuccess: () => {
-      if (messageToDelete) {
-        setMessages(prev => prev.filter(m => m.id !== messageToDelete.id));
-      }
+      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
       setDeleteDialogOpen(false);
       setMessageToDelete(null);
       toast({ title: "Message deleted" });
@@ -267,7 +257,11 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
           return (
             <div 
               key={message.id} 
-              className={`group relative flex gap-3 rounded-md p-2 -m-2 cursor-pointer ${longPressMessageId === message.id ? 'bg-muted' : ''}`}
+              className={`group relative flex gap-3 rounded-md p-2 cursor-pointer ${
+                isOwnMessage 
+                  ? 'bg-primary/10 ml-8' 
+                  : 'bg-muted/50'
+              } ${longPressMessageId === message.id ? 'ring-2 ring-primary/30' : ''}`}
               data-testid={`message-${message.id}`}
               onClick={() => {
                 if (isPreview || isEditing) return;
@@ -276,13 +270,23 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
             >
               <Avatar className="h-8 w-8 flex-shrink-0">
                 <AvatarImage src={(message as any).avatarUrl || ""} alt={message.username} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                <AvatarFallback className={`text-xs ${isOwnMessage ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
               {/* Message action menu - positioned at right of message row */}
               {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
                 <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-7 justify-start gap-2"
+                    onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(message); }}
+                    data-testid={`button-edit-message-${message.id}`}
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -297,7 +301,9 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">{message.username}</span>
+                  <span className={`text-sm font-semibold ${isOwnMessage ? 'text-primary' : ''}`}>
+                    {isOwnMessage ? 'You' : message.username}
+                  </span>
                   <span className="text-xs text-muted-foreground">{timestamp}</span>
                 </div>
                 {isEditing ? (
