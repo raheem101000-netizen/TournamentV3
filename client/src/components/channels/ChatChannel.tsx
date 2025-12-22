@@ -80,12 +80,30 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch messages from API with polling for real-time updates
-  const { data: messages = [], isLoading: messagesLoading } = useQuery<ChannelMessage[]>({
+  const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery<ChannelMessage[]>({
     queryKey: ["/api/channels", channelId, "messages"],
+    queryFn: async () => {
+      const response = await fetch(`/api/channels/${channelId}/messages?limit=500`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages");
+      }
+      return response.json();
+    },
     enabled: !!channelId,
     refetchInterval: 3000,
-    staleTime: 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
+  // Refetch messages when channelId changes
+  useEffect(() => {
+    if (channelId) {
+      refetchMessages();
+    }
+  }, [channelId, refetchMessages]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -95,12 +113,25 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   // REST API mutation for sending messages
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: { message: string; imageUrl: string | null }) => {
-      const response = await apiRequest("POST", `/api/channels/${channelId}/messages`, messageData);
+      const response = await fetch(`/api/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(messageData),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 401) {
+          throw new Error("Session expired. Please refresh the page and log in again.");
+        }
+        throw new Error(errorText || `Failed to send message (${response.status})`);
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
       setMessageInput("");
+      setStagedImage(null);
     },
     onError: (error) => {
       console.error("Error sending message:", error);
