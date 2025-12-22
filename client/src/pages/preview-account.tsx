@@ -214,24 +214,14 @@ export default function PreviewAccount() {
           <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
           <div className="flex items-center gap-2">
             {isOwnProfile && (
-              <>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setViewingUser("NinjaKid")}
-                  data-testid="button-demo-visitor"
-                >
-                  View as Visitor
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  onClick={() => setLocation("/account/settings")}
-                  data-testid="button-settings"
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={() => setLocation("/account/settings")}
+                data-testid="button-settings"
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
             )}
             {!isOwnProfile && (
               <Button 

@@ -28,8 +28,8 @@ export default function PreviewHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set());
-  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
-  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
+  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
@@ -228,7 +228,6 @@ export default function PreviewHome() {
       format: mockData.format,
       platform: "PC",
       region: "Global",
-      rankReq: "Any Rank",
     };
   });
 
@@ -260,7 +259,6 @@ export default function PreviewHome() {
         format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
         platform: t.platform || "Any Platform",
         region: t.region || "Global",
-        rankReq: "Any Rank",
       };
     });
 
@@ -601,14 +599,6 @@ export default function PreviewHome() {
                     <span className="text-sm">Region</span>
                   </div>
                   <span className="font-semibold text-sm">{detailsModal.region}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Shield className="w-4 h-4" />
-                    <span className="text-sm">Rank Requirement</span>
-                  </div>
-                  <span className="font-semibold text-sm">{detailsModal.rankReq}</span>
                 </div>
               </div>
 
