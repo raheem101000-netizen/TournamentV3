@@ -274,7 +274,8 @@ export default function PreviewAccount() {
                   </div>
 
                   <div className="space-y-2 w-full">
-                    <h2 className="text-2xl font-bold">{currentUser.username}</h2>
+                    <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
+                    <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
                     
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4" />

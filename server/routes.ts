@@ -3381,7 +3381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // =============== ADMIN PANEL ROUTES ===============
 
-  // Search registered users for achievement awarding
+  // Search registered users for achievement awarding (by username only)
   app.get("/api/users/search", async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -3389,9 +3389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       const allUsers = await storage.getAllUsers();
+      // Match by username only - more reliable than display name
       const filtered = allUsers.filter(user =>
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.displayName?.toLowerCase().includes(query.toLowerCase())
+        user.username.toLowerCase().includes(query.toLowerCase())
       );
       res.json(filtered.map(u => ({
         id: u.id,
