@@ -4,17 +4,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Send, X, Image as ImageIcon, Paperclip, Loader2, Pencil, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ChannelMessage } from "@shared/schema";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,34 @@ interface ChatChannelProps {
   isPreview?: boolean;
 }
 
+function renderMessageWithLinks(text: string): JSX.Element {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (urlRegex.test(part)) {
+          urlRegex.lastIndex = 0;
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline break-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part}
+            </a>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export default function ChatChannel({ channelId, isPreview = false }: ChatChannelProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -43,15 +71,16 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<ChannelMessage | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch messages from API with polling for real-time updates
-  const { data: messages = [] } = useQuery<ChannelMessage[]>({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<ChannelMessage[]>({
     queryKey: ["/api/channels", channelId, "messages"],
     enabled: !!channelId,
-    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    refetchInterval: 3000,
     staleTime: 1000,
   });
 
@@ -67,7 +96,6 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate to refetch messages immediately
       queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
       setMessageInput("");
     },
@@ -146,12 +174,10 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Must have either text or staged image
     if (!messageInput.trim() && !stagedImage) return;
 
     let imageUrl: string | null = null;
 
-    // Upload staged image first if present
     if (stagedImage) {
       setIsUploadingImage(true);
       try {
@@ -182,13 +208,11 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       setIsUploadingImage(false);
     }
 
-    // Send message via REST API
     sendMessageMutation.mutate({
       message: messageInput.trim(),
       imageUrl: imageUrl,
     });
 
-    // Clear staged image
     setStagedImage(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = '';
@@ -221,7 +245,6 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
 
-    // Create preview URL and stage the image
     const previewUrl = URL.createObjectURL(file);
     setStagedImage({ file, preview: previewUrl });
   };
@@ -243,102 +266,128 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
         <h2 className="text-lg font-semibold">Chat</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 pt-2 mb-4">
-        {messages.map((message) => {
-          const initials = message.username.substring(0, 2).toUpperCase();
-          const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          });
-          const isOwnMessage = message.userId === user?.id;
-          const isEditing = editingMessage?.id === message.id;
-
-          return (
-            <div 
-              key={message.id} 
-              className={`group relative flex gap-3 rounded-md p-2 cursor-pointer ${
-                isOwnMessage 
-                  ? 'bg-primary/10 ml-8' 
-                  : 'bg-muted/50'
-              } ${longPressMessageId === message.id ? 'ring-2 ring-primary/30' : ''}`}
-              data-testid={`message-${message.id}`}
-              onClick={() => {
-                if (isPreview || isEditing) return;
-                setLongPressMessageId(longPressMessageId === message.id ? null : message.id);
-              }}
-            >
-              <Avatar className="h-8 w-8 flex-shrink-0">
-                <AvatarImage src={(message as any).avatarUrl || ""} alt={message.username} />
-                <AvatarFallback className={`text-xs ${isOwnMessage ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {/* Message action menu - positioned at right of message row */}
-              {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
-                <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-7 justify-start gap-2"
-                    onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(message); }}
-                    data-testid={`button-edit-message-${message.id}`}
-                  >
-                    <Pencil className="h-3 w-3" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-7 justify-start gap-2 text-destructive"
-                    onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(message); }}
-                    data-testid={`button-delete-message-${message.id}`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Delete
-                  </Button>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-sm font-semibold ${isOwnMessage ? 'text-primary' : ''}`}>
-                    {isOwnMessage ? 'You' : message.username}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{timestamp}</span>
-                </div>
-                {isEditing ? (
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveEdit();
-                        if (e.key === 'Escape') handleCancelEdit();
-                      }}
-                      autoFocus
-                      data-testid="input-edit-message"
-                    />
-                    <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-sm mt-0.5">{message.message}</p>
-                )}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4 pt-2">
+            {messagesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-            </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
+            ) : messages.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((message) => {
+                const initials = message.username?.substring(0, 2).toUpperCase() || 'U';
+                const isOwnMessage = message.userId === user?.id;
+                const isEditing = editingMessage?.id === message.id;
+                const senderName = isOwnMessage ? 'You' : (message.username || 'Unknown User');
+                const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                });
+
+                return (
+                  <div 
+                    key={message.id} 
+                    className={`group relative flex gap-3 p-2 -m-2 rounded-md cursor-pointer ${longPressMessageId === message.id ? 'bg-muted' : ''}`}
+                    data-testid={`message-${message.id}`}
+                    onClick={() => {
+                      if (isPreview || isEditing) return;
+                      setLongPressMessageId(longPressMessageId === message.id ? null : message.id);
+                    }}
+                  >
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Message action menu */}
+                    {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
+                      <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 justify-start gap-2"
+                          onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(message); }}
+                          data-testid={`button-edit-message-${message.id}`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 justify-start gap-2 text-destructive"
+                          onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(message); }}
+                          data-testid={`button-delete-message-${message.id}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1 max-w-[70%]">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs ${isOwnMessage ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                          {senderName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{timestamp}</span>
+                      </div>
+                      {(message as any).imageUrl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEnlargedImageUrl((message as any).imageUrl);
+                          }}
+                          className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
+                          data-testid={`button-img-message-${message.id}`}
+                        >
+                          <img 
+                            src={(message as any).imageUrl} 
+                            alt="Shared image" 
+                            className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                          />
+                        </button>
+                      )}
+                      {isEditing ? (
+                        <div className="flex gap-2 w-full">
+                          <Input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit();
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                            autoFocus
+                            data-testid="input-edit-message"
+                          />
+                          <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : message.message ? (
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{renderMessageWithLinks(message.message)}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
       </div>
 
-      <Card className="mt-auto">
+      <Card className="mt-4">
         <CardContent className="p-3">
-          {/* Staged image preview */}
           {stagedImage && (
             <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-md">
               <img 
@@ -352,7 +401,6 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
               <Button 
                 size="icon" 
                 variant="ghost" 
-                className="h-6 w-6 flex-shrink-0"
                 onClick={clearStagedImage}
                 data-testid="button-clear-staged-image"
               >
@@ -418,6 +466,20 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
           />
         </CardContent>
       </Card>
+
+      {/* Image enlargement dialog */}
+      <Dialog open={!!enlargedImageUrl} onOpenChange={() => setEnlargedImageUrl(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          {enlargedImageUrl && (
+            <img 
+              src={enlargedImageUrl} 
+              alt="Enlarged" 
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
