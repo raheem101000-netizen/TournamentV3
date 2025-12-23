@@ -11,22 +11,26 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### December 23, 2025 (Payment Method in Tournament Creation - COMPLETE ✅)
-- **Enhanced Payment Method section in Step 3 with input fields**:
-  - ✅ Payment Method card with radio group: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
-  - ✅ Dynamic info header that explains what's needed for each payment method
-  - ✅ "Payment Link or Account" input field - method-specific placeholders:
-    - Stripe: "https://buy.stripe.com/..."
-    - PayPal: "https://www.paypal.com/paypalme/..."
-    - Cryptocurrency: "Wallet address or payment instructions"
-  - ✅ "Additional Instructions" optional input field for extra details (reference codes, deadlines, etc.)
-  - ✅ Helper text for each field explaining what to enter
-  - ✅ Conditional display - payment fields only appear when payment method selected
-  - ✅ Blue info box showing dynamic header text based on payment method selection
-  - ✅ State management: `paymentLink` and `paymentInstructions` useState hooks
-  - ✅ Properly included in form submission and reset
+- **Enhanced Payment Method section in Step 3 with input fields and database persistence**:
+  - ✅ **Frontend (CreateTournamentDialog.tsx)**:
+    - Payment Method radio group: "None", "Stripe", "PayPal", "Cryptocurrency"
+    - Dynamic info header explaining what's needed for each payment method
+    - "Payment Link or Account" input field with method-specific placeholders
+    - "Additional Instructions" optional field for extra details
+    - Helper text and blue info box with guidance
+    - Conditional display - fields only show when payment method selected
+    - State management: `paymentLink` and `paymentInstructions` hooks
+    - Full form submission and reset integration
+  
+  - ✅ **Database Schema (shared/schema.ts)**:
+    - Added `paymentMethod` column (enum: none, stripe, paypal, cryptocurrency)
+    - Added `paymentLink` column (text field for payment URLs/emails)
+    - Added `paymentInstructions` column (text field for instructions)
+    - Schema migration applied with `npm run db:push --force`
+    - ✅ Data now persists to PostgreSQL database
   
 - **Step 3 layout**:
-  - ✅ Payment Method (with payment details input fields)
+  - ✅ Payment Method (with payment details input fields and database persistence)
   - ✅ Team Capacity Settings
   - ✅ Custom Registration Form
 
