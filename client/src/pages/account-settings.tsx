@@ -62,7 +62,7 @@ const passwordSchema = z.object({
 
 export default function AccountSettings() {
   const { toast } = useToast();
-  const { user: authUser } = useAuth();
+  const { user: authUser, refetchUser } = useAuth();
 
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: [`/api/users/${authUser?.id}`],
@@ -130,9 +130,12 @@ export default function AccountSettings() {
         avatarUrl: response.avatarUrl || "",
       });
       
-      // Invalidate user profile queries immediately
+      // Invalidate and immediately refetch user profile queries
       queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Explicitly refetch auth context to update avatar immediately across app
+      refetchUser();
       
       // Clear ALL cache related to messages and users to ensure fresh data
       queryClient.removeQueries({ queryKey: ['/api/matches'] });

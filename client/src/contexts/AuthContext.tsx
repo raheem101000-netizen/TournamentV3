@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/auth/me'],
     retry: false,
     refetchOnWindowFocus: true,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000, // 5 minutes - allows caching but not forever
   });
 
   useEffect(() => {
