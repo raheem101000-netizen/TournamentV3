@@ -10,24 +10,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### December 23, 2025 (Tournament Creation Multi-Step Form & Payment Method - COMPLETE ✅)
-- **Converted tournament creation to 3-step form**:
-  - ✅ Step 1: Basic Information (name, game, organizer name)
-  - ✅ Step 2: Format & Teams (format, total teams, swiss rounds if applicable)
-  - ✅ Step 3: Payments & Appearance (payment method, entry fee, prize reward, image URL, image fit)
-  
-- **Added Payment Method field to Step 3**:
-  - ✅ Dropdown with options: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
+### December 23, 2025 (Payment Method in Tournament Creation - COMPLETE ✅)
+- **Added Payment Method field to Step 3 of tournament creation dialog**:
+  - ✅ Payment Method card with radio group options: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
   - ✅ Field description explains: "How participants will pay entry fees (if applicable)"
-  - ✅ Entry fee and Prize fields now grouped together with payment method on Step 3
-  - ✅ Image URL and Image Fit settings also on Step 3
-  - ✅ Progress indicator bar at top shows Step 1/2/3
+  - ✅ Located at top of Step 3, before "Team Capacity" section
+  - ✅ State managed with `paymentMethod` useState hook
+  - ✅ Properly included in form submission via `onSubmit`
+  - ✅ Properly reset when dialog closes via `handleReset`
   
-- **Multi-step form navigation**:
-  - ✅ Previous/Next buttons for moving between steps
-  - ✅ Create Tournament button appears only on final step
-  - ✅ Visual step indicator fills as user progresses
-  - ✅ All form data persists as user moves between steps
+- **Step 3 layout**:
+  - ✅ Payment Method (new)
+  - ✅ Team Capacity Settings (existing)
+  - ✅ Custom Registration Form (existing)
 
 ### December 23, 2025 (Profile Picture Cache Fix - COMPLETE ✅)
 - **Fixed profile picture caching issue**:

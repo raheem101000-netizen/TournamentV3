@@ -48,6 +48,7 @@ export default function CreateTournamentDialog({
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
   const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
   const [maxTeams, setMaxTeams] = useState("16");
+  const [paymentMethod, setPaymentMethod] = useState<"none" | "stripe" | "paypal" | "cryptocurrency">("none");
   
   // Use ref to store the latest config from RegistrationFormBuilder
   const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
@@ -109,6 +110,7 @@ export default function CreateTournamentDialog({
       format: format as any,
       totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
+      paymentMethod: paymentMethod,
       teamNames: [],
       registrationConfig: finalConfig,
     });
@@ -132,6 +134,7 @@ export default function CreateTournamentDialog({
     setRegistrationConfig(undefined);
     setTeamCapacityMode("unlimited");
     setMaxTeams("16");
+    setPaymentMethod("none");
     onOpenChange(false);
   };
 
@@ -320,6 +323,44 @@ export default function CreateTournamentDialog({
 
         {step === 3 && (
           <div className="space-y-4 py-4">
+            {/* Payment Method */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Payment Method</CardTitle>
+                <CardDescription>How participants will pay entry fees (if applicable)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="none" id="payment-none" />
+                      <Label htmlFor="payment-none" className="cursor-pointer font-normal">
+                        No Payment Required
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="stripe" id="payment-stripe" />
+                      <Label htmlFor="payment-stripe" className="cursor-pointer font-normal">
+                        Stripe
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="paypal" id="payment-paypal" />
+                      <Label htmlFor="payment-paypal" className="cursor-pointer font-normal">
+                        PayPal
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="cryptocurrency" id="payment-crypto" />
+                      <Label htmlFor="payment-crypto" className="cursor-pointer font-normal">
+                        Cryptocurrency
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </CardContent>
+            </Card>
+
             {/* Team Capacity Settings */}
             <Card>
               <CardHeader>
