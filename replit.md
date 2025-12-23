@@ -10,6 +10,32 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### December 23, 2025 (Tournament Creation Multi-Step Form & Payment Method - COMPLETE ✅)
+- **Converted tournament creation to 3-step form**:
+  - ✅ Step 1: Basic Information (name, game, organizer name)
+  - ✅ Step 2: Format & Teams (format, total teams, swiss rounds if applicable)
+  - ✅ Step 3: Payments & Appearance (payment method, entry fee, prize reward, image URL, image fit)
+  
+- **Added Payment Method field to Step 3**:
+  - ✅ Dropdown with options: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
+  - ✅ Field description explains: "How participants will pay entry fees (if applicable)"
+  - ✅ Entry fee and Prize fields now grouped together with payment method on Step 3
+  - ✅ Image URL and Image Fit settings also on Step 3
+  - ✅ Progress indicator bar at top shows Step 1/2/3
+  
+- **Multi-step form navigation**:
+  - ✅ Previous/Next buttons for moving between steps
+  - ✅ Create Tournament button appears only on final step
+  - ✅ Visual step indicator fills as user progresses
+  - ✅ All form data persists as user moves between steps
+
+### December 23, 2025 (Profile Picture Cache Fix - COMPLETE ✅)
+- **Fixed profile picture caching issue**:
+  - ✅ Changed auth context staleTime from `Infinity` to `5 * 60 * 1000` (5 minutes)
+  - ✅ Added explicit `refetchUser()` call after profile updates
+  - ✅ Profile pictures now update immediately across entire app (chat, account, match chat, etc.)
+  - ✅ Ensures all components using `useAuth()` see updated avatar instantly
+
 ### December 20, 2025 (Match Chat System - PERMANENT IMPLEMENTATION ✅)
 - **PERMANENT: Match chats automatically appear in ALL participants' Messages inbox**:
   - ✅ `createMatchThreadsForAllMembers()` helper function automatically creates threads for all team members when a match is created

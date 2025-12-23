@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Trophy } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft } from "lucide-react";
 
 const createTournamentSchema = z.object({
   name: z.string().min(1, "Tournament name is required"),
@@ -37,6 +38,7 @@ const createTournamentSchema = z.object({
   imageFit: z.enum(["stretch", "contain", "cover"]).optional(),
   prizeReward: z.string().optional(),
   entryFee: z.number().optional(),
+  paymentMethod: z.enum(["none", "stripe", "paypal", "cryptocurrency"]).optional(),
   organizerName: z.string().optional(),
   serverId: z.string().optional(),
 });
@@ -46,6 +48,7 @@ type CreateTournamentForm = z.infer<typeof createTournamentSchema>;
 export default function CreateTournament() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState(1);
 
   const form = useForm<CreateTournamentForm>({
     resolver: zodResolver(createTournamentSchema),
@@ -57,6 +60,7 @@ export default function CreateTournament() {
       imageFit: "cover",
       prizeReward: "",
       entryFee: 0,
+      paymentMethod: "none",
       organizerName: "",
     },
   });
@@ -89,6 +93,14 @@ export default function CreateTournament() {
     createMutation.mutate(data);
   };
 
+  const handleNext = () => {
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
   return (
     <div className="container max-w-3xl mx-auto p-6">
       <Card>
@@ -100,235 +112,314 @@ export default function CreateTournament() {
             <div>
               <CardTitle>Create Tournament</CardTitle>
               <CardDescription>
-                Set up a new tournament with teams and matches
+                Step {currentStep} of 3 - Set up a new tournament with teams and matches
               </CardDescription>
             </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={`flex-1 h-2 rounded-full ${
+                  step <= currentStep ? 'bg-primary' : 'bg-secondary'
+                }`}
+              />
+            ))}
           </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Tournament Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Spring Championship 2024"
-                          data-testid="input-tournament-name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="game"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Game/Sport</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Chess, Basketball"
-                          data-testid="input-tournament-game"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="organizerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organizer Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Your name"
-                          data-testid="input-organizer-name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="format"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tournament Format</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-tournament-format">
-                            <SelectValue placeholder="Select format" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="single_elimination">Single Elimination</SelectItem>
-                          <SelectItem value="round_robin">Round Robin</SelectItem>
-                          <SelectItem value="swiss">Swiss System</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {field.value === "single_elimination" && "One loss and you're out"}
-                        {field.value === "round_robin" && "Everyone plays everyone"}
-                        {field.value === "swiss" && "Optimized pairing each round"}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="totalTeams"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of Teams</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="2"
-                          data-testid="input-total-teams"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {selectedFormat === "swiss" && (
+              {/* STEP 1 - Basic Information */}
+              {currentStep === 1 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="swissRounds"
+                    name="name"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Swiss Rounds</FormLabel>
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Tournament Name</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min="1"
-                            placeholder="e.g., 5"
-                            data-testid="input-swiss-rounds"
+                            placeholder="Spring Championship 2024"
+                            data-testid="input-tournament-name"
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="game"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Game/Sport</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Chess, Basketball"
+                            data-testid="input-tournament-game"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="organizerName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organizer Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Your name"
+                            data-testid="input-organizer-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* STEP 2 - Format & Teams */}
+              {currentStep === 2 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="format"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Tournament Format</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-tournament-format">
+                              <SelectValue placeholder="Select format" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="single_elimination">Single Elimination</SelectItem>
+                            <SelectItem value="round_robin">Round Robin</SelectItem>
+                            <SelectItem value="swiss">Swiss System</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormDescription>
-                          Typically 5-7 rounds for Swiss
+                          {field.value === "single_elimination" && "One loss and you're out"}
+                          {field.value === "round_robin" && "Everyone plays everyone"}
+                          {field.value === "swiss" && "Optimized pairing each round"}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="totalTeams"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Teams</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="2"
+                            data-testid="input-total-teams"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {selectedFormat === "swiss" && (
+                    <FormField
+                      control={form.control}
+                      name="swissRounds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Swiss Rounds</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="e.g., 5"
+                              data-testid="input-swiss-rounds"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Typically 5-7 rounds for Swiss
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* STEP 3 - Payments & Appearance */}
+              {currentStep === 3 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Payment Method</FormLabel>
+                        <Select value={field.value || "none"} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-payment-method">
+                              <SelectValue placeholder="Select payment method" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No Payment Required</SelectItem>
+                            <SelectItem value="stripe">Stripe</SelectItem>
+                            <SelectItem value="paypal">PayPal</SelectItem>
+                            <SelectItem value="cryptocurrency">Cryptocurrency</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          How participants will pay entry fees (if applicable)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="entryFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Entry Fee (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            data-testid="input-entry-fee"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>Amount per team in USD</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="prizeReward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prize/Reward (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$500 or Trophy"
+                            data-testid="input-prize-reward"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Image URL (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/image.jpg"
+                            data-testid="input-image-url"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="imageFit"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Image Fit</FormLabel>
+                        <Select value={field.value || "cover"} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-image-fit">
+                              <SelectValue placeholder="Select image fit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="stretch">Stretch (Fill entire poster)</SelectItem>
+                            <SelectItem value="contain">Contain (Full image visible)</SelectItem>
+                            <SelectItem value="cover">Cover (Crop to fill)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>How the image fits inside the poster</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex gap-3 pt-4">
+                {currentStep > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevious}
+                    data-testid="button-previous-step"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Previous
+                  </Button>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="prizeReward"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prize/Reward (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="$500 or Trophy"
-                          data-testid="input-prize-reward"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {currentStep < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    className="flex-1"
+                    data-testid="button-next-step"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending}
+                    className="flex-1"
+                    data-testid="button-create-tournament"
+                  >
+                    {createMutation.isPending ? "Creating..." : "Create Tournament"}
+                  </Button>
+                )}
 
-                <FormField
-                  control={form.control}
-                  name="entryFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Entry Fee (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          data-testid="input-entry-fee"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/image.jpg"
-                          data-testid="input-image-url"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="imageFit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image Fit</FormLabel>
-                      <Select value={field.value || "cover"} onValueChange={field.onChange}>
-                        <SelectTrigger data-testid="select-image-fit">
-                          <SelectValue placeholder="Select image fit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="stretch">Stretch (Fill entire poster)</SelectItem>
-                          <SelectItem value="contain">Contain (Full image visible)</SelectItem>
-                          <SelectItem value="cover">Cover (Crop to fill)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>How the image fits inside the poster</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="flex-1"
-                  data-testid="button-create-tournament"
-                >
-                  {createMutation.isPending ? "Creating..." : "Create Tournament"}
-                </Button>
                 <Button
                   type="button"
                   variant="outline"
