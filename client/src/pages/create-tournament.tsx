@@ -38,7 +38,7 @@ const createTournamentSchema = z.object({
   imageFit: z.enum(["stretch", "contain", "cover"]).optional(),
   prizeReward: z.string().optional(),
   entryFee: z.number().optional(),
-  paymentMethod: z.enum(["none", "stripe", "paypal", "cryptocurrency"]).optional(),
+  paymentMethod: z.enum(["none", "stripe", "paypal", "cryptocurrency"], { required_error: "Payment method is required" }),
   organizerName: z.string().optional(),
   serverId: z.string().optional(),
 });
