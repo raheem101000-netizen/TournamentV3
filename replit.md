@@ -11,18 +11,24 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### December 23, 2025 (Payment Method in Tournament Creation - COMPLETE ✅)
-- **Added Payment Method field to Step 3 of tournament creation dialog**:
-  - ✅ Payment Method card with radio group options: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
-  - ✅ Field description explains: "How participants will pay entry fees (if applicable)"
-  - ✅ Located at top of Step 3, before "Team Capacity" section
-  - ✅ State managed with `paymentMethod` useState hook
-  - ✅ Properly included in form submission via `onSubmit`
-  - ✅ Properly reset when dialog closes via `handleReset`
+- **Enhanced Payment Method section in Step 3 with input fields**:
+  - ✅ Payment Method card with radio group: "No Payment Required", "Stripe", "PayPal", "Cryptocurrency"
+  - ✅ Dynamic info header that explains what's needed for each payment method
+  - ✅ "Payment Link or Account" input field - method-specific placeholders:
+    - Stripe: "https://buy.stripe.com/..."
+    - PayPal: "https://www.paypal.com/paypalme/..."
+    - Cryptocurrency: "Wallet address or payment instructions"
+  - ✅ "Additional Instructions" optional input field for extra details (reference codes, deadlines, etc.)
+  - ✅ Helper text for each field explaining what to enter
+  - ✅ Conditional display - payment fields only appear when payment method selected
+  - ✅ Blue info box showing dynamic header text based on payment method selection
+  - ✅ State management: `paymentLink` and `paymentInstructions` useState hooks
+  - ✅ Properly included in form submission and reset
   
 - **Step 3 layout**:
-  - ✅ Payment Method (new)
-  - ✅ Team Capacity Settings (existing)
-  - ✅ Custom Registration Form (existing)
+  - ✅ Payment Method (with payment details input fields)
+  - ✅ Team Capacity Settings
+  - ✅ Custom Registration Form
 
 ### December 23, 2025 (Profile Picture Cache Fix - COMPLETE ✅)
 - **Fixed profile picture caching issue**:

@@ -49,9 +49,24 @@ export default function CreateTournamentDialog({
   const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
   const [maxTeams, setMaxTeams] = useState("16");
   const [paymentMethod, setPaymentMethod] = useState<"none" | "stripe" | "paypal" | "cryptocurrency">("none");
+  const [paymentLink, setPaymentLink] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
   
   // Use ref to store the latest config from RegistrationFormBuilder
   const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
+
+  const getPaymentMethodInfo = () => {
+    switch (paymentMethod) {
+      case "stripe":
+        return "Provide your Stripe payment link or account details so participants can pay via Stripe";
+      case "paypal":
+        return "Provide your PayPal payment link or email address for participants";
+      case "cryptocurrency":
+        return "Provide your wallet address and any payment instructions for cryptocurrency payments";
+      default:
+        return "";
+    }
+  };
 
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
     console.log('[CREATE-DIALOG] Registration config updated:', JSON.stringify(config, null, 2));
@@ -111,6 +126,8 @@ export default function CreateTournamentDialog({
       totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
       paymentMethod: paymentMethod,
+      paymentLink: paymentLink || null,
+      paymentInstructions: paymentInstructions || null,
       teamNames: [],
       registrationConfig: finalConfig,
     });
@@ -135,6 +152,8 @@ export default function CreateTournamentDialog({
     setTeamCapacityMode("unlimited");
     setMaxTeams("16");
     setPaymentMethod("none");
+    setPaymentLink("");
+    setPaymentInstructions("");
     onOpenChange(false);
   };
 
@@ -329,7 +348,7 @@ export default function CreateTournamentDialog({
                 <CardTitle className="text-base">Payment Method</CardTitle>
                 <CardDescription>How participants will pay entry fees (if applicable)</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
@@ -358,6 +377,54 @@ export default function CreateTournamentDialog({
                     </div>
                   </div>
                 </RadioGroup>
+
+                {paymentMethod !== "none" && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                      <p className="text-sm text-blue-900 dark:text-blue-100">
+                        {getPaymentMethodInfo()}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentLink">Payment Link or Account</Label>
+                      <Input
+                        id="paymentLink"
+                        placeholder={
+                          paymentMethod === "stripe"
+                            ? "https://buy.stripe.com/..."
+                            : paymentMethod === "paypal"
+                            ? "https://www.paypal.com/paypalme/..."
+                            : "Wallet address or payment instructions"
+                        }
+                        value={paymentLink}
+                        onChange={(e) => setPaymentLink(e.target.value)}
+                        data-testid="input-payment-link"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {paymentMethod === "stripe"
+                          ? "Enter your Stripe payment link"
+                          : paymentMethod === "paypal"
+                          ? "Enter your PayPal.me link or email"
+                          : "Enter your cryptocurrency wallet address"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentInstructions">Additional Instructions (Optional)</Label>
+                      <Input
+                        id="paymentInstructions"
+                        placeholder="e.g., Reference code, payment deadline, special instructions"
+                        value={paymentInstructions}
+                        onChange={(e) => setPaymentInstructions(e.target.value)}
+                        data-testid="input-payment-instructions"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Optional: Any additional payment instructions for participants
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
