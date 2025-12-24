@@ -16,6 +16,7 @@ import CreateChannelDialog from "@/components/CreateChannelDialog";
 import ManageCategoriesDialog from "@/components/ManageCategoriesDialog";
 import useEmblaCarousel from "embla-carousel-react";
 import { useAuth } from "@/contexts/AuthContext";
+import UserProfileModal from "@/components/UserProfileModal";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -27,6 +28,8 @@ export default function PreviewServerDetail() {
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showMembersView, setShowMembersView] = useState(false);
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -156,6 +159,7 @@ export default function PreviewServerDetail() {
         <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
           <div className="space-y-2">
             {members
+              .filter((member) => member.username !== "Unknown")
               .sort((a, b) => {
                 if (a.isOwner && !b.isOwner) return -1;
                 if (!a.isOwner && b.isOwner) return 1;
@@ -164,7 +168,11 @@ export default function PreviewServerDetail() {
               .map((member) => (
                 <Card
                   key={member.id}
-                  className="p-4"
+                  className="p-4 cursor-pointer hover-elevate"
+                  onClick={() => {
+                    setSelectedProfileUserId(member.userId);
+                    setProfileModalOpen(true);
+                  }}
                   data-testid={`member-card-${member.userId}`}
                 >
                   <div className="flex items-center gap-3">
@@ -195,6 +203,12 @@ export default function PreviewServerDetail() {
               ))}
           </div>
         </main>
+
+        <UserProfileModal
+          userId={selectedProfileUserId}
+          open={profileModalOpen}
+          onOpenChange={setProfileModalOpen}
+        />
 
         <BottomNavigation />
       </div>
@@ -682,7 +696,7 @@ export default function PreviewServerDetail() {
                 <div className="flex items-center justify-between gap-2 px-2 cursor-pointer hover-elevate rounded-md py-1">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                     <Users className="h-3 w-3" />
-                    Members ({members.length})
+                    Members ({members.filter(m => m.username !== "Unknown").length})
                   </h3>
                   <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showMembers ? 'rotate-180' : ''}`} />
                 </div>
@@ -691,6 +705,7 @@ export default function PreviewServerDetail() {
                 <div className="space-y-1">
                   {/* Sort members: owner first, then by role, then alphabetically */}
                   {members
+                    .filter((member) => member.username !== "Unknown")
                     .sort((a, b) => {
                       if (a.isOwner && !b.isOwner) return -1;
                       if (!a.isOwner && b.isOwner) return 1;
@@ -699,7 +714,11 @@ export default function PreviewServerDetail() {
                     .map((member) => (
                       <Card
                         key={member.id}
-                        className="p-3 border-0 shadow-none"
+                        className="p-3 border-0 shadow-none cursor-pointer hover-elevate"
+                        onClick={() => {
+                          setSelectedProfileUserId(member.userId);
+                          setProfileModalOpen(true);
+                        }}
                         data-testid={`member-${member.userId}`}
                       >
                         <div className="flex items-center gap-3">
@@ -734,6 +753,12 @@ export default function PreviewServerDetail() {
           </Collapsible>
         </div>
       </main>
+
+      <UserProfileModal
+        userId={selectedProfileUserId}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+      />
 
       <CreateChannelDialog 
         serverId={serverId!}
