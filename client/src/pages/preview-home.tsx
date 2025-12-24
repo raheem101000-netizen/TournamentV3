@@ -262,7 +262,8 @@ export default function PreviewHome() {
       };
     });
 
-  const allPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
+  // Only show real tournaments - no mock data
+  const allPosters = tournamentPosters;
   
   // Filter posters based on search query and active filters (can be multiple at once)
   const displayPosters = allPosters.filter(poster => {

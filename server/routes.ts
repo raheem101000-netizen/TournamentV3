@@ -260,10 +260,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create channel message with validated data
           const savedMessage = await storage.createChannelMessage(validatedData);
 
+          // Enrich message with avatarUrl for consistent display
+          const user = await storage.getUser(userInfo.userId);
+          const enrichedMessage = {
+            ...savedMessage,
+            avatarUrl: user?.avatarUrl || null,
+          };
+
           // Broadcast to all connections in this channel
           const broadcastPayload = {
             type: "new_message",
-            message: savedMessage,
+            message: enrichedMessage,
           };
           broadcastToChannel(channelId, broadcastPayload);
         } catch (error: any) {
