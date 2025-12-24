@@ -98,24 +98,22 @@ export default function PosterUploadField({
 
       {!value ? (
         <div 
-          className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-muted/50 cursor-pointer hover-elevate transition-colors"
-          style={{ aspectRatio: '16/9' }}
+          className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-muted/50 cursor-pointer hover-elevate transition-colors h-32"
           onClick={handleUploadClick}
           data-testid="poster-upload-dropzone"
         >
-          <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground mb-1">
             Upload tournament poster
           </p>
           <p className="text-xs text-muted-foreground">
-            Recommended: 16:9 aspect ratio (1920x1080)
+            16:9 aspect ratio recommended
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           <div 
-            className="relative rounded-lg border overflow-hidden bg-muted"
-            style={{ aspectRatio: '16/9' }}
+            className="relative rounded-lg border overflow-hidden bg-muted h-36"
             data-testid="poster-preview"
           >
             <img 
