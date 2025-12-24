@@ -61,7 +61,7 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
   };
 
   const sortedMessages = [...messages].sort((a, b) => 
-    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
   );
 
   return (
