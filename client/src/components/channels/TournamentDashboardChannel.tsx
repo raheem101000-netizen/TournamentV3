@@ -1374,6 +1374,10 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
   const [endDate, setEndDate] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"none" | "stripe" | "paypal" | "cryptocurrency">("none");
+  const [paymentLink, setPaymentLink] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [totalTeams, setTotalTeams] = useState("-1");
 
   useEffect(() => {
     if (tournament && open) {
@@ -1386,6 +1390,10 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       setEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "");
       setPlatform(tournament.platform || "");
       setRegion(tournament.region || "");
+      setPaymentMethod(tournament.paymentMethod as any || "none");
+      setPaymentLink(tournament.paymentLink || "");
+      setPaymentInstructions(tournament.paymentInstructions || "");
+      setTotalTeams(String(tournament.totalTeams || -1));
     }
   }, [tournament, open]);
 
@@ -1410,6 +1418,10 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       endDate: endDate ? new Date(endDate) : null,
       platform: platform.trim() || null,
       region: region.trim() || null,
+      paymentMethod,
+      paymentLink: paymentLink.trim() || null,
+      paymentInstructions: paymentInstructions.trim() || null,
+      totalTeams: parseInt(totalTeams) || -1,
     });
   };
 
@@ -1511,6 +1523,60 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 data-testid="input-edit-tournament-region"
+              />
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-sm font-semibold mb-3">Payment & Capacity Settings</h3>
+            
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="edit-paymentMethod">Payment Method</Label>
+              <select
+                id="edit-paymentMethod"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                data-testid="select-edit-payment-method"
+              >
+                <option value="none">No Payment Required</option>
+                <option value="stripe">Stripe</option>
+                <option value="paypal">PayPal</option>
+                <option value="cryptocurrency">Cryptocurrency</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="edit-paymentInstructions">Payment Instructions</Label>
+              <Input
+                id="edit-paymentInstructions"
+                placeholder="e.g., enter your @username in the payment link when you pay"
+                value={paymentInstructions}
+                onChange={(e) => setPaymentInstructions(e.target.value)}
+                data-testid="input-edit-payment-instructions"
+              />
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="edit-paymentLink">Payment Link</Label>
+              <Input
+                id="edit-paymentLink"
+                placeholder="e.g., https://buy.stripe.com/... or https://paypal.me/username"
+                value={paymentLink}
+                onChange={(e) => setPaymentLink(e.target.value)}
+                data-testid="input-edit-payment-link"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-totalTeams">Maximum Teams (-1 for unlimited)</Label>
+              <Input
+                id="edit-totalTeams"
+                type="number"
+                placeholder="-1 for unlimited"
+                value={totalTeams}
+                onChange={(e) => setTotalTeams(e.target.value)}
+                data-testid="input-edit-total-teams"
               />
             </div>
           </div>
