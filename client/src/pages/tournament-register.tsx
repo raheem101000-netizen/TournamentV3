@@ -113,17 +113,19 @@ export default function TournamentRegister() {
         </Card>
 
         {/* Payment Information */}
-        {tournament.paymentMethod && tournament.paymentMethod !== "none" && (
+        {((tournament.paymentMethod && tournament.paymentMethod !== "none") || tournament.paymentLink) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Payment Information</CardTitle>
               <CardDescription>Details for paying your entry fee</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
-                <p className="font-semibold capitalize">{tournament.paymentMethod.replace("_", " ")}</p>
-              </div>
+              {tournament.paymentMethod && tournament.paymentMethod !== "none" && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
+                  <p className="font-semibold capitalize">{tournament.paymentMethod.replace("_", " ")}</p>
+                </div>
+              )}
               {tournament.paymentLink && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Payment Link</p>
