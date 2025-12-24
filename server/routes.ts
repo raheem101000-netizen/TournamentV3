@@ -1592,6 +1592,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingTeams = await storage.getTeamsByTournament(tournamentId);
       const existingRegistrations = await storage.getRegistrationsByTournament(tournamentId);
       
+      // Check if this user is already registered for this tournament
+      const userRegistration = existingRegistrations.find(
+        r => r.userId === req.session.userId
+      );
+      
+      if (userRegistration) {
+        return res.status(409).json({ error: "You are already registered for this tournament" });
+      }
+      
       const pendingRegistrations = existingRegistrations.filter(
         r => r.status === "submitted"
       );

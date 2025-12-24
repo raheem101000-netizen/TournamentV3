@@ -42,6 +42,14 @@ export default function TournamentRegistrationForm({
     queryKey: [`/api/tournaments/${tournamentId}/registration/config`],
   });
 
+  // Check if user is already registered for this tournament
+  const { data: registrations = [] } = useQuery<any[]>({
+    queryKey: [`/api/tournaments/${tournamentId}/registrations`],
+    enabled: !!user?.id,
+  });
+
+  const userAlreadyRegistered = registrations.some(r => r.userId === user?.id);
+
   // Build dynamic schema - one text input per step
   const schemaObj: Record<string, any> = {};
 
@@ -117,6 +125,20 @@ export default function TournamentRegistrationForm({
       <Card>
         <CardContent className="pt-6 text-center">
           <p className="text-muted-foreground text-sm">Registration is not available for this tournament</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Check if user is already registered
+  if (userAlreadyRegistered) {
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center space-y-4">
+          <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
+            <p className="text-sm text-amber-900 dark:text-amber-100 font-medium">You are already registered for this tournament</p>
+          </div>
+          <p className="text-muted-foreground text-sm">You cannot register multiple times for the same tournament.</p>
         </CardContent>
       </Card>
     );
