@@ -26,6 +26,7 @@ export default function PreviewServerDetail() {
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showMembersView, setShowMembersView] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -122,6 +123,80 @@ export default function PreviewServerDetail() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Server not found</p>
+      </div>
+    );
+  }
+
+  // If members view is selected, show members list
+  if (showMembersView) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-lg mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={() => setShowMembersView(false)}
+                data-testid="button-back-from-members"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+              </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  <h1 className="text-lg font-bold truncate">Members</h1>
+                </div>
+                <p className="text-xs text-muted-foreground">{members.length} members</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
+          <div className="space-y-2">
+            {members
+              .sort((a, b) => {
+                if (a.isOwner && !b.isOwner) return -1;
+                if (!a.isOwner && b.isOwner) return 1;
+                return a.username.localeCompare(b.username);
+              })
+              .map((member) => (
+                <Card
+                  key={member.id}
+                  className="p-4"
+                  data-testid={`member-card-${member.userId}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      {member.avatarUrl ? (
+                        <AvatarImage src={member.avatarUrl} alt={member.username} />
+                      ) : null}
+                      <AvatarFallback>
+                        {member.username.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{member.username}</span>
+                        {member.isOwner && (
+                          <Crown className="h-4 w-4 text-yellow-500" />
+                        )}
+                      </div>
+                      <span 
+                        className="text-sm" 
+                        style={{ color: member.roleColor }}
+                      >
+                        {member.isOwner ? "Owner" : member.roleName}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+          </div>
+        </main>
+
+        <BottomNavigation />
       </div>
     );
   }
@@ -312,10 +387,14 @@ export default function PreviewServerDetail() {
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
+                <button 
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  onClick={() => setShowMembersView(true)}
+                  data-testid="button-show-members"
+                >
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                   <span>{server.memberCount || 0} members</span>
-                </div>
+                </button>
               </div>
             </div>
             <Button 
