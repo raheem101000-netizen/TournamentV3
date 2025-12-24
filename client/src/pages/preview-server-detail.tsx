@@ -2,8 +2,9 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users, Crown } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useState, useCallback, useEffect } from "react";
@@ -24,6 +25,7 @@ export default function PreviewServerDetail() {
   const [showWelcomePage, setShowWelcomePage] = useState(false); // Users see channel list first
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -47,6 +49,26 @@ export default function PreviewServerDetail() {
 
   const { data: categories = [] } = useQuery<ChannelCategory[]>({
     queryKey: [`/api/servers/${serverId}/categories`],
+    enabled: !!serverId,
+  });
+
+  interface EnrichedMember {
+    id: string;
+    serverId: string;
+    userId: string;
+    roleId: string | null;
+    role: string | null;
+    customTitle: string | null;
+    joinedAt: Date;
+    username: string;
+    avatarUrl: string | null;
+    isOwner: boolean;
+    roleName: string;
+    roleColor: string;
+  }
+
+  const { data: members = [] } = useQuery<EnrichedMember[]>({
+    queryKey: [`/api/servers/${serverId}/members`],
     enabled: !!serverId,
   });
 
@@ -573,6 +595,64 @@ export default function PreviewServerDetail() {
               </div>
             </div>
           )}
+
+          {/* Members Section */}
+          <Collapsible open={showMembers} onOpenChange={setShowMembers}>
+            <div className="space-y-2">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between gap-2 px-2 cursor-pointer hover-elevate rounded-md py-1">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Members ({members.length})
+                  </h3>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showMembers ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-1">
+                  {/* Sort members: owner first, then by role, then alphabetically */}
+                  {members
+                    .sort((a, b) => {
+                      if (a.isOwner && !b.isOwner) return -1;
+                      if (!a.isOwner && b.isOwner) return 1;
+                      return a.username.localeCompare(b.username);
+                    })
+                    .map((member) => (
+                      <Card
+                        key={member.id}
+                        className="p-3 border-0 shadow-none"
+                        data-testid={`member-${member.userId}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8">
+                            {member.avatarUrl ? (
+                              <AvatarImage src={member.avatarUrl} alt={member.username} />
+                            ) : null}
+                            <AvatarFallback className="text-sm">
+                              {member.username.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium truncate">{member.username}</span>
+                              {member.isOwner && (
+                                <Crown className="h-4 w-4 text-yellow-500" />
+                              )}
+                            </div>
+                            <span 
+                              className="text-xs" 
+                              style={{ color: member.roleColor }}
+                            >
+                              {member.isOwner ? "Owner" : member.roleName}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         </div>
       </main>
 

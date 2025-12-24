@@ -2497,7 +2497,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/servers/:serverId/members", async (req, res) => {
     try {
       const members = await storage.getMembersByServer(req.params.serverId);
-      res.json(members);
+      const server = await storage.getServer(req.params.serverId);
+      const roles = await storage.getRolesByServer(req.params.serverId);
+      
+      // Enrich members with user information
+      const enrichedMembers = await Promise.all(
+        members.map(async (member) => {
+          const user = await storage.getUser(member.userId);
+          const role = member.roleId ? roles.find(r => r.id === member.roleId) : null;
+          return {
+            ...member,
+            username: user?.username || "Unknown",
+            avatarUrl: user?.avatarUrl || null,
+            isOwner: server?.ownerId === member.userId,
+            roleName: role?.name || member.role || "Member",
+            roleColor: role?.color || "#99AAB5",
+          };
+        })
+      );
+      res.json(enrichedMembers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
