@@ -229,12 +229,8 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-2xl"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
+      <DialogContent className="max-w-2xl z-[100]">
         <DialogHeader>
           <DialogTitle>Edit Tournament Poster Image</DialogTitle>
         </DialogHeader>
