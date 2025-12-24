@@ -19,7 +19,7 @@ import type { InsertTournament } from "@shared/schema";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import { RegistrationPlatformProvider, defaultPlatformAdapter } from "@/modules/registration/platform-adapter";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
-import ImageUploadField from "@/components/ImageUploadField";
+import PosterUploadField from "@/components/PosterUploadField";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -204,11 +204,10 @@ export default function CreateTournamentDialog({
                 data-testid="input-tournament-game"
               />
             </div>
-            <ImageUploadField
+            <PosterUploadField
               label="Tournament Poster"
               value={imageUrl}
               onChange={setImageUrl}
-              placeholder="https://example.com/poster.jpg"
             />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

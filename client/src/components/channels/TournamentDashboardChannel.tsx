@@ -34,7 +34,7 @@ import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
 import RichMatchChat from "@/components/RichMatchChat";
 import UserProfileModal from "@/components/UserProfileModal";
-import ImageUploadField from "@/components/ImageUploadField";
+import PosterUploadField from "@/components/PosterUploadField";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
@@ -1454,11 +1454,10 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
               data-testid="input-edit-tournament-game"
             />
           </div>
-          <ImageUploadField
+          <PosterUploadField
             label="Tournament Poster"
             value={imageUrl}
             onChange={setImageUrl}
-            placeholder="https://example.com/poster.jpg"
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
