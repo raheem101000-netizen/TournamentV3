@@ -373,8 +373,15 @@ export default function PreviewServerDetail() {
                               )}
                             </div>
                           </div>
-                          <Button size="sm" data-testid={`button-view-tournament-${tournament.id}`}>
-                            View
+                          <Button 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/tournament/${tournament.id}/register`);
+                            }}
+                            data-testid={`button-join-tournament-${tournament.id}`}
+                          >
+                            Join
                           </Button>
                         </div>
                       </CardHeader>
