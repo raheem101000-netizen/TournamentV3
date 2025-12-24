@@ -433,14 +433,27 @@ export default function CreateTournamentDialog({
               <CardHeader>
                 <CardTitle className="text-base">Payment Link</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Input
-                  id="paymentLinkSimple"
-                  placeholder="Enter your payment link or URL"
-                  value={paymentLink}
-                  onChange={(e) => setPaymentLink(e.target.value)}
-                  data-testid="input-payment-link-simple"
-                />
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentLinkAdditionalInstructions">Additional Payment Instructions (Optional)</Label>
+                  <Input
+                    id="paymentLinkAdditionalInstructions"
+                    placeholder="e.g., enter your @username in the payment link when you pay"
+                    value={paymentInstructions}
+                    onChange={(e) => setPaymentInstructions(e.target.value)}
+                    data-testid="input-payment-instructions-additional"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentLinkSimple">Payment Link</Label>
+                  <Input
+                    id="paymentLinkSimple"
+                    placeholder="Enter your payment link or URL"
+                    value={paymentLink}
+                    onChange={(e) => setPaymentLink(e.target.value)}
+                    data-testid="input-payment-link-simple"
+                  />
+                </div>
               </CardContent>
             </Card>
 
