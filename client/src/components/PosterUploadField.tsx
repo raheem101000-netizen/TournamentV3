@@ -241,7 +241,7 @@ export default function PosterUploadField({
           <Slider
             value={[zoom]}
             onValueChange={(v) => setZoom(v[0])}
-            min={100}
+            min={50}
             max={200}
             step={5}
             className="flex-1"
