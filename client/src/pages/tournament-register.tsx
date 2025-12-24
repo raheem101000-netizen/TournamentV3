@@ -112,6 +112,42 @@ export default function TournamentRegister() {
           </CardContent>
         </Card>
 
+        {/* Payment Information */}
+        {tournament.paymentMethod && tournament.paymentMethod !== "none" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Payment Information</CardTitle>
+              <CardDescription>Details for paying your entry fee</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
+                <p className="font-semibold capitalize">{tournament.paymentMethod.replace("_", " ")}</p>
+              </div>
+              {tournament.paymentLink && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Payment Link</p>
+                  <a
+                    href={tournament.paymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium break-all"
+                    data-testid="link-payment"
+                  >
+                    {tournament.paymentLink}
+                  </a>
+                </div>
+              )}
+              {tournament.paymentInstructions && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Instructions</p>
+                  <p className="text-sm">{tournament.paymentInstructions}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Registration Form */}
         {tournamentId && (
           <TournamentRegistrationForm
