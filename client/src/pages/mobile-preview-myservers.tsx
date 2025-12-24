@@ -120,7 +120,7 @@ export default function MobilePreviewMyServers() {
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
                         <AvatarImage 
-                          src={server.iconUrl ? `${window.location.origin}${server.iconUrl}` : ''} 
+                          src={server.iconUrl || undefined} 
                           alt={server.name} 
                         />
                         <AvatarFallback className="rounded-md">
@@ -166,7 +166,7 @@ export default function MobilePreviewMyServers() {
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
                         <AvatarImage 
-                          src={server.iconUrl ? `${window.location.origin}${server.iconUrl}` : ''} 
+                          src={server.iconUrl || undefined} 
                           alt={server.name} 
                         />
                         <AvatarFallback className="rounded-md">

@@ -119,9 +119,10 @@ export default function PreviewMyServers() {
                   >
                     <div className="flex items-center gap-4">
                       <Avatar className="w-14 h-14">
-                        {server.iconUrl && (
-                          <AvatarImage src={server.iconUrl} alt={server.name} />
-                        )}
+                        <AvatarImage 
+                          src={server.iconUrl || undefined} 
+                          alt={server.name} 
+                        />
                         <AvatarFallback className="text-xl font-semibold">
                           {server.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
