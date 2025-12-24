@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { X, Upload, Loader2 } from "lucide-react";
+import { X, Upload, Loader2, ZoomIn, ZoomOut, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 
 interface PosterUploadFieldProps {
@@ -18,8 +19,14 @@ export default function PosterUploadField({
   required = false
 }: PosterUploadFieldProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const [position, setPosition] = useState({ x: 50, y: 50 });
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,11 +50,85 @@ export default function PosterUploadField({
       return;
     }
 
-    setIsUploading(true);
+    // Read as data URL for editing
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setRawImage(e.target?.result as string);
+      setZoom(100);
+      setPosition({ x: 50, y: 50 });
+    };
+    reader.readAsDataURL(file);
 
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const deltaX = (e.clientX - dragStart.current.x) / 2;
+    const deltaY = (e.clientY - dragStart.current.y) / 2;
+    setPosition((prev) => ({
+      x: Math.max(0, Math.min(100, prev.x + deltaX)),
+      y: Math.max(0, Math.min(100, prev.y + deltaY)),
+    }));
+    dragStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleSaveEdited = async () => {
+    if (!rawImage) return;
+    
+    setIsSaving(true);
     try {
+      // Create canvas to render the edited image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      const canvasWidth = 800;
+      const canvasHeight = 450;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = rawImage;
+      });
+
+      const zoomFactor = zoom / 100;
+      const scaleX = canvasWidth / img.width;
+      const scaleY = canvasHeight / img.height;
+      const baseScale = Math.max(scaleX, scaleY);
+      const scale = baseScale * zoomFactor;
+
+      const scaledWidth = img.width * scale;
+      const scaledHeight = img.height * scale;
+      const excessWidth = scaledWidth - canvasWidth;
+      const excessHeight = scaledHeight - canvasHeight;
+      const offsetX = -excessWidth * (position.x / 100);
+      const offsetY = -excessHeight * (position.y / 100);
+
+      ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+
+      // Convert to blob and upload
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to create blob')), 'image/jpeg', 0.9);
+      });
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', blob, 'poster.jpg');
 
       const response = await fetch('/api/objects/upload', {
         method: 'POST',
@@ -55,42 +136,118 @@ export default function PosterUploadField({
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
+      if (!response.ok) throw new Error('Upload failed');
 
       const data = await response.json();
-      const fileUrl = data.fileUrl || data.url;
-      
-      onChange(fileUrl);
+      onChange(data.fileUrl || data.url);
+      setRawImage(null);
       
       toast({
-        title: "Poster uploaded",
-        description: "Your tournament poster has been uploaded.",
+        title: "Poster saved",
+        description: "Your tournament poster has been saved.",
       });
     } catch (error) {
-      console.error("Error uploading file:", error);
       toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image.",
+        title: "Save failed",
+        description: "Failed to save the poster.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setIsSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setRawImage(null);
+    setZoom(100);
+    setPosition({ x: 50, y: 50 });
   };
 
   const handleRemoveImage = () => {
     onChange("");
+    setRawImage(null);
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+
+  // Editing mode - show inline editor
+  if (rawImage) {
+    return (
+      <div className="space-y-3">
+        <Label>{label}</Label>
+        
+        <div 
+          className="relative rounded-lg border overflow-hidden bg-muted cursor-move select-none"
+          style={{ aspectRatio: '16/9' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          data-testid="poster-editor"
+        >
+          <img 
+            src={rawImage} 
+            alt="Edit Poster" 
+            className="absolute pointer-events-none"
+            style={{
+              width: `${zoom}%`,
+              height: `${zoom}%`,
+              objectFit: 'cover',
+              left: `${50 - position.x}%`,
+              top: `${50 - position.y}%`,
+              transform: 'translate(-50%, -50%)',
+              minWidth: '100%',
+              minHeight: '100%',
+            }}
+            draggable={false}
+          />
+          <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-md p-2">
+            <Move className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs text-muted-foreground">Drag to reposition</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <ZoomOut className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <Slider
+            value={[zoom]}
+            onValueChange={(v) => setZoom(v[0])}
+            min={100}
+            max={200}
+            step={5}
+            className="flex-1"
+            data-testid="slider-zoom"
+          />
+          <ZoomIn className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-xs text-muted-foreground w-12">{zoom}%</span>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancelEdit}
+            className="flex-1"
+            data-testid="button-cancel-edit"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSaveEdited}
+            disabled={isSaving}
+            className="flex-1"
+            data-testid="button-save-poster"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSaving ? "Saving..." : "Save Poster"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -117,17 +274,10 @@ export default function PosterUploadField({
           className="w-full h-24 border-dashed"
           data-testid="poster-upload-dropzone"
         >
-          {isUploading ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin" />
-              <span className="text-sm">Uploading...</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <Upload className="w-6 h-6" />
-              <span className="text-sm">Upload Tournament Poster</span>
-            </div>
-          )}
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="w-6 h-6" />
+            <span className="text-sm">Upload Tournament Poster</span>
+          </div>
         </Button>
       ) : (
         <div className="space-y-2">
@@ -155,16 +305,11 @@ export default function PosterUploadField({
             type="button"
             variant="outline"
             onClick={handleUploadClick}
-            disabled={isUploading}
             className="w-full"
             data-testid="button-change-poster"
           >
-            {isUploading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="w-4 h-4 mr-2" />
-            )}
-            {isUploading ? "Uploading..." : "Change Poster"}
+            <Upload className="w-4 h-4 mr-2" />
+            Change Poster
           </Button>
         </div>
       )}
