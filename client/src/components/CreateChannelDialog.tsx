@@ -3,11 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { MessageSquare, Megaphone } from "lucide-react";
 
 interface CreateChannelDialogProps {
   serverId: string;
@@ -15,70 +15,12 @@ interface CreateChannelDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const CHANNEL_ICONS = [
-  { category: "Text Channels", icons: [
-    { emoji: "📝", label: "Text channel" },
-    { emoji: "📢", label: "Announcements" },
-    { emoji: "💬", label: "General chat" },
-    { emoji: "🗂️", label: "Threads" },
-  ]},
-  { category: "Voice Channels", icons: [
-    { emoji: "🔊", label: "Voice channel" },
-    { emoji: "🎤", label: "Stage channel" },
-    { emoji: "🎧", label: "Listening/music channel" },
-  ]},
-  { category: "Categories", icons: [
-    { emoji: "📁", label: "Folder/category" },
-    { emoji: "📂", label: "Sub-category" },
-  ]},
-  { category: "Bots & Automations", icons: [
-    { emoji: "🤖", label: "Bot channel" },
-    { emoji: "🛠️", label: "Admin tools" },
-    { emoji: "⚙️", label: "Settings" },
-  ]},
-  { category: "Gaming Channels", icons: [
-    { emoji: "🎮", label: "Gaming" },
-    { emoji: "🕹️", label: "Controller" },
-    { emoji: "🏆", label: "Tournaments" },
-  ]},
-  { category: "Media Channels", icons: [
-    { emoji: "🎨", label: "Art" },
-    { emoji: "📸", label: "Photos" },
-    { emoji: "🎥", label: "Videos" },
-    { emoji: "🎵", label: "Music" },
-  ]},
-  { category: "Information Channels", icons: [
-    { emoji: "📌", label: "Rules" },
-    { emoji: "📜", label: "Guidelines" },
-    { emoji: "📢", label: "Announcements" },
-    { emoji: "❓", label: "Help / FAQ" },
-    { emoji: "📣", label: "Updates" },
-  ]},
-  { category: "Economy / Points", icons: [
-    { emoji: "💰", label: "Money / economy" },
-    { emoji: "🪙", label: "Coins / credits" },
-    { emoji: "📊", label: "Stats" },
-    { emoji: "📝", label: "Leaderboards" },
-  ]},
-  { category: "Community", icons: [
-    { emoji: "👋", label: "Welcome" },
-    { emoji: "🙋", label: "Introductions" },
-    { emoji: "🗣️", label: "Discussion" },
-    { emoji: "🎉", label: "Events" },
-  ]},
-  { category: "Security / Staff", icons: [
-    { emoji: "🔐", label: "Staff-only" },
-    { emoji: "🛡️", label: "Moderation" },
-    { emoji: "🚨", label: "Reports" },
-  ]},
-];
+type ChannelType = "chat" | "announcements";
 
 export default function CreateChannelDialog({ serverId, open, onOpenChange }: CreateChannelDialogProps) {
   const { toast } = useToast();
   const [name, setName] = useState("");
-  const [type, setType] = useState("text");
-  const [selectedIcon, setSelectedIcon] = useState("📝");
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [channelType, setChannelType] = useState<ChannelType>("chat");
 
   const createChannelMutation = useMutation({
     mutationFn: async (data: { name: string; type: string; icon: string; isPrivate: number; slug: string; serverId: string; position: number }) => {
@@ -92,9 +34,7 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
       });
       onOpenChange(false);
       setName("");
-      setType("text");
-      setSelectedIcon("📝");
-      setIsPrivate(false);
+      setChannelType("chat");
     },
     onError: (error: any) => {
       toast({
@@ -117,14 +57,16 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
     }
 
     const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const icon = channelType === "announcements" ? "📢" : "💬";
+    
     createChannelMutation.mutate({
       name: name.trim(),
-      type,
-      icon: selectedIcon,
-      isPrivate: isPrivate ? 1 : 0,
+      type: channelType,
+      icon,
+      isPrivate: 0,
       slug,
       serverId,
-      position: 999, // Will be sorted at the end
+      position: 999,
     });
   };
 
@@ -134,11 +76,11 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
         <DialogHeader>
           <DialogTitle>Create Channel</DialogTitle>
           <DialogDescription>
-            Add a new channel to your server. Choose an icon and customize the settings.
+            Add a new channel to your server.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="channel-name">Channel Name</Label>
             <Input
@@ -150,57 +92,56 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="channel-type">Channel Type</Label>
-            <Input
-              id="channel-type"
-              placeholder="e.g., text, voice, announcement"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              data-testid="input-channel-type"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Channel Icon</Label>
-            <ScrollArea className="h-64 rounded-md border p-4">
-              <div className="space-y-4">
-                {CHANNEL_ICONS.map((category) => (
-                  <div key={category.category}>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      {category.category}
-                    </h4>
-                    <div className="grid grid-cols-4 gap-2">
-                      {category.icons.map((icon) => (
-                        <Button
-                          key={icon.emoji}
-                          type="button"
-                          variant={selectedIcon === icon.emoji ? "default" : "outline"}
-                          className="h-12 text-2xl"
-                          onClick={() => setSelectedIcon(icon.emoji)}
-                          data-testid={`icon-${icon.emoji}`}
-                        >
-                          {icon.emoji}
-                        </Button>
-                      ))}
-                    </div>
+          <div className="space-y-3">
+            <Label>Channel Type</Label>
+            <RadioGroup
+              value={channelType}
+              onValueChange={(value) => setChannelType(value as ChannelType)}
+              className="space-y-3"
+            >
+              <div 
+                className={`flex items-start gap-3 p-4 rounded-md border cursor-pointer transition-colors ${
+                  channelType === "chat" ? "border-primary bg-primary/5" : "border-border hover-elevate"
+                }`}
+                onClick={() => setChannelType("chat")}
+              >
+                <RadioGroupItem value="chat" id="type-chat" className="mt-1" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-primary" />
+                    <Label htmlFor="type-chat" className="font-semibold cursor-pointer">
+                      General Chat
+                    </Label>
                   </div>
-                ))}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Everyone in the server can send messages in this channel.
+                  </p>
+                </div>
               </div>
-            </ScrollArea>
+
+              <div 
+                className={`flex items-start gap-3 p-4 rounded-md border cursor-pointer transition-colors ${
+                  channelType === "announcements" ? "border-primary bg-primary/5" : "border-border hover-elevate"
+                }`}
+                onClick={() => setChannelType("announcements")}
+              >
+                <RadioGroupItem value="announcements" id="type-announcements" className="mt-1" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                    <Label htmlFor="type-announcements" className="font-semibold cursor-pointer">
+                      Announcement Channel
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Only the server owner and users with permission can post messages.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="private-channel">Private Channel</Label>
-            <Switch
-              id="private-channel"
-              checked={isPrivate}
-              onCheckedChange={setIsPrivate}
-              data-testid="switch-private"
-            />
-          </div>
-
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
