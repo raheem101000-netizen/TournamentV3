@@ -428,6 +428,22 @@ export default function CreateTournamentDialog({
               </CardContent>
             </Card>
 
+            {/* Payment Link */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Payment Link</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Input
+                  id="paymentLinkSimple"
+                  placeholder="Enter your payment link or URL"
+                  value={paymentLink}
+                  onChange={(e) => setPaymentLink(e.target.value)}
+                  data-testid="input-payment-link-simple"
+                />
+              </CardContent>
+            </Card>
+
             {/* Team Capacity Settings */}
             <Card>
               <CardHeader>
