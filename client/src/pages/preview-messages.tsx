@@ -104,52 +104,6 @@ function renderMessageWithLinks(text: string): JSX.Element {
   );
 }
 
-const mockMessageRequests: Chat[] = [
-  {
-    id: "req-1",
-    name: "Sarah Johnson",
-    isGroup: false,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-    lastMessage: "Hey! Want to join our tournament team?",
-    timestamp: "5m ago",
-    unread: 0,
-    members: 0,
-  },
-  {
-    id: "req-2",
-    name: "Elite Gamers Group",
-    isGroup: true,
-    groupImage: "⚡",
-    lastMessage: "Invitation to join Elite Gamers",
-    timestamp: "1h ago",
-    unread: 0,
-    members: 12,
-  },
-];
-
-const mockMessages = [
-  {
-    id: "msg-1",
-    sender: "Alex",
-    content: "Ready for tonight's match?",
-    timestamp: "2m ago",
-    isOwn: false,
-  },
-  {
-    id: "msg-2",
-    sender: "You",
-    content: "Yeah! What time are we starting?",
-    timestamp: "1m ago",
-    isOwn: true,
-  },
-  {
-    id: "msg-3",
-    sender: "Sarah",
-    content: "I think 8 PM EST",
-    timestamp: "30s ago",
-    isOwn: false,
-  },
-];
 
 function threadToChat(thread: MessageThread): Chat {
   const isMatchChat = !!thread.matchId;
@@ -299,7 +253,7 @@ export default function PreviewMessages() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
-  const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
+  const [messageRequests, setMessageRequests] = useState<Chat[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
