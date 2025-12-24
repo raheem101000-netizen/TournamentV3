@@ -289,7 +289,7 @@ export default function PreviewServerDetail() {
               <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2 border-t">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  <span>{server.memberCount?.toLocaleString() || 0} members</span>
+                  <span>{members.filter(m => m.username !== "Unknown").length} members</span>
                 </div>
                 <Badge variant="outline">{server.category}</Badge>
               </div>
@@ -407,7 +407,7 @@ export default function PreviewServerDetail() {
                   data-testid="button-show-members"
                 >
                   <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span>{server.memberCount || 0} members</span>
+                  <span>{members.filter(m => m.username !== "Unknown").length} members</span>
                 </button>
               </div>
             </div>
