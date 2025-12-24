@@ -119,8 +119,8 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
           <Card key={message.id} data-testid={`announcement-${message.id}`}>
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <CardTitle className="text-base">{message.message}</CardTitle>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base whitespace-pre-wrap break-words">{message.message}</CardTitle>
                   <CardDescription className="text-xs mt-1">
                     Posted by {message.username} on {new Date(message.createdAt || Date.now()).toLocaleDateString()}
                   </CardDescription>
