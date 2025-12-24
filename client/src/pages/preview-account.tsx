@@ -247,21 +247,10 @@ export default function PreviewAccount() {
                 </div>
               ) : (
                 <>
-                  <div className="relative">
-                    <Avatar className="w-24 h-24 border-4 border-primary/20">
-                      <AvatarImage src={currentUser.avatarUrl || undefined} />
-                      <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {isOwnProfile && (
-                      <Button
-                        size="icon"
-                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full"
-                        data-testid="button-edit-avatar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+                  <Avatar className="w-24 h-24 border-4 border-primary/20">
+                    <AvatarImage src={currentUser.avatarUrl || undefined} />
+                    <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
 
                   <div className="space-y-2 w-full">
                     <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
