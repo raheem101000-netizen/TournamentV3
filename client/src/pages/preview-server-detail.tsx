@@ -41,6 +41,8 @@ export default function PreviewServerDetail() {
   const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 
   const { data: categories = [] } = useQuery<ChannelCategory[]>({
@@ -251,7 +253,10 @@ export default function PreviewServerDetail() {
             </>
           )}
           {selectedChannel.type === "announcements" && (
-            <AnnouncementsChannel channelId={selectedChannel.id} />
+            <AnnouncementsChannel 
+              channelId={selectedChannel.id} 
+              canPost={server?.ownerId === currentUserId}
+            />
           )}
           {selectedChannel.type === "chat" && (
             <ChatChannel channelId={selectedChannel.id} />

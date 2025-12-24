@@ -25,6 +25,8 @@ export default function MobilePreviewServerDetail() {
   const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 
   const { data: userPermissions, isError: permissionsError, isLoading: permissionsLoading } = useQuery<{ permissions: string[] }>({
@@ -258,7 +260,10 @@ export default function MobilePreviewServerDetail() {
                 </>
               )}
               {selectedChannel.type === "announcements" && (
-                <AnnouncementsChannel channelId={selectedChannel.id} />
+                <AnnouncementsChannel 
+                  channelId={selectedChannel.id} 
+                  canPost={server?.ownerId === currentUserId}
+                />
               )}
               {selectedChannel.type === "chat" && (
                 <ChatChannel channelId={selectedChannel.id} />

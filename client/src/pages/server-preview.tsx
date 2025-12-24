@@ -29,6 +29,8 @@ export default function ServerPreview() {
   const { data: channels = [] } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 
   // Only show selected channel if user explicitly clicked one
