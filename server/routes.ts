@@ -1845,9 +1845,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all servers (for user discovery or admin)
   app.get("/api/servers", async (req, res) => {
     try {
-      // Return all public servers
+      // Return all public servers with actual member counts
       const allServers = await storage.getAllServers();
-      res.json(allServers);
+      const serversWithMemberCount = await Promise.all(
+        allServers.map(async (server) => {
+          const members = await storage.getMembersByServer(server.id);
+          const validMembers = members.filter(m => m.userId);
+          return {
+            ...server,
+            memberCount: validMembers.length,
+          };
+        })
+      );
+      res.json(serversWithMemberCount);
     } catch (error: any) {
       console.error("Error fetching servers:", error);
       res.status(500).json({ error: error.message });
@@ -1891,7 +1901,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mobile-preview/servers", async (_req, res) => {
     try {
       const servers = await storage.getAllServers();
-      res.json(servers);
+      const serversWithMemberCount = await Promise.all(
+        servers.map(async (server) => {
+          const members = await storage.getMembersByServer(server.id);
+          const validMembers = members.filter(m => m.userId);
+          return {
+            ...server,
+            memberCount: validMembers.length,
+          };
+        })
+      );
+      res.json(serversWithMemberCount);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1989,7 +2009,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!server) {
         return res.status(404).json({ error: "Server not found" });
       }
-      res.json(server);
+      // Get actual member count
+      const members = await storage.getMembersByServer(server.id);
+      const validMembers = members.filter(m => m.userId);
+      res.json({
+        ...server,
+        memberCount: validMembers.length,
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -2027,7 +2053,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/servers", async (req, res) => {
     try {
       const servers = await storage.getServersByUser(req.params.userId);
-      res.json(servers);
+      const serversWithMemberCount = await Promise.all(
+        servers.map(async (server) => {
+          const members = await storage.getMembersByServer(server.id);
+          const validMembers = members.filter(m => m.userId);
+          return {
+            ...server,
+            memberCount: validMembers.length,
+          };
+        })
+      );
+      res.json(serversWithMemberCount);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
