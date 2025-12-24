@@ -2,7 +2,8 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users, Crown } from "lucide-react";
+import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users, Crown, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ export default function PreviewServerDetail() {
   const [showMembersView, setShowMembersView] = useState(false);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -140,7 +142,10 @@ export default function PreviewServerDetail() {
               <Button 
                 size="icon" 
                 variant="ghost"
-                onClick={() => setShowMembersView(false)}
+                onClick={() => {
+                  setShowMembersView(false);
+                  setMemberSearchQuery("");
+                }}
                 data-testid="button-back-from-members"
               >
                 <ChevronDown className="w-5 h-5 rotate-90" />
@@ -157,9 +162,24 @@ export default function PreviewServerDetail() {
         </header>
 
         <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search members..."
+              value={memberSearchQuery}
+              onChange={(e) => setMemberSearchQuery(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-members"
+            />
+          </div>
           <div className="space-y-2">
             {members
               .filter((member) => member.username !== "Unknown")
+              .filter((member) => 
+                memberSearchQuery === "" || 
+                member.username.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+                member.roleName.toLowerCase().includes(memberSearchQuery.toLowerCase())
+              )
               .sort((a, b) => {
                 if (a.isOwner && !b.isOwner) return -1;
                 if (!a.isOwner && b.isOwner) return 1;
@@ -201,6 +221,15 @@ export default function PreviewServerDetail() {
                   </div>
                 </Card>
               ))}
+            {members.filter(m => m.username !== "Unknown").filter(m => 
+              memberSearchQuery === "" || 
+              m.username.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+              m.roleName.toLowerCase().includes(memberSearchQuery.toLowerCase())
+            ).length === 0 && memberSearchQuery !== "" && (
+              <p className="text-center text-muted-foreground py-4">
+                No members found matching "{memberSearchQuery}"
+              </p>
+            )}
           </div>
         </main>
 
