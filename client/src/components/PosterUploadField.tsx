@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { X, Upload, Loader2, Edit2 } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ImageEditor } from "./ImageEditor";
 
 interface PosterUploadFieldProps {
   label?: string;
@@ -19,8 +18,6 @@ export default function PosterUploadField({
   required = false
 }: PosterUploadFieldProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,34 +43,49 @@ export default function PosterUploadField({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setPendingImage(dataUrl);
-      setEditorOpen(true);
-    };
-    reader.readAsDataURL(file);
+    setIsUploading(true);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/objects/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      const fileUrl = data.fileUrl || data.url;
+      
+      onChange(fileUrl);
+      
+      toast({
+        title: "Poster uploaded",
+        description: "Your tournament poster has been uploaded.",
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload image.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
-  };
-
-  const handleEditorSave = (imageUrl: string) => {
-    onChange(imageUrl);
-    setPendingImage(null);
-    setEditorOpen(false);
   };
 
   const handleRemoveImage = () => {
     onChange("");
-  };
-
-  const handleEditExisting = () => {
-    if (value) {
-      setPendingImage(value);
-      setEditorOpen(true);
-    }
   };
 
   const handleUploadClick = () => {
@@ -97,23 +109,30 @@ export default function PosterUploadField({
       />
 
       {!value ? (
-        <div 
-          className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-muted/50 cursor-pointer hover-elevate transition-colors h-32"
+        <Button
+          type="button"
+          variant="outline"
           onClick={handleUploadClick}
+          disabled={isUploading}
+          className="w-full h-24 border-dashed"
           data-testid="poster-upload-dropzone"
         >
-          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground mb-1">
-            Upload tournament poster
-          </p>
-          <p className="text-xs text-muted-foreground">
-            16:9 aspect ratio recommended
-          </p>
-        </div>
+          {isUploading ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-sm">Uploading...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Upload className="w-6 h-6" />
+              <span className="text-sm">Upload Tournament Poster</span>
+            </div>
+          )}
+        </Button>
       ) : (
         <div className="space-y-2">
           <div 
-            className="relative rounded-lg border overflow-hidden bg-muted h-36"
+            className="relative rounded-lg border overflow-hidden bg-muted h-32"
             data-testid="poster-preview"
           >
             <img 
@@ -121,53 +140,34 @@ export default function PosterUploadField({
               alt="Tournament Poster" 
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                onClick={handleEditExisting}
-                data-testid="button-edit-poster"
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                onClick={handleRemoveImage}
-                data-testid="button-remove-poster"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={handleRemoveImage}
+              data-testid="button-remove-poster"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
           <Button
             type="button"
             variant="outline"
             onClick={handleUploadClick}
+            disabled={isUploading}
             className="w-full"
             data-testid="button-change-poster"
           >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Different Image
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4 mr-2" />
+            )}
+            {isUploading ? "Uploading..." : "Change Poster"}
           </Button>
         </div>
       )}
-
-      <p className="text-xs text-muted-foreground">
-        You can adjust zoom and position after uploading
-      </p>
-
-      <ImageEditor
-        open={editorOpen}
-        onOpenChange={(open) => {
-          setEditorOpen(open);
-          if (!open) setPendingImage(null);
-        }}
-        onSave={handleEditorSave}
-        initialImage={pendingImage || undefined}
-      />
     </div>
   );
 }
