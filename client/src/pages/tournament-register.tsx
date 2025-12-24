@@ -63,7 +63,7 @@ export default function TournamentRegister() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation(tournament.serverId ? `/server/${tournament.serverId}` : "/")}
             data-testid="button-back"
           >
             <ChevronLeft className="w-5 h-5" />
