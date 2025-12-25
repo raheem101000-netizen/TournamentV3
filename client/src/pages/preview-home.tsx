@@ -521,16 +521,16 @@ export default function PreviewHome() {
                 {/* Prize pool and entry fee - centered */}
                 <div className="flex items-center justify-center gap-4">
                   <div className="flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-1 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
-                      <Trophy className="w-3.5 h-3.5 text-yellow-500" />
-                      <span className="font-bold text-sm text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
+                    <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                      <Trophy className="w-3.5 h-3.5" />
+                      <span className="font-bold text-sm">{poster.prize}</span>
                     </div>
                     <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
                   </div>
                   <div className="flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-1 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
-                      <Coins className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                      <span className="font-semibold text-sm text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                    <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                      <Coins className="w-3.5 h-3.5" />
+                      <span className="font-semibold text-sm">{poster.entryFee}</span>
                     </div>
                     <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
                   </div>
