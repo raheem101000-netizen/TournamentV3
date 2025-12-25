@@ -438,8 +438,8 @@ export default function PreviewHome() {
               data-testid={`tournament-poster-${poster.id}`}
               onClick={() => setDetailsModal(poster)}
             >
-              {/* Image stage with 4:5 aspect - shows full image with blurred fill */}
-              <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5' }}>
+              {/* Image stage with 1:1 square aspect - shows full image with blurred fill */}
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: '1/1' }}>
                 {/* Blurred background fill */}
                 <img
                   src={poster.backgroundImage}

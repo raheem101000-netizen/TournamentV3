@@ -148,7 +148,7 @@ export default function PosterUploadField({
         
         <div 
           className="relative rounded-lg border overflow-hidden bg-muted mx-auto"
-          style={{ aspectRatio: '4/5', maxWidth: '240px' }}
+          style={{ aspectRatio: '1/1', maxWidth: '240px' }}
           data-testid="poster-editor"
         >
           {/* Blurred background fill */}
