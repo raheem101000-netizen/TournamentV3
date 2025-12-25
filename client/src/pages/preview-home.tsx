@@ -356,8 +356,8 @@ export default function PreviewHome() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-lg mx-auto px-4 py-3 space-y-2">
+      <header className="sticky top-0 z-40">
+        <div className={`container max-w-lg mx-auto px-4 ${showSearch ? "py-3 space-y-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" : "py-2"}`}>
           <div className="flex items-center justify-end gap-2">
             {showSearch ? (
               <div className="relative flex-1 animate-in fade-in slide-in-from-right-4 duration-200">
