@@ -662,11 +662,63 @@ export default function PreviewHome() {
       <Dialog open={!!joinModal} onOpenChange={() => setJoinModal(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Join Tournament</DialogTitle>
-            <DialogDescription>
-              Choose how you'd like to join {joinModal?.title}
-            </DialogDescription>
+            <DialogTitle>{joinModal?.title}</DialogTitle>
+            <DialogDescription>{joinModal?.game}</DialogDescription>
           </DialogHeader>
+          
+          {joinModal && (
+            <div className="space-y-4">
+              {/* Tournament details summary */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Prize Pool</p>
+                    <p className="font-semibold">{joinModal.prize}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Entry Fee</p>
+                    <p className="font-semibold">{joinModal.entryFee}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Start Time</p>
+                    <p className="font-semibold">{joinModal.startDate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Players</p>
+                    <p className="font-semibold">{joinModal.participants}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Monitor className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Platform</p>
+                    <p className="font-semibold">{joinModal.platform}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Region</p>
+                    <p className="font-semibold">{joinModal.region}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <p className="text-sm text-muted-foreground">Choose how to join:</p>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-3">
             <Button
