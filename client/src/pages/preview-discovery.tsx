@@ -76,6 +76,7 @@ export default function PreviewDiscovery() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [createServerOpen, setCreateServerOpen] = useState(false);
   const [serverName, setServerName] = useState("");
   const [serverDescription, setServerDescription] = useState("");
@@ -198,24 +199,40 @@ export default function PreviewDiscovery() {
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Discovery</h1>
-            <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
-              Create Server
-            </Button>
+        <div className="container max-w-lg mx-auto px-4 py-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-2xl font-bold">Servers</h1>
+            <div className="flex items-center gap-1">
+              <Button 
+                size="icon" 
+                variant={showSearch ? "default" : "ghost"}
+                onClick={() => setShowSearch(!showSearch)}
+                data-testid="button-search-toggle"
+              >
+                <Search className="w-5 h-5" />
+              </Button>
+              <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
+                <Plus className="w-4 h-4 mr-1" />
+                Create
+              </Button>
+            </div>
           </div>
           
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search servers..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              data-testid="input-search-servers"
-            />
-          </div>
+          {showSearch && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search servers..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  data-testid="input-search-servers"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
