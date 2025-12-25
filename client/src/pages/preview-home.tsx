@@ -471,24 +471,21 @@ export default function PreviewHome() {
                   alt={poster.title}
                   className="w-full h-full object-cover"
                 />
-                {/* Server badge overlay on image */}
+                {/* Server icon overlay on image */}
                 <button
-                  className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 cursor-pointer hover-elevate active-elevate-2"
+                  className="absolute top-3 left-3 z-20 cursor-pointer hover-elevate active-elevate-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId });
                   }}
                   data-testid={`button-server-${poster.id}`}
                 >
-                  <Avatar className="w-8 h-8 border-2 border-white/30">
+                  <Avatar className="w-10 h-10 border-2 border-white/30">
                     {poster.serverLogo && <AvatarImage src={poster.serverLogo} alt={poster.serverName} />}
-                    <AvatarFallback className="text-xs bg-black/40 text-white">
+                    <AvatarFallback className="text-sm bg-black/60 text-white">
                       {poster.serverLogoFallback}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-xs font-semibold text-white">
-                    {poster.serverName}
-                  </span>
                 </button>
                 
                 {/* Tournament name overlay at bottom of image */}
