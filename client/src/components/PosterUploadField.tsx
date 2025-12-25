@@ -90,13 +90,13 @@ export default function PosterUploadField({
     
     setIsSaving(true);
     try {
-      // Create canvas to render the edited image (9:16 portrait ratio like homepage)
+      // Create canvas to render the edited image (1:1 square ratio)
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not get canvas context');
 
-      const canvasWidth = 540;
-      const canvasHeight = 960;
+      const canvasWidth = 800;
+      const canvasHeight = 800;
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
 
@@ -172,16 +172,16 @@ export default function PosterUploadField({
     fileInputRef.current?.click();
   };
 
-  // Editing mode - show inline editor with homepage poster preview
+  // Editing mode - show inline editor with square poster preview
   if (rawImage) {
     return (
       <div className="space-y-3">
         <Label>{label}</Label>
-        <p className="text-xs text-muted-foreground">Preview shows how your poster will appear on the homepage</p>
+        <p className="text-xs text-muted-foreground">Square image preview - drag to reposition</p>
         
         <div 
-          className="relative rounded-lg border overflow-hidden bg-black cursor-move select-none mx-auto"
-          style={{ aspectRatio: '9/16', maxHeight: '320px' }}
+          className="relative rounded-lg border overflow-hidden bg-muted cursor-move select-none mx-auto"
+          style={{ aspectRatio: '1/1', maxWidth: '280px' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -207,31 +207,14 @@ export default function PosterUploadField({
             draggable={false}
           />
           
-          {/* Overlay gradient like homepage */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30 pointer-events-none" />
-          
-          {/* Mock poster content overlay */}
-          <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-3 py-4 pointer-events-none">
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30" />
-              <span className="text-[10px] text-white/70">Server Name</span>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-sm font-bold">Tournament Title</div>
-              <div className="flex justify-center gap-4 text-[10px]">
-                <div className="flex flex-col items-center">
-                  <span className="font-bold">Prize</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="font-bold">Entry</span>
-                </div>
-              </div>
-            </div>
+          {/* Server badge preview overlay */}
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-2 py-0.5 pointer-events-none">
+            <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30" />
+            <span className="text-[9px] text-white/80">Server</span>
           </div>
           
           {/* Drag hint */}
-          <div className="absolute top-2 left-2 right-2 flex items-center justify-center gap-1 bg-background/80 backdrop-blur-sm rounded-md px-2 py-1">
+          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-1 bg-background/80 backdrop-blur-sm rounded-md px-2 py-1">
             <Move className="w-3 h-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground">Drag to reposition</span>
           </div>

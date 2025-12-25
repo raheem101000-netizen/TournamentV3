@@ -438,87 +438,89 @@ export default function PreviewHome() {
               data-testid={`tournament-poster-${poster.id}`}
               onClick={() => setDetailsModal(poster)}
             >
-              <div className="relative h-[600px] overflow-hidden">
+              {/* Square poster image */}
+              <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
                 <img
                   src={poster.backgroundImage}
                   alt={poster.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+                {/* Server badge overlay on image */}
+                <button
+                  className="absolute top-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 cursor-pointer hover-elevate active-elevate-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId });
+                  }}
+                  data-testid={`button-server-${poster.id}`}
+                >
+                  <Avatar className="w-8 h-8 border-2 border-white/30">
+                    {poster.serverLogo && <AvatarImage src={poster.serverLogo} alt={poster.serverName} />}
+                    <AvatarFallback className="text-xs bg-black/40 text-white">
+                      {poster.serverLogoFallback}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs font-semibold text-white">
+                    {poster.serverName}
+                  </span>
+                </button>
+              </div>
 
-                <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
-                  <button
-                    className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
-                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId })}
-                    data-testid={`button-server-${poster.id}`}
-                  >
-                    <Avatar className="w-16 h-16 border-4 border-white/30">
-                      {poster.serverLogo && <AvatarImage src={poster.serverLogo} alt={poster.serverName} />}
-                      <AvatarFallback className="text-2xl bg-black/40 backdrop-blur-sm text-white">
-                        {poster.serverLogoFallback}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-xs font-semibold text-white/90 tracking-wider uppercase">
-                      {poster.serverName}
-                    </div>
-                  </button>
-
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-3xl font-black mb-3 drop-shadow-2xl leading-tight">
-                        {poster.title}
-                      </h2>
-                      
-                      {poster.game && (
-                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-sm font-semibold">
-                          {poster.game}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-center gap-10">
-                      <div className="flex flex-col items-center">
-                        <Trophy className="w-6 h-6 mb-1" />
-                        <span className="text-2xl font-bold">{poster.prize}</span>
-                        <span className="text-xs text-white/70">Prize Pool</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <Coins className="w-6 h-6 mb-1" />
-                        <span className="text-2xl font-bold">{poster.entryFee}</span>
-                        <span className="text-xs text-white/70">Entry Fee</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1.5 mx-auto">
-                        {poster.participants} Players
+              {/* Tournament info section */}
+              <div className="p-4 space-y-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-bold leading-tight truncate">
+                      {poster.title}
+                    </h2>
+                    {poster.game && (
+                      <Badge variant="secondary" className="mt-1 text-xs">
+                        {poster.game}
                       </Badge>
-                      <span className="text-white/80 text-sm">Starts {poster.startDate}</span>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="shrink-0 text-xs">
+                    {poster.participants} Players
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <Trophy className="w-4 h-4 text-yellow-500" />
+                      <span className="font-semibold">{poster.prize}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{poster.entryFee}</span>
                     </div>
                   </div>
+                  <span className="text-sm text-muted-foreground">{poster.startDate}</span>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="lg" 
-                      className="bg-green-600 text-white hover:bg-green-700 font-bold px-6 flex-1"
-                      onClick={() => setJoinModal(poster)}
-                      data-testid={`button-join-${poster.id}`}
-                    >
-                      Join Tournament
-                    </Button>
-                    <Button 
-                      size="icon"
-                      variant="outline"
-                      className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetailsModal(poster);
-                      }}
-                      data-testid={`button-details-${poster.id}`}
-                    >
-                      <Info className="w-4 h-4" />
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="default" 
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setJoinModal(poster);
+                    }}
+                    data-testid={`button-join-${poster.id}`}
+                  >
+                    Join Tournament
+                  </Button>
+                  <Button 
+                    size="icon"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDetailsModal(poster);
+                    }}
+                    data-testid={`button-details-${poster.id}`}
+                  >
+                    <Info className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </Card>
