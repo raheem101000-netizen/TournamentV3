@@ -438,16 +438,24 @@ export default function PreviewHome() {
               data-testid={`tournament-poster-${poster.id}`}
               onClick={() => setDetailsModal(poster)}
             >
-              {/* Square poster image */}
-              <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
+              {/* Image stage with 4:5 aspect - shows full image with blurred fill */}
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5' }}>
+                {/* Blurred background fill */}
+                <img
+                  src={poster.backgroundImage}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                  aria-hidden="true"
+                />
+                {/* Actual image - fully visible */}
                 <img
                   src={poster.backgroundImage}
                   alt={poster.title}
-                  className="w-full h-full object-cover"
+                  className="relative w-full h-full object-contain z-10"
                 />
                 {/* Server badge overlay on image */}
                 <button
-                  className="absolute top-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 cursor-pointer hover-elevate active-elevate-2"
+                  className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 cursor-pointer hover-elevate active-elevate-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId });
