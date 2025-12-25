@@ -14,6 +14,8 @@ export const tournaments = pgTable("tournaments", {
   currentRound: integer("current_round").default(1),
   swissRounds: integer("swiss_rounds"),
   imageUrl: text("image_url"),
+  posterWidth: integer("poster_width"),
+  posterHeight: integer("poster_height"),
   prizeReward: text("prize_reward"),
   entryFee: text("entry_fee"),
   paymentMethod: text("payment_method", { enum: ["none", "stripe", "paypal", "cryptocurrency"] }).default("none"),

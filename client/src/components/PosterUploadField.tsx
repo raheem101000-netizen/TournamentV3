@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 interface PosterUploadFieldProps {
   label?: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, width?: number, height?: number) => void;
   required?: boolean;
 }
 
@@ -21,6 +21,7 @@ export default function PosterUploadField({
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [rawImage, setRawImage] = useState<string | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [zoom, setZoom] = useState(100);
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const { toast } = useToast();
@@ -53,9 +54,16 @@ export default function PosterUploadField({
     // Read as data URL for editing
     const reader = new FileReader();
     reader.onload = (e) => {
-      setRawImage(e.target?.result as string);
-      setZoom(100);
-      setPosition({ x: 50, y: 50 });
+      const dataUrl = e.target?.result as string;
+      // Get image dimensions
+      const img = new Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+        setRawImage(dataUrl);
+        setZoom(100);
+        setPosition({ x: 50, y: 50 });
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
 
@@ -86,20 +94,10 @@ export default function PosterUploadField({
   };
 
   const handleSaveEdited = async () => {
-    if (!rawImage) return;
+    if (!rawImage || !imageDimensions) return;
     
     setIsSaving(true);
     try {
-      // Create canvas to render the edited image (16:9 wide)
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get canvas context');
-
-      const canvasWidth = 1280;
-      const canvasHeight = 720;
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
@@ -107,15 +105,30 @@ export default function PosterUploadField({
         img.src = rawImage;
       });
 
-      // Draw blurred background first
-      ctx.filter = 'blur(20px)';
-      const bgScale = Math.max(canvasWidth / img.width, canvasHeight / img.height) * 1.2;
-      const bgW = img.width * bgScale;
-      const bgH = img.height * bgScale;
-      ctx.drawImage(img, (canvasWidth - bgW) / 2, (canvasHeight - bgH) / 2, bgW, bgH);
-      ctx.filter = 'none';
+      // Calculate canvas size based on image aspect ratio
+      // Clamp ratio between 0.5 (2:1 tall) and 2.0 (2:1 wide) for reasonable display
+      const aspectRatio = Math.min(2.0, Math.max(0.5, img.width / img.height));
+      const maxDimension = 1280;
+      let canvasWidth: number, canvasHeight: number;
+      
+      if (aspectRatio >= 1) {
+        // Landscape or square
+        canvasWidth = maxDimension;
+        canvasHeight = Math.round(maxDimension / aspectRatio);
+      } else {
+        // Portrait
+        canvasHeight = maxDimension;
+        canvasWidth = Math.round(maxDimension * aspectRatio);
+      }
 
-      // Draw main image with zoom/position
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Draw the image with zoom/position applied
       const zoomFactor = zoom / 100;
       const baseScale = Math.min(canvasWidth / img.width, canvasHeight / img.height);
       const scale = baseScale * zoomFactor;
@@ -126,6 +139,10 @@ export default function PosterUploadField({
       const offsetY = (position.y / 100 - 0.5) * (scaledH - canvasHeight);
       const drawX = (canvasWidth - scaledW) / 2 - offsetX;
       const drawY = (canvasHeight - scaledH) / 2 - offsetY;
+
+      // Fill background with solid color first (in case zoom < 100%)
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
       ctx.drawImage(img, drawX, drawY, scaledW, scaledH);
 
@@ -146,8 +163,9 @@ export default function PosterUploadField({
       if (!uploadResponse.ok) throw new Error('Upload failed');
 
       const data = await uploadResponse.json();
-      onChange(data.fileUrl || data.url);
+      onChange(data.fileUrl || data.url, canvasWidth, canvasHeight);
       setRawImage(null);
+      setImageDimensions(null);
       setZoom(100);
       setPosition({ x: 50, y: 50 });
       
@@ -168,6 +186,7 @@ export default function PosterUploadField({
 
   const handleCancelEdit = () => {
     setRawImage(null);
+    setImageDimensions(null);
     setZoom(100);
     setPosition({ x: 50, y: 50 });
   };
@@ -190,20 +209,18 @@ export default function PosterUploadField({
         
         <div 
           className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none w-full"
-          style={{ aspectRatio: '16/9' }}
+          style={{ 
+            aspectRatio: imageDimensions 
+              ? `${Math.min(2.0, Math.max(0.5, imageDimensions.width / imageDimensions.height))}` 
+              : '16/9',
+            backgroundColor: '#1a1a1a'
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           data-testid="poster-editor"
         >
-          {/* Blurred background fill */}
-          <img 
-            src={rawImage} 
-            alt="" 
-            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60 pointer-events-none"
-            aria-hidden="true"
-          />
           {/* Actual image with zoom/position */}
           <img 
             src={rawImage} 

@@ -36,6 +36,8 @@ export default function CreateTournamentDialog({
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [posterWidth, setPosterWidth] = useState<number | null>(null);
+  const [posterHeight, setPosterHeight] = useState<number | null>(null);
   const [prizeReward, setPrizeReward] = useState("");
   const [entryFee, setEntryFee] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -116,6 +118,8 @@ export default function CreateTournamentDialog({
       name,
       game,
       imageUrl: imageUrl || null,
+      posterWidth,
+      posterHeight,
       prizeReward: prizeReward || null,
       entryFee: entryFee || null,
       startDate: startDate ? new Date(startDate) : null,
@@ -139,6 +143,8 @@ export default function CreateTournamentDialog({
     setName("");
     setGame("");
     setImageUrl("");
+    setPosterWidth(null);
+    setPosterHeight(null);
     setPrizeReward("");
     setEntryFee("");
     setStartDate("");
@@ -207,7 +213,13 @@ export default function CreateTournamentDialog({
             <PosterUploadField
               label="Tournament Poster"
               value={imageUrl}
-              onChange={setImageUrl}
+              onChange={(url, width, height) => {
+                setImageUrl(url);
+                if (width && height) {
+                  setPosterWidth(width);
+                  setPosterHeight(height);
+                }
+              }}
             />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

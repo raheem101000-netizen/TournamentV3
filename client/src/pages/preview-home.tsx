@@ -28,8 +28,8 @@ export default function PreviewHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set());
-  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
-  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
+  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; posterWidth?: number | null; posterHeight?: number | null; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
+  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; posterWidth?: number | null; posterHeight?: number | null; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
@@ -251,6 +251,8 @@ export default function PreviewHome() {
         serverLogo: server.iconUrl || null,
         serverLogoFallback: server.name.charAt(0),
         backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        posterWidth: t.posterWidth,
+        posterHeight: t.posterHeight,
         prize: t.prizeReward || "TBD",
         entryFee: t.entryFee || "Free",
         startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
@@ -438,20 +440,20 @@ export default function PreviewHome() {
               data-testid={`tournament-poster-${poster.id}`}
               onClick={() => setDetailsModal(poster)}
             >
-              {/* Image stage with 16:9 wide aspect - shows full image with blurred fill */}
-              <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                {/* Blurred background fill */}
-                <img
-                  src={poster.backgroundImage}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
-                  aria-hidden="true"
-                />
-                {/* Actual image - fully visible */}
+              {/* Image stage - uses stored dimensions or defaults to 16:9 */}
+              <div 
+                className="relative w-full overflow-hidden bg-black/20" 
+                style={{ 
+                  aspectRatio: poster.posterWidth && poster.posterHeight 
+                    ? `${poster.posterWidth}/${poster.posterHeight}` 
+                    : '16/9' 
+                }}
+              >
+                {/* Image - covers the container since dimensions match */}
                 <img
                   src={poster.backgroundImage}
                   alt={poster.title}
-                  className="relative w-full h-full object-contain z-10"
+                  className="w-full h-full object-cover"
                 />
                 {/* Server badge overlay on image */}
                 <button

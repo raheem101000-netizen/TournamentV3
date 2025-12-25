@@ -1368,6 +1368,8 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [posterWidth, setPosterWidth] = useState<number | null>(null);
+  const [posterHeight, setPosterHeight] = useState<number | null>(null);
   const [prizeReward, setPrizeReward] = useState("");
   const [entryFee, setEntryFee] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -1384,6 +1386,8 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       setName(tournament.name || "");
       setGame(tournament.game || "");
       setImageUrl(tournament.imageUrl || "");
+      setPosterWidth(tournament.posterWidth || null);
+      setPosterHeight(tournament.posterHeight || null);
       setPrizeReward(tournament.prizeReward || "");
       setEntryFee(tournament.entryFee || "");
       setStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().slice(0, 16) : "");
@@ -1412,6 +1416,8 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       name: trimmedName,
       game: game.trim() || null,
       imageUrl: imageUrl.trim() || null,
+      posterWidth,
+      posterHeight,
       prizeReward: prizeReward.trim() || null,
       entryFee: entryFee.trim() || null,
       startDate: startDate ? new Date(startDate) : null,
@@ -1457,7 +1463,13 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
           <PosterUploadField
             label="Tournament Poster"
             value={imageUrl}
-            onChange={setImageUrl}
+            onChange={(url, width, height) => {
+              setImageUrl(url);
+              if (width && height) {
+                setPosterWidth(width);
+                setPosterHeight(height);
+              }
+            }}
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
