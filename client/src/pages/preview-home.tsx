@@ -477,35 +477,35 @@ export default function PreviewHome() {
               </div>
 
               {/* Tournament info section */}
-              <div className="p-4 space-y-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold leading-tight truncate">
-                      {poster.title}
-                    </h2>
-                    {poster.game && (
-                      <Badge variant="secondary" className="mt-1 text-xs">
-                        {poster.game}
-                      </Badge>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="shrink-0 text-xs">
-                    {poster.participants} Players
-                  </Badge>
+              <div className="p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-lg font-bold leading-tight truncate flex-1 min-w-0">
+                    {poster.title}
+                  </h2>
+                  {poster.game && (
+                    <Badge variant="secondary" className="shrink-0 text-xs">
+                      {poster.game}
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Trophy className="w-4 h-4 text-yellow-500" />
-                      <span className="font-semibold">{poster.prize}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Coins className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{poster.entryFee}</span>
-                    </div>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    <span className="font-semibold">{poster.prize}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{poster.startDate}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Coins className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{poster.entryFee}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{poster.participants}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{poster.startDate}</span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
