@@ -492,15 +492,27 @@ export default function PreviewHome() {
                 </button>
                 
                 {/* Tournament name overlay at bottom of image */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 py-3 pt-8">
+                <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 py-2 pt-8">
                   <h2 className="text-xl font-bold text-white leading-tight drop-shadow-lg">
                     {poster.title}
                   </h2>
-                  {poster.game && (
-                    <span className="text-sm text-white/80 font-medium">
-                      {poster.game}
-                    </span>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    {poster.game && (
+                      <span className="text-sm text-white/80 font-medium">
+                        {poster.game}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-white/70">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span>{poster.participants}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{poster.startDate}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -521,18 +533,6 @@ export default function PreviewHome() {
                       <span className="font-semibold text-sm text-green-600 dark:text-green-400">{poster.entryFee}</span>
                     </div>
                     <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
-                  </div>
-                </div>
-                
-                {/* Teams and date - opposite sides */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>{poster.participants} Players</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{poster.startDate}</span>
                   </div>
                 </div>
 
