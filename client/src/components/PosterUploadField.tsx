@@ -106,8 +106,9 @@ export default function PosterUploadField({
       });
 
       // Calculate canvas size based on image aspect ratio and zoom level
-      // Clamp ratio between 0.5 (2:1 tall) and 2.0 (2:1 wide) for reasonable display
-      const aspectRatio = Math.min(2.0, Math.max(0.5, img.width / img.height));
+      // Clamp ratio between 0.75 (4:3 portrait max) and 2.0 (2:1 wide) for reasonable display
+      // This prevents excessively tall posters
+      const aspectRatio = Math.min(2.0, Math.max(0.75, img.width / img.height));
       const maxDimension = 1280;
       // When zoom < 100%, we shrink the canvas proportionally
       const zoomScale = Math.min(1, zoom / 100);
@@ -215,7 +216,7 @@ export default function PosterUploadField({
           className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none"
           style={{ 
             aspectRatio: imageDimensions 
-              ? `${Math.min(2.0, Math.max(0.5, imageDimensions.width / imageDimensions.height))}` 
+              ? `${Math.min(2.0, Math.max(0.75, imageDimensions.width / imageDimensions.height))}` 
               : '16/9',
             width: `${Math.min(100, zoom)}%`,
             maxWidth: '100%',
