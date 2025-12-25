@@ -194,14 +194,15 @@ export default function PosterUploadField({
             alt="Edit Poster" 
             className="absolute pointer-events-none"
             style={{
-              width: `${zoom}%`,
-              height: `${zoom}%`,
-              objectFit: 'cover',
+              width: zoom <= 100 ? `${zoom}%` : `${zoom}%`,
+              height: 'auto',
+              maxWidth: zoom < 100 ? `${zoom}%` : 'none',
+              minWidth: zoom >= 100 ? '100%' : 'auto',
+              minHeight: zoom >= 100 ? '100%' : 'auto',
+              objectFit: 'contain',
               left: `${50 - position.x}%`,
               top: `${50 - position.y}%`,
               transform: 'translate(-50%, -50%)',
-              minWidth: '100%',
-              minHeight: '100%',
             }}
             draggable={false}
           />
@@ -241,7 +242,7 @@ export default function PosterUploadField({
           <Slider
             value={[zoom]}
             onValueChange={(v) => setZoom(v[0])}
-            min={50}
+            min={10}
             max={200}
             step={5}
             className="flex-1"
