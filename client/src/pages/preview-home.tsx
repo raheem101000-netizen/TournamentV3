@@ -489,22 +489,25 @@ export default function PreviewHome() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2 text-sm">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
                     <Trophy className="w-4 h-4 text-yellow-500" />
-                    <span className="font-semibold">{poster.prize}</span>
+                    <span className="font-bold text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Coins className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{poster.entryFee}</span>
+                  <div className="flex items-center gap-1.5 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
+                    <Coins className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="font-semibold text-green-600 dark:text-green-400">{poster.entryFee}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{poster.participants}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{poster.participants} Players</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{poster.startDate}</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{poster.startDate}</span>
                   </div>
                 </div>
 
