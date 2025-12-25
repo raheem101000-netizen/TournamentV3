@@ -2662,7 +2662,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload endpoint - saves to disk using multer
+  // Request presigned URL for Object Storage upload - Reference: blueprint:javascript_object_storage
+  // This endpoint returns a presigned URL that allows direct upload to cloud storage
+  app.post("/api/uploads/request-url", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const { uploadURL, objectPath } = await objectStorageService.getObjectEntityUploadURL();
+      
+      res.json({
+        uploadURL,
+        objectPath,
+        metadata: {
+          name: req.body.name,
+          size: req.body.size,
+          contentType: req.body.contentType
+        }
+      });
+    } catch (error: any) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // File upload endpoint - saves to disk using multer (legacy, for backward compatibility)
   app.post("/api/objects/upload", requireAuth, upload.single("file"), async (req, res) => {
     try {
       const file = req.file as Express.Multer.File | undefined;
