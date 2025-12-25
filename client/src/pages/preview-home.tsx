@@ -505,8 +505,9 @@ export default function PreviewHome() {
               </div>
 
               {/* Tournament info section */}
-              <div className="p-2 space-y-1.5">
-                <div className="flex items-start justify-between gap-2">
+              <div className="p-2 space-y-2">
+                {/* Prize pool and entry fee - centered */}
+                <div className="flex items-center justify-center gap-4">
                   <div className="flex flex-col items-center gap-0.5">
                     <div className="flex items-center gap-1 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
                       <Trophy className="w-3.5 h-3.5 text-yellow-500" />
@@ -514,22 +515,24 @@ export default function PreviewHome() {
                     </div>
                     <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
                   </div>
-                  <div className="flex flex-col items-center gap-0.5 text-muted-foreground text-[10px]">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      <span>{poster.participants} Players</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{poster.startDate}</span>
-                    </div>
-                  </div>
                   <div className="flex flex-col items-center gap-0.5">
                     <div className="flex items-center gap-1 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
                       <Coins className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                       <span className="font-semibold text-sm text-green-600 dark:text-green-400">{poster.entryFee}</span>
                     </div>
                     <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
+                  </div>
+                </div>
+                
+                {/* Teams and date - centered metadata row */}
+                <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    <span>{poster.participants} Players</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{poster.startDate}</span>
                   </div>
                 </div>
 
