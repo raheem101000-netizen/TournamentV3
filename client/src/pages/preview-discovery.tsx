@@ -225,9 +225,8 @@ export default function PreviewDiscovery() {
             >
               <Search className="w-5 h-5" />
             </Button>
-            <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
-              <Plus className="w-4 h-4 mr-1" />
-              Create
+            <Button size="icon" variant="ghost" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
+              <Plus className="w-5 h-5" />
             </Button>
           </div>
         </div>
