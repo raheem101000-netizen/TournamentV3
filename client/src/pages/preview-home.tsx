@@ -520,7 +520,7 @@ export default function PreviewHome() {
                 <div className="flex items-center gap-2">
                   <Button 
                     size="default" 
-                    className="flex-1"
+                    className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white"
                     onClick={(e) => {
                       e.stopPropagation();
                       setJoinModal(poster);
