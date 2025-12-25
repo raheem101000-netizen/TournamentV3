@@ -474,21 +474,22 @@ export default function PreviewHome() {
                     {poster.serverName}
                   </span>
                 </button>
+                
+                {/* Tournament name overlay at bottom of image */}
+                <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 py-3 pt-8">
+                  <h2 className="text-xl font-bold text-white leading-tight drop-shadow-lg">
+                    {poster.title}
+                  </h2>
+                  {poster.game && (
+                    <span className="text-sm text-white/80 font-medium">
+                      {poster.game}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Tournament info section */}
               <div className="p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-lg font-bold leading-tight truncate flex-1 min-w-0">
-                    {poster.title}
-                  </h2>
-                  {poster.game && (
-                    <Badge variant="secondary" className="shrink-0 text-xs">
-                      {poster.game}
-                    </Badge>
-                  )}
-                </div>
-
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
                     <Trophy className="w-4 h-4 text-yellow-500" />
