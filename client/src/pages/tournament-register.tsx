@@ -2,10 +2,12 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronLeft, Clock, Users, Trophy, Monitor, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Tournament } from "@shared/schema";
+import type { Tournament, Server } from "@shared/schema";
 import TournamentRegistrationForm from "@/components/TournamentRegistrationForm";
+import { format } from "date-fns";
 
 export default function TournamentRegister() {
   const [match, params] = useRoute("/tournament/:id/register");
@@ -17,6 +19,11 @@ export default function TournamentRegister() {
   const { data: tournament, isLoading } = useQuery<Tournament>({
     queryKey: [`/api/tournaments/${tournamentId}`],
     enabled: !!tournamentId,
+  });
+
+  const { data: server } = useQuery<Server>({
+    queryKey: [`/api/servers/${tournament?.serverId}`],
+    enabled: !!tournament?.serverId,
   });
 
   if (!match) return null;
@@ -79,7 +86,7 @@ export default function TournamentRegister() {
           <CardHeader>
             <CardTitle className="text-lg">Tournament Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {tournament.imageUrl && (
               <img
                 src={tournament.imageUrl}
@@ -87,25 +94,80 @@ export default function TournamentRegister() {
                 className="w-full h-40 object-cover rounded-md"
               />
             )}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Format</p>
-                <p className="font-semibold capitalize">{tournament.format.replace("_", " ")}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Teams</p>
-                <p className="font-semibold">{tournament.totalTeams === -1 ? "Unlimited" : tournament.totalTeams}</p>
-              </div>
-              {tournament.prizeReward && (
+
+            {/* Server/Host Info */}
+            {server && (
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12">
+                  {server.iconUrl && <AvatarImage src={server.iconUrl} alt={server.name} />}
+                  <AvatarFallback className="text-2xl">{server.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <p className="text-muted-foreground">Prize Pool</p>
-                  <p className="font-semibold">{tournament.prizeReward}</p>
+                  <p className="font-semibold">{server.name}</p>
+                  <p className="text-sm text-muted-foreground">Tournament Host</p>
+                </div>
+              </div>
+            )}
+
+            {/* Prize Pool & Entry Fee */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Prize Pool</p>
+                <p className="text-xl font-bold text-green-600">{tournament.prizeReward || "No Prize"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Entry Fee</p>
+                <p className="text-xl font-bold">{tournament.entryFee || "Free"}</p>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            <div className="space-y-3 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">Start Time</span>
+                </div>
+                <span className="font-semibold text-sm">
+                  {tournament.startDate ? format(new Date(tournament.startDate), "MMM d, yyyy • h:mm a") : "TBD"}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">Teams/Players</span>
+                </div>
+                <span className="font-semibold text-sm">
+                  {tournament.totalTeams === -1 ? "Unlimited" : `${tournament.totalTeams} max`}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Trophy className="w-4 h-4" />
+                  <span className="text-sm">Format</span>
+                </div>
+                <span className="font-semibold text-sm capitalize">{tournament.format.replace("_", " ")}</span>
+              </div>
+
+              {tournament.platform && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Monitor className="w-4 h-4" />
+                    <span className="text-sm">Platform</span>
+                  </div>
+                  <span className="font-semibold text-sm">{tournament.platform}</span>
                 </div>
               )}
-              {tournament.entryFee && (
-                <div>
-                  <p className="text-muted-foreground">Entry Fee</p>
-                  <p className="font-semibold">{tournament.entryFee}</p>
+
+              {tournament.region && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">Region</span>
+                  </div>
+                  <span className="font-semibold text-sm">{tournament.region}</span>
                 </div>
               )}
             </div>
