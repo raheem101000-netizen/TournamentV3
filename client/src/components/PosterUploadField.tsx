@@ -90,9 +90,48 @@ export default function PosterUploadField({
     
     setIsSaving(true);
     try {
-      // Convert base64 to blob and upload as-is (no cropping needed)
-      const response = await fetch(rawImage);
-      const blob = await response.blob();
+      // Create canvas to render the edited image (1:1 square)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      const canvasSize = 800;
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = rawImage;
+      });
+
+      // Draw blurred background first
+      ctx.filter = 'blur(20px)';
+      const bgScale = Math.max(canvasSize / img.width, canvasSize / img.height) * 1.2;
+      const bgW = img.width * bgScale;
+      const bgH = img.height * bgScale;
+      ctx.drawImage(img, (canvasSize - bgW) / 2, (canvasSize - bgH) / 2, bgW, bgH);
+      ctx.filter = 'none';
+
+      // Draw main image with zoom/position
+      const zoomFactor = zoom / 100;
+      const baseScale = Math.min(canvasSize / img.width, canvasSize / img.height);
+      const scale = baseScale * zoomFactor;
+      const scaledW = img.width * scale;
+      const scaledH = img.height * scale;
+      
+      const offsetX = (position.x / 100 - 0.5) * (scaledW - canvasSize);
+      const offsetY = (position.y / 100 - 0.5) * (scaledH - canvasSize);
+      const drawX = (canvasSize - scaledW) / 2 - offsetX;
+      const drawY = (canvasSize - scaledH) / 2 - offsetY;
+
+      ctx.drawImage(img, drawX, drawY, scaledW, scaledH);
+
+      // Convert to blob and upload
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to create blob')), 'image/jpeg', 0.9);
+      });
 
       const formData = new FormData();
       formData.append('file', blob, 'poster.jpg');
@@ -108,6 +147,8 @@ export default function PosterUploadField({
       const data = await uploadResponse.json();
       onChange(data.fileUrl || data.url);
       setRawImage(null);
+      setZoom(100);
+      setPosition({ x: 50, y: 50 });
       
       toast({
         title: "Poster saved",
@@ -139,37 +180,66 @@ export default function PosterUploadField({
     fileInputRef.current?.click();
   };
 
-  // Editing mode - show preview with 4:5 aspect ratio (matches homepage display)
+  // Editing mode - show preview with zoom/pan controls
   if (rawImage) {
     return (
       <div className="space-y-3">
         <Label>{label}</Label>
-        <p className="text-xs text-muted-foreground">Preview - your full image will be displayed with a blurred background fill</p>
+        <p className="text-xs text-muted-foreground">Drag to reposition, use slider to resize</p>
         
         <div 
-          className="relative rounded-lg border overflow-hidden bg-muted mx-auto"
+          className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none"
           style={{ aspectRatio: '1/1', maxWidth: '240px' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           data-testid="poster-editor"
         >
           {/* Blurred background fill */}
           <img 
             src={rawImage} 
             alt="" 
-            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60"
+            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60 pointer-events-none"
             aria-hidden="true"
           />
-          {/* Actual image - fully visible */}
+          {/* Actual image with zoom/position */}
           <img 
             src={rawImage} 
             alt="Poster Preview" 
-            className="relative w-full h-full object-contain z-10"
+            className="absolute pointer-events-none z-10"
+            style={{
+              width: `${zoom}%`,
+              height: 'auto',
+              minWidth: zoom >= 100 ? '100%' : 'auto',
+              minHeight: zoom >= 100 ? '100%' : 'auto',
+              left: `${50 - position.x}%`,
+              top: `${50 - position.y}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            draggable={false}
           />
           
-          {/* Server badge preview overlay */}
-          <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-2 py-0.5 pointer-events-none">
-            <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30" />
-            <span className="text-[9px] text-white/80">Server</span>
+          {/* Drag hint */}
+          <div className="absolute bottom-2 left-2 right-2 z-20 flex items-center justify-center gap-1 bg-background/80 backdrop-blur-sm rounded-md px-2 py-1">
+            <Move className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">Drag to reposition</span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <ZoomOut className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <Slider
+            value={[zoom]}
+            onValueChange={(v) => setZoom(v[0])}
+            min={50}
+            max={200}
+            step={5}
+            className="flex-1"
+            data-testid="slider-zoom"
+          />
+          <ZoomIn className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-xs text-muted-foreground w-12">{zoom}%</span>
         </div>
 
         <div className="flex gap-2">
