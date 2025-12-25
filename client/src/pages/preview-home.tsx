@@ -489,15 +489,21 @@ export default function PreviewHome() {
               </div>
 
               {/* Tournament info section */}
-              <div className="p-3 space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
-                    <Trophy className="w-4 h-4 text-yellow-500" />
-                    <span className="font-bold text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
+              <div className="p-3 space-y-3">
+                <div className="flex items-center justify-center gap-6">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1.5 bg-yellow-500/15 dark:bg-yellow-500/20 px-3 py-1.5 rounded-md">
+                      <Trophy className="w-4 h-4 text-yellow-500" />
+                      <span className="font-bold text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
-                    <Coins className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span className="font-semibold text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1.5 bg-green-500/15 dark:bg-green-500/20 px-3 py-1.5 rounded-md">
+                      <Coins className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
                   </div>
                 </div>
 
