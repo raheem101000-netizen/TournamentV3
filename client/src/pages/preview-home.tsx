@@ -356,81 +356,70 @@ export default function PreviewHome() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <h1 className="text-2xl font-bold">Tournaments</h1>
-            <div className="flex items-center gap-1">
-              <Button 
-                size="icon" 
-                variant={showSearch ? "default" : "ghost"}
-                onClick={() => setShowSearch(!showSearch)}
-                data-testid="button-search-toggle"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button size="icon" variant="ghost" data-testid="button-notifications">
-                <Trophy className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tournaments..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value && !showSearch) setShowSearch(true);
+                }}
+                onFocus={() => setShowSearch(true)}
+                data-testid="input-search-tournaments"
+              />
             </div>
+            <Button size="icon" variant="ghost" data-testid="button-notifications">
+              <Trophy className="w-5 h-5" />
+            </Button>
           </div>
           
           {showSearch && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tournaments..."
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  data-testid="input-search-tournaments"
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                <Badge 
-                  variant={activeFilters.size === 0 ? "default" : "outline"} 
-                  className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-                  onClick={() => setActiveFilters(new Set())}
-                  data-testid="filter-all"
-                >
-                  All
-                </Badge>
-                <Badge 
-                  variant={activeFilters.has("prize") ? "default" : "outline"} 
-                  className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-                  onClick={() => toggleFilter("prize")}
-                  data-testid="filter-prize"
-                >
-                  Prize
-                </Badge>
-                <Badge 
-                  variant={activeFilters.has("no-prize") ? "default" : "outline"} 
-                  className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-                  onClick={() => toggleFilter("no-prize")}
-                  data-testid="filter-no-prize"
-                >
-                  No Prize
-                </Badge>
-                <Badge 
-                  variant={activeFilters.has("free") ? "default" : "outline"} 
-                  className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-                  onClick={() => toggleFilter("free")}
-                  data-testid="filter-free"
-                >
-                  Free Entry
-                </Badge>
-                <Badge 
-                  variant={activeFilters.has("paid") ? "default" : "outline"} 
-                  className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-                  onClick={() => toggleFilter("paid")}
-                  data-testid="filter-paid"
-                >
-                  Paid Entry
-                </Badge>
-              </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 animate-in fade-in slide-in-from-top-2 duration-200">
+              <Badge 
+                variant={activeFilters.size === 0 ? "default" : "outline"} 
+                className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+                onClick={() => setActiveFilters(new Set())}
+                data-testid="filter-all"
+              >
+                All
+              </Badge>
+              <Badge 
+                variant={activeFilters.has("prize") ? "default" : "outline"} 
+                className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+                onClick={() => toggleFilter("prize")}
+                data-testid="filter-prize"
+              >
+                Prize
+              </Badge>
+              <Badge 
+                variant={activeFilters.has("no-prize") ? "default" : "outline"} 
+                className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+                onClick={() => toggleFilter("no-prize")}
+                data-testid="filter-no-prize"
+              >
+                No Prize
+              </Badge>
+              <Badge 
+                variant={activeFilters.has("free") ? "default" : "outline"} 
+                className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+                onClick={() => toggleFilter("free")}
+                data-testid="filter-free"
+              >
+                Free Entry
+              </Badge>
+              <Badge 
+                variant={activeFilters.has("paid") ? "default" : "outline"} 
+                className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+                onClick={() => toggleFilter("paid")}
+                data-testid="filter-paid"
+              >
+                Paid Entry
+              </Badge>
             </div>
           )}
         </div>
