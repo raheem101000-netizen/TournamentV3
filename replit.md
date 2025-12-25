@@ -31,6 +31,12 @@ Preferred communication style: Simple, everyday language.
 *   **Schema Design**: Key tables include `servers`, `channels`, `channelCategories`, `serverRoles`, `serverMembers`, `serverBans`, `serverInvites`, `tournaments`, `teams`, `matches`, `channelMessages`, and `users`.
 *   **Data Relationships**: Employs one-to-many and many-to-many relationships.
 *   **Validation**: Utilizes Zod schemas generated from Drizzle tables for type-safe data validation.
+*   **File Uploads**: Uses Replit Object Storage with presigned URLs for persistent file storage. The upload flow:
+    1. Client requests a presigned URL via `POST /api/uploads/request-url`
+    2. Client uploads file directly to the presigned URL
+    3. Client normalizes the object path via `POST /api/objects/normalize` to set public ACL
+    4. Files are served via `/objects/{objectPath}` route
+*   **Legacy Upload Support**: Old uploads using `/api/uploads/{fileId}` are still supported for backward compatibility.
 
 ## External Dependencies
 *   **Database**: Neon PostgreSQL.
