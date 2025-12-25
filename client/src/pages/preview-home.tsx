@@ -507,13 +507,13 @@ export default function PreviewHome() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" />
+                <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <Users className="w-3 h-3" />
                     <span>{poster.participants} Players</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <Clock className="w-3 h-3" />
                     <span>{poster.startDate}</span>
                   </div>
                 </div>
