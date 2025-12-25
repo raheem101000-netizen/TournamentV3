@@ -70,7 +70,7 @@ export default function TournamentRegister() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setLocation(tournament.serverId ? `/server/${tournament.serverId}` : "/")}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ChevronLeft className="w-5 h-5" />
