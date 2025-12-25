@@ -505,29 +505,33 @@ export default function PreviewHome() {
               </div>
 
               {/* Tournament info section */}
-              <div className="px-2 py-1.5 space-y-1">
+              <div className="p-2 space-y-2">
                 {/* Prize pool and entry fee - centered */}
-                <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-1 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-0.5 rounded-md">
-                    <Trophy className="w-3 h-3 text-yellow-500" />
-                    <span className="font-bold text-xs text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
-                    <span className="text-[8px] text-yellow-600/70 dark:text-yellow-400/70 uppercase">Prize</span>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-1 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
+                      <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+                      <span className="font-bold text-sm text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
                   </div>
-                  <div className="flex items-center gap-1 bg-green-500/15 dark:bg-green-500/20 px-2 py-0.5 rounded-md">
-                    <Coins className="w-3 h-3 text-green-600 dark:text-green-400" />
-                    <span className="font-semibold text-xs text-green-600 dark:text-green-400">{poster.entryFee}</span>
-                    <span className="text-[8px] text-green-600/70 dark:text-green-400/70 uppercase">Entry</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-1 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
+                      <Coins className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold text-sm text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
                   </div>
                 </div>
                 
-                {/* Teams and date - centered metadata row */}
-                <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
+                {/* Teams and date - opposite sides */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    <Users className="w-2.5 h-2.5" />
-                    <span>{poster.participants}</span>
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{poster.participants} Players</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5" />
+                    <Clock className="w-3.5 h-3.5" />
                     <span>{poster.startDate}</span>
                   </div>
                 </div>
