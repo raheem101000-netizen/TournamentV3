@@ -105,21 +105,27 @@ export default function PosterUploadField({
         img.src = rawImage;
       });
 
-      // Calculate canvas size based on image aspect ratio
+      // Calculate canvas size based on image aspect ratio and zoom level
       // Clamp ratio between 0.5 (2:1 tall) and 2.0 (2:1 wide) for reasonable display
       const aspectRatio = Math.min(2.0, Math.max(0.5, img.width / img.height));
       const maxDimension = 1280;
+      // When zoom < 100%, we shrink the canvas proportionally
+      const zoomScale = Math.min(1, zoom / 100);
       let canvasWidth: number, canvasHeight: number;
       
       if (aspectRatio >= 1) {
         // Landscape or square
-        canvasWidth = maxDimension;
-        canvasHeight = Math.round(maxDimension / aspectRatio);
+        canvasWidth = Math.round(maxDimension * zoomScale);
+        canvasHeight = Math.round((maxDimension / aspectRatio) * zoomScale);
       } else {
         // Portrait
-        canvasHeight = maxDimension;
-        canvasWidth = Math.round(maxDimension * aspectRatio);
+        canvasHeight = Math.round(maxDimension * zoomScale);
+        canvasWidth = Math.round((maxDimension * aspectRatio) * zoomScale);
       }
+      
+      // Ensure minimum dimensions
+      canvasWidth = Math.max(canvasWidth, 200);
+      canvasHeight = Math.max(canvasHeight, 200);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -129,9 +135,11 @@ export default function PosterUploadField({
       canvas.height = canvasHeight;
 
       // Draw the image with zoom/position applied
-      const zoomFactor = zoom / 100;
+      // When zoom < 100%, frame shrinks but image fills it completely
+      // When zoom >= 100%, frame is full size and we crop into the image
+      const effectiveZoom = zoom >= 100 ? zoom / 100 : 1;
       const baseScale = Math.min(canvasWidth / img.width, canvasHeight / img.height);
-      const scale = baseScale * zoomFactor;
+      const scale = baseScale * effectiveZoom;
       const scaledW = img.width * scale;
       const scaledH = img.height * scale;
       
@@ -139,10 +147,6 @@ export default function PosterUploadField({
       const offsetY = (position.y / 100 - 0.5) * (scaledH - canvasHeight);
       const drawX = (canvasWidth - scaledW) / 2 - offsetX;
       const drawY = (canvasHeight - scaledH) / 2 - offsetY;
-
-      // Fill background with solid color first (in case zoom < 100%)
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
       ctx.drawImage(img, drawX, drawY, scaledW, scaledH);
 
@@ -208,11 +212,14 @@ export default function PosterUploadField({
         <p className="text-xs text-muted-foreground">Drag to reposition, use slider to resize</p>
         
         <div 
-          className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none w-full"
+          className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none"
           style={{ 
             aspectRatio: imageDimensions 
               ? `${Math.min(2.0, Math.max(0.5, imageDimensions.width / imageDimensions.height))}` 
               : '16/9',
+            width: `${Math.min(100, zoom)}%`,
+            maxWidth: '100%',
+            transition: 'width 0.15s ease-out',
             backgroundColor: '#1a1a1a'
           }}
           onMouseDown={handleMouseDown}
@@ -227,10 +234,10 @@ export default function PosterUploadField({
             alt="Poster Preview" 
             className="absolute pointer-events-none z-10"
             style={{
-              width: `${zoom}%`,
+              width: zoom >= 100 ? `${zoom}%` : '100%',
               height: 'auto',
-              minWidth: zoom >= 100 ? '100%' : 'auto',
-              minHeight: zoom >= 100 ? '100%' : 'auto',
+              minWidth: '100%',
+              minHeight: '100%',
               left: `${50 - position.x}%`,
               top: `${50 - position.y}%`,
               transform: 'translate(-50%, -50%)',
