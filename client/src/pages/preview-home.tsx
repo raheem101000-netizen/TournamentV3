@@ -489,32 +489,31 @@ export default function PreviewHome() {
               </div>
 
               {/* Tournament info section */}
-              <div className="p-3 space-y-3">
-                <div className="flex items-center justify-center gap-6">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-1.5 bg-yellow-500/15 dark:bg-yellow-500/20 px-3 py-1.5 rounded-md">
-                      <Trophy className="w-4 h-4 text-yellow-500" />
-                      <span className="font-bold text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
+              <div className="p-2 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-1 bg-yellow-500/15 dark:bg-yellow-500/20 px-2 py-1 rounded-md">
+                      <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+                      <span className="font-bold text-sm text-yellow-600 dark:text-yellow-400">{poster.prize}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Prize Pool</span>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-1.5 bg-green-500/15 dark:bg-green-500/20 px-3 py-1.5 rounded-md">
-                      <Coins className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span className="font-semibold text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                  <div className="flex flex-col items-center gap-0.5 text-muted-foreground text-[10px]">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      <span>{poster.participants} Players</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{poster.startDate}</span>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                  <div className="flex items-center gap-1 text-[11px]">
-                    <Users className="w-3 h-3" />
-                    <span>{poster.participants} Players</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <Clock className="w-3 h-3" />
-                    <span>{poster.startDate}</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-1 bg-green-500/15 dark:bg-green-500/20 px-2 py-1 rounded-md">
+                      <Coins className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold text-sm text-green-600 dark:text-green-400">{poster.entryFee}</span>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Entry Fee</span>
                   </div>
                 </div>
 
