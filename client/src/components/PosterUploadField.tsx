@@ -90,14 +90,15 @@ export default function PosterUploadField({
     
     setIsSaving(true);
     try {
-      // Create canvas to render the edited image (1:1 square)
+      // Create canvas to render the edited image (16:9 wide)
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not get canvas context');
 
-      const canvasSize = 800;
-      canvas.width = canvasSize;
-      canvas.height = canvasSize;
+      const canvasWidth = 1280;
+      const canvasHeight = 720;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
 
       const img = new Image();
       await new Promise((resolve, reject) => {
@@ -108,23 +109,23 @@ export default function PosterUploadField({
 
       // Draw blurred background first
       ctx.filter = 'blur(20px)';
-      const bgScale = Math.max(canvasSize / img.width, canvasSize / img.height) * 1.2;
+      const bgScale = Math.max(canvasWidth / img.width, canvasHeight / img.height) * 1.2;
       const bgW = img.width * bgScale;
       const bgH = img.height * bgScale;
-      ctx.drawImage(img, (canvasSize - bgW) / 2, (canvasSize - bgH) / 2, bgW, bgH);
+      ctx.drawImage(img, (canvasWidth - bgW) / 2, (canvasHeight - bgH) / 2, bgW, bgH);
       ctx.filter = 'none';
 
       // Draw main image with zoom/position
       const zoomFactor = zoom / 100;
-      const baseScale = Math.min(canvasSize / img.width, canvasSize / img.height);
+      const baseScale = Math.min(canvasWidth / img.width, canvasHeight / img.height);
       const scale = baseScale * zoomFactor;
       const scaledW = img.width * scale;
       const scaledH = img.height * scale;
       
-      const offsetX = (position.x / 100 - 0.5) * (scaledW - canvasSize);
-      const offsetY = (position.y / 100 - 0.5) * (scaledH - canvasSize);
-      const drawX = (canvasSize - scaledW) / 2 - offsetX;
-      const drawY = (canvasSize - scaledH) / 2 - offsetY;
+      const offsetX = (position.x / 100 - 0.5) * (scaledW - canvasWidth);
+      const offsetY = (position.y / 100 - 0.5) * (scaledH - canvasHeight);
+      const drawX = (canvasWidth - scaledW) / 2 - offsetX;
+      const drawY = (canvasHeight - scaledH) / 2 - offsetY;
 
       ctx.drawImage(img, drawX, drawY, scaledW, scaledH);
 
@@ -188,8 +189,8 @@ export default function PosterUploadField({
         <p className="text-xs text-muted-foreground">Drag to reposition, use slider to resize</p>
         
         <div 
-          className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none"
-          style={{ aspectRatio: '1/1', maxWidth: '240px' }}
+          className="relative rounded-lg border overflow-hidden bg-muted mx-auto cursor-move select-none w-full"
+          style={{ aspectRatio: '16/9' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
