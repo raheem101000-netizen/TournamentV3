@@ -76,8 +76,9 @@ export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
   const totalWidth = chars.length * charWidth + (chars.length - 1) * charSpacing;
   const totalHeight = 5 * (dotSize + gap);
   
-  const startX = (size - totalWidth) / 2;
-  const startY = (size - totalHeight) / 2;
+  const outerRingThickness = size * 0.025;
+  const ringGap = size * 0.015;
+  const innerRingThickness = size * 0.01;
   
   return (
     <div 
@@ -85,8 +86,21 @@ export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
       style={{ width: size, height: size }}
     >
       <div 
-        className="absolute inset-0 rounded-full border-[3px] border-white"
-        style={{ width: size, height: size }}
+        className="absolute rounded-full border-white"
+        style={{ 
+          width: size, 
+          height: size,
+          borderWidth: outerRingThickness,
+          boxShadow: `0 0 ${size * 0.08}px rgba(255,255,255,0.3), inset 0 0 ${size * 0.04}px rgba(255,255,255,0.2)`
+        }}
+      />
+      <div 
+        className="absolute rounded-full border-white/40"
+        style={{ 
+          width: size - (outerRingThickness * 2) - (ringGap * 2), 
+          height: size - (outerRingThickness * 2) - (ringGap * 2),
+          borderWidth: innerRingThickness,
+        }}
       />
       <svg 
         width={totalWidth} 
