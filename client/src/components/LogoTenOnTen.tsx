@@ -6,9 +6,9 @@ interface LogoTenOnTenProps {
 }
 
 const DOT_COLORS = [
-  "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", 
-  "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
-  "#F8B500", "#FF69B4", "#00CED1", "#32CD32", "#FF4500",
+  "#FFB3B3", "#A8E6CF", "#87CEEB", "#DDA0DD", "#FFFACD", 
+  "#E6E6FA", "#B0E0E6", "#FFDAB9", "#D8BFD8", "#ADD8E6",
+  "#FFE4B5", "#FFB6C1", "#AFEEEE", "#98FB98", "#FFC0CB",
 ];
 
 const DIGIT_PATTERNS: Record<string, number[][]> = {
