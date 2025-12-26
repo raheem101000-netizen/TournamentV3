@@ -98,10 +98,16 @@ function ProtectedRoute({ component: Component, ...rest }: { component: any }) {
 }
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <Switch>
-      <Route path="/register" component={Register} />
-      <Route path="/login" component={Login} />
+      <Route path="/register">
+        {() => isAuthenticated ? <Redirect to="/" /> : <Register />}
+      </Route>
+      <Route path="/login">
+        {() => isAuthenticated ? <Redirect to="/" /> : <Login />}
+      </Route>
       
       <Route path="/create-server">
         {() => <ProtectedRoute component={CreateServer} />}
