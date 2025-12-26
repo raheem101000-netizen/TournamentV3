@@ -338,14 +338,17 @@ export default function AccountSettings() {
                     </div>
 
                     <div className="flex-1 space-y-4">
-                      <FormField
+                        <FormField
                         control={profileForm.control}
                         name="username"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Username</FormLabel>
                             <FormControl>
-                              <Input {...field} data-testid="input-username" />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                                <Input {...field} className="pl-8" data-testid="input-username" />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
