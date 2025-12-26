@@ -5,10 +5,18 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Trophy, Server as ServerIcon, Search, Crown, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import type { Server, ServerRole } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import ImageUploadField from "@/components/ImageUploadField";
 
 type ServerFilter = "all" | "owned" | "member" | "roles";
 
@@ -18,8 +26,18 @@ interface ServerWithRoles extends Server {
 
 export default function PreviewMyServers() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [filter, setFilter] = useState<ServerFilter>("all");
+  const [createServerOpen, setCreateServerOpen] = useState(false);
+  const [serverName, setServerName] = useState("");
+  const [serverDescription, setServerDescription] = useState("");
+  const [selectedGameTags, setSelectedGameTags] = useState<string[]>([]);
+  const [gameTagInput, setGameTagInput] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [serverIconUrl, setServerIconUrl] = useState("");
+  const [serverBackgroundUrl, setServerBackgroundUrl] = useState("");
+  const [createServerStep, setCreateServerStep] = useState(1);
   
   // Fetch servers where user is a member
   const { data: memberServersData, isLoading: memberLoading } = useQuery<Server[]>({
@@ -32,6 +50,59 @@ export default function PreviewMyServers() {
     queryKey: [`/api/users/${user?.id}/roles`],
     enabled: !!user?.id,
   });
+
+  const createServerMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("You must be logged in to create a server");
+      const response = await apiRequest('POST', `/api/servers`, {
+        name: serverName,
+        description: serverDescription,
+        gameTags: selectedGameTags,
+        category: "Gaming",
+        isPublic: 1,
+        welcomeMessage: welcomeMessage,
+        iconUrl: serverIconUrl,
+        backgroundUrl: serverBackgroundUrl,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Server created!",
+        description: "Your server has been created successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
+      setCreateServerOpen(false);
+      setServerName("");
+      setServerDescription("");
+      setSelectedGameTags([]);
+      setWelcomeMessage("");
+      setServerIconUrl("");
+      setServerBackgroundUrl("");
+      setCreateServerStep(1);
+      setLocation(`/server/${data.id}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create server",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateServer = () => {
+    if (!serverName.trim()) {
+      toast({
+        title: "Server name required",
+        description: "Please enter a name for your server.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createServerMutation.mutate();
+  };
 
   const myServers = memberServersData || [];
   const userRoles = userRolesData || [];
@@ -58,7 +129,7 @@ export default function PreviewMyServers() {
         <div className="container max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl font-bold">My Servers</h1>
-            <Button size="sm" onClick={() => setLocation("/create-server")} data-testid="button-create-server">
+            <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
               <Plus className="w-4 h-4 mr-2" />
               Create
             </Button>
@@ -180,6 +251,168 @@ export default function PreviewMyServers() {
       </main>
 
       <BottomNavigation />
+
+      {/* Create Server Dialog */}
+      <Dialog open={createServerOpen} onOpenChange={(open) => {
+        setCreateServerOpen(open);
+        if (!open) setCreateServerStep(1);
+      }}>
+        <DialogContent className="max-w-md max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Create Your Server</DialogTitle>
+            <DialogDescription>
+              {createServerStep === 1 ? "Step 1 of 2: Basic Information" : "Step 2 of 2: Welcome & Branding"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {createServerStep === 1 ? (
+            <>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="server-name">Server Name *</Label>
+                  <Input
+                    id="server-name"
+                    placeholder="Enter server name..."
+                    value={serverName}
+                    onChange={(e) => setServerName(e.target.value)}
+                    data-testid="input-server-name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="server-description">Description</Label>
+                  <Textarea
+                    id="server-description"
+                    placeholder="Tell people what your server is about..."
+                    value={serverDescription}
+                    onChange={(e) => setServerDescription(e.target.value)}
+                    rows={3}
+                    data-testid="textarea-server-description"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Game Tags (optional)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Type game names and press Enter to add them as tags
+                  </p>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="e.g. Valorant, Dragon Ball Z, Fortnite..."
+                      value={gameTagInput}
+                      onChange={(e) => setGameTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && gameTagInput.trim()) {
+                          e.preventDefault();
+                          const tag = gameTagInput.trim();
+                          if (!selectedGameTags.includes(tag)) {
+                            setSelectedGameTags(prev => [...prev, tag]);
+                          }
+                          setGameTagInput("");
+                        }
+                      }}
+                      data-testid="input-game-tags"
+                    />
+                    {selectedGameTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGameTags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="default"
+                            className="cursor-pointer"
+                            onClick={() => {
+                              setSelectedGameTags(prev => prev.filter(t => t !== tag));
+                            }}
+                            data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCreateServerOpen(false)}
+                  data-testid="button-cancel-create"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => setCreateServerStep(2)}
+                  disabled={!serverName.trim()}
+                  data-testid="button-next-step"
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <ScrollArea className="max-h-[50vh] pr-4">
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="welcome-message">Welcome Message *</Label>
+                    <Textarea
+                      id="welcome-message"
+                      placeholder="Welcome to our server! Here you'll find..."
+                      value={welcomeMessage}
+                      onChange={(e) => setWelcomeMessage(e.target.value)}
+                      rows={4}
+                      data-testid="textarea-welcome-message"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This message will be displayed to everyone who previews or joins your server.
+                    </p>
+                  </div>
+
+                  <ImageUploadField
+                    label="Server Icon"
+                    value={serverIconUrl}
+                    onChange={setServerIconUrl}
+                    placeholder="Upload your server icon"
+                    required
+                  />
+
+                  <ImageUploadField
+                    label="Server Background"
+                    value={serverBackgroundUrl}
+                    onChange={setServerBackgroundUrl}
+                    placeholder="Upload your server background image"
+                    required
+                  />
+                </div>
+              </ScrollArea>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCreateServerStep(1)}
+                  disabled={createServerMutation.isPending}
+                  data-testid="button-back-step"
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleCreateServer}
+                  disabled={createServerMutation.isPending || welcomeMessage.length < 10 || !serverIconUrl || !serverBackgroundUrl}
+                  data-testid="button-confirm-create"
+                >
+                  {createServerMutation.isPending ? "Creating..." : "Create Server"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
