@@ -67,10 +67,10 @@ function renderCharacter(char: string, offsetX: number, dotSize: number, gap: nu
 }
 
 export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
-  const dotSize = size * 0.028;
-  const gap = size * 0.012;
+  const dotSize = size * 0.024;
+  const gap = size * 0.01;
   const charWidth = 3 * (dotSize + gap);
-  const charSpacing = size * 0.02;
+  const charSpacing = size * 0.018;
   
   const chars = ["1", "0", "/", "1", "0"];
   const slashExtraSpace = size * 0.03;
