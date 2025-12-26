@@ -485,7 +485,7 @@ export default function PreviewServerDetail() {
             <Button 
               size="icon" 
               variant="ghost"
-              onClick={() => setLocation('/myservers')}
+              onClick={() => window.history.back()}
               data-testid="button-back-to-servers"
             >
               <ArrowLeft className="w-5 h-5" />
