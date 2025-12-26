@@ -359,9 +359,9 @@ export default function AccountSettings() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input type="email" {...field} data-testid="input-email" />
+                              <Input type="email" {...field} data-testid="input-email" disabled />
                             </FormControl>
-                            <FormDescription>Your email address for notifications</FormDescription>
+                            <FormDescription>Your email address is managed by your account and cannot be changed here.</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
