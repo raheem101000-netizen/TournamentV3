@@ -45,7 +45,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
     },
   });
 
-  const { data: friendRequestStatus, refetch: refetchFriendStatus } = useQuery<FriendRequestStatus>({
+  const { data: friendRequestStatus, refetch: refetchFriendStatus, isLoading: isFriendStatusLoading } = useQuery<FriendRequestStatus>({
     queryKey: ["/api/friend-requests/status", userId],
     enabled: !!userId && open && !!currentUser && currentUser.id !== userId,
     staleTime: 0,
@@ -149,6 +149,16 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
   };
 
   const renderFriendButton = () => {
+    // Show loading state while checking friend status to prevent wrong button clicks
+    if (isFriendStatusLoading) {
+      return (
+        <Button variant="outline" disabled className="flex-1" data-testid="button-friend-loading">
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          Loading...
+        </Button>
+      );
+    }
+
     const status = friendRequestStatus?.status || "none";
     const isSender = friendRequestStatus?.isSender;
 
