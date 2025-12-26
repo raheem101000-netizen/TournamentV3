@@ -33,7 +33,7 @@ import TagInput from "@/components/TagInput";
 const createServerSchema = z.object({
   name: z.string().min(1, "Server name is required"),
   description: z.string().optional(),
-  welcomeMessage: z.string().min(10, "Welcome message must be at least 10 characters"),
+  welcomeMessage: z.string().optional(),
   category: z.string().optional(),
   gameTags: z.array(z.string()).optional(),
   isPublic: z.number().default(1),
@@ -89,7 +89,7 @@ export default function CreateServer() {
   };
 
   return (
-    <div className="container max-w-2xl mx-auto p-6">
+    <div className="container max-w-2xl mx-auto p-6 overflow-y-auto max-h-screen">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function CreateServer() {
                 name="welcomeMessage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Welcome Page Message <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>Welcome Page Message (Optional)</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Welcome to our server! Here you'll find..."

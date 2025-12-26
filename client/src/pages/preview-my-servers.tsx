@@ -257,106 +257,85 @@ export default function PreviewMyServers() {
         setCreateServerOpen(open);
         if (!open) setCreateServerStep(1);
       }}>
-        <DialogContent className="max-w-md max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>Create Your Server</DialogTitle>
             <DialogDescription>
               {createServerStep === 1 ? "Step 1 of 2: Basic Information" : "Step 2 of 2: Welcome & Branding"}
             </DialogDescription>
           </DialogHeader>
 
-          {createServerStep === 1 ? (
-            <>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="server-name">Server Name *</Label>
-                  <Input
-                    id="server-name"
-                    placeholder="Enter server name..."
-                    value={serverName}
-                    onChange={(e) => setServerName(e.target.value)}
-                    data-testid="input-server-name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="server-description">Description</Label>
-                  <Textarea
-                    id="server-description"
-                    placeholder="Tell people what your server is about..."
-                    value={serverDescription}
-                    onChange={(e) => setServerDescription(e.target.value)}
-                    rows={3}
-                    data-testid="textarea-server-description"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Game Tags (optional)</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Type game names and press Enter to add them as tags
-                  </p>
+          <ScrollArea className="flex-1 px-6">
+            <div className="py-4">
+              {createServerStep === 1 ? (
+                <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="server-name">Server Name *</Label>
                     <Input
-                      placeholder="e.g. Valorant, Dragon Ball Z, Fortnite..."
-                      value={gameTagInput}
-                      onChange={(e) => setGameTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && gameTagInput.trim()) {
-                          e.preventDefault();
-                          const tag = gameTagInput.trim();
-                          if (!selectedGameTags.includes(tag)) {
-                            setSelectedGameTags(prev => [...prev, tag]);
-                          }
-                          setGameTagInput("");
-                        }
-                      }}
-                      data-testid="input-game-tags"
+                      id="server-name"
+                      placeholder="Enter server name..."
+                      value={serverName}
+                      onChange={(e) => setServerName(e.target.value)}
+                      data-testid="input-server-name"
                     />
-                    {selectedGameTags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedGameTags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="default"
-                            className="cursor-pointer"
-                            onClick={() => {
-                              setSelectedGameTags(prev => prev.filter(t => t !== tag));
-                            }}
-                            data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="server-description">Description</Label>
+                    <Textarea
+                      id="server-description"
+                      placeholder="Tell people what your server is about..."
+                      value={serverDescription}
+                      onChange={(e) => setServerDescription(e.target.value)}
+                      rows={3}
+                      data-testid="textarea-server-description"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Game Tags (optional)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Type game names and press Enter to add them as tags
+                    </p>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="e.g. Valorant, Dragon Ball Z, Fortnite..."
+                        value={gameTagInput}
+                        onChange={(e) => setGameTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && gameTagInput.trim()) {
+                            e.preventDefault();
+                            const tag = gameTagInput.trim();
+                            if (!selectedGameTags.includes(tag)) {
+                              setSelectedGameTags(prev => [...prev, tag]);
+                            }
+                            setGameTagInput("");
+                          }
+                        }}
+                        data-testid="input-game-tags"
+                      />
+                      {selectedGameTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedGameTags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="default"
+                              className="cursor-pointer"
+                              onClick={() => {
+                                setSelectedGameTags(prev => prev.filter(t => t !== tag));
+                              }}
+                              data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setCreateServerOpen(false)}
-                  data-testid="button-cancel-create"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => setCreateServerStep(2)}
-                  disabled={!serverName.trim()}
-                  data-testid="button-next-step"
-                >
-                  Next
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <ScrollArea className="max-h-[50vh] pr-4">
-                <div className="space-y-4 pt-4">
+              ) : (
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="welcome-message">Welcome Message (Optional)</Label>
                     <Textarea
@@ -388,29 +367,54 @@ export default function PreviewMyServers() {
                     required
                   />
                 </div>
-              </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
 
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setCreateServerStep(1)}
-                  disabled={createServerMutation.isPending}
-                  data-testid="button-back-step"
-                >
-                  Back
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleCreateServer}
-                  disabled={createServerMutation.isPending || !serverIconUrl || !serverBackgroundUrl}
-                  data-testid="button-confirm-create"
-                >
-                  {createServerMutation.isPending ? "Creating..." : "Create Server"}
-                </Button>
-              </div>
-            </>
-          )}
+          <div className="p-6 pt-2 border-t bg-background">
+            <div className="flex gap-2">
+              {createServerStep === 1 ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setCreateServerOpen(false)}
+                    data-testid="button-cancel-create"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => setCreateServerStep(2)}
+                    disabled={!serverName.trim()}
+                    data-testid="button-next-step"
+                  >
+                    Next
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setCreateServerStep(1)}
+                    disabled={createServerMutation.isPending}
+                    data-testid="button-back-step"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleCreateServer}
+                    disabled={createServerMutation.isPending || !serverIconUrl || !serverBackgroundUrl}
+                    data-testid="button-confirm-create"
+                  >
+                    {createServerMutation.isPending ? "Creating..." : "Create Server"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
