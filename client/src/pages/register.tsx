@@ -88,8 +88,8 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
-      <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-start py-12 px-4 sm:justify-center sm:py-16 bg-black">
+      <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-[280px]">
         <LogoTenOnTen size={200} />
 
         <Form {...form}>
