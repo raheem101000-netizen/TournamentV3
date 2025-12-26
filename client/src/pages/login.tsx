@@ -47,6 +47,8 @@ export default function Login() {
       return res.json();
     },
     onSuccess: async () => {
+      // Clear the user query cache to ensure the next fetch gets the fresh session
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       const user = await refetchUser();
       
       if (user) {
@@ -54,7 +56,8 @@ export default function Login() {
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
-        setLocation("/");
+        // Use window.location.href for a hard redirect to ensure session is fully picked up
+        window.location.href = "/";
       } else {
         const retryUser = await refetchUser();
         if (retryUser) {
@@ -62,7 +65,7 @@ export default function Login() {
             title: "Welcome back!",
             description: "You've successfully logged in.",
           });
-          setLocation("/");
+          window.location.href = "/";
         }
       }
     },
