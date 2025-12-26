@@ -81,30 +81,35 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
-      <div className="flex flex-col items-center gap-10 w-full max-w-xs">
-        <LogoTenOnTen size={240} />
+      <div className="flex flex-col items-center gap-6 w-full max-w-[280px]">
+        <div className="flex flex-col items-center gap-3">
+          <LogoTenOnTen size={280} />
+          <span className="text-white text-lg font-light tracking-[0.3em] font-mono">
+            10 / 10
+          </span>
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-[10px] font-medium tracking-wider uppercase w-16 text-right">
                       EMAIL:
                     </span>
                     <FormControl>
                       <Input 
                         type="email"
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-6 text-xs px-2 focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-email"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1" />
+                  <FormMessage className="text-red-400 mt-1 text-xs pl-[72px]" />
                 </FormItem>
               )}
             />
@@ -114,27 +119,27 @@ export default function Login() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-[10px] font-medium tracking-wider uppercase w-16 text-right">
                       PASSWORD:
                     </span>
                     <FormControl>
                       <PasswordInput 
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-7 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-7"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-6 text-xs focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-6 [&>input]:text-xs [&>input]:px-2 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-6 [&>button]:w-6"
                         {...field} 
                         testid="input-password"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1" />
+                  <FormMessage className="text-red-400 mt-1 text-xs pl-[72px]" />
                 </FormItem>
               )}
             />
 
-            <div className="pt-2">
+            <div className="pt-1">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-8 text-sm border-0 hover:from-gray-200 hover:to-gray-400"
+                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-7 text-xs border-0 hover:from-gray-200 hover:to-gray-400"
                 disabled={loginMutation.isPending}
                 data-testid="button-login"
               >
@@ -142,7 +147,7 @@ export default function Login() {
               </Button>
             </div>
 
-            <div className="text-center text-sm text-gray-400 pt-2">
+            <div className="text-center text-xs text-gray-400 pt-1">
               Don't have an account?{" "}
               <button
                 type="button"
