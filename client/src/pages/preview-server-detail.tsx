@@ -491,7 +491,10 @@ export default function PreviewServerDetail() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="text-2xl">{"🎮"}</AvatarFallback>
+              <AvatarImage src={server.iconUrl || undefined} alt={server.name} />
+              <AvatarFallback className="text-2xl">
+                {server.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
