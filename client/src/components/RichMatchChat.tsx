@@ -74,6 +74,16 @@ export default function RichMatchChat({
     }
   }, [threadMessages, messagesLoading]);
 
+  // Mark match chat as read when opened
+  useEffect(() => {
+    if (matchId && currentUser?.id) {
+      fetch(`/api/matches/${matchId}/mark-read`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(err => console.error('Failed to mark match as read:', err));
+    }
+  }, [matchId, currentUser?.id]);
+
   // Extract unique users from thread messages
   const chatUsers = useMemo(() => {
     const userMap = new Map<string, any>();

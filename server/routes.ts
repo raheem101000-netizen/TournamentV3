@@ -3109,6 +3109,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark match thread as read by matchId
+  app.post("/api/matches/:matchId/mark-read", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { matchId } = req.params;
+      
+      // Find the user's thread for this match and mark it as read
+      const thread = await storage.getMatchThreadForUser(matchId, req.session.userId);
+      if (thread) {
+        await storage.markThreadAsRead(thread.id);
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error marking match thread as read:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/message-threads/:id", async (req, res) => {
     try {
       const thread = await storage.getMessageThread(req.params.id);

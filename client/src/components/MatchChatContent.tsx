@@ -50,6 +50,16 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Mark match chat as read when opened
+  useEffect(() => {
+    if (matchId && user?.id) {
+      fetch(`/api/matches/${matchId}/mark-read`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(err => console.error('Failed to mark match as read:', err));
+    }
+  }, [matchId, user?.id]);
+
   const handleSendMessage = () => {
     if (messageText.trim() && !sendMessageMutation.isPending) {
       sendMessageMutation.mutate(messageText);
