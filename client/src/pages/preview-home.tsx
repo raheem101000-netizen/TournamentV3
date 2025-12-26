@@ -174,6 +174,39 @@ export default function PreviewHome() {
     },
   });
 
+  const tournamentPosters = (tournaments || [])
+    .filter((t) => {
+      // Only include tournaments with valid server references
+      const server = t.serverId ? servers?.find(s => s.id === t.serverId) : null;
+      return !!server;
+    })
+    .map((t) => {
+      // Look up server data (we know it exists because of filter)
+      const server = servers?.find(s => s.id === t.serverId!)!;
+      
+      return {
+        id: t.id,
+        serverId: t.serverId || undefined,
+        title: t.name,
+        game: t.game || "Tournament",
+        serverName: server.name,
+        // Use real server icon (null if not set, for proper Avatar handling)
+        serverLogo: server.iconUrl || null,
+        serverLogoFallback: server.name.charAt(0),
+        backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        posterWidth: t.posterWidth,
+        posterHeight: t.posterHeight,
+        prize: t.prizeReward || "TBD",
+        entryFee: t.entryFee || "Free",
+        startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
+        startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
+        participants: t.totalTeams === -1 ? "Unlimited" : `${t.totalTeams || 0}`,
+        format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+        platform: t.platform || "Any Platform",
+        region: t.region || "Global",
+      };
+    });
+
   // Only show real tournaments - no mock data
   const allPosters = tournamentPosters;
   
