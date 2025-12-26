@@ -265,8 +265,8 @@ export default function PreviewMyServers() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 px-6">
-            <div className="py-4">
+          <ScrollArea className="flex-1 px-6 overflow-y-auto">
+            <div className="py-4 min-h-0 flex-shrink-0">
               {createServerStep === 1 ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
