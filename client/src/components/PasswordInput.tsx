@@ -2,14 +2,16 @@ import { useState, forwardRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-interface PasswordInputProps {
+export interface PasswordInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   testid?: string;
   onBlur?: () => void;
   name?: string;
+  className?: string;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
@@ -21,13 +23,14 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       testid,
       onBlur,
       name,
+      className,
     },
     ref
   ) {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
-      <div className="relative">
+      <div className={cn("relative", className)}>
         <Input
           ref={ref}
           type={showPassword ? "text" : "password"}

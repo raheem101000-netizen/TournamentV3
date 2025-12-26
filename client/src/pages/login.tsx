@@ -1,22 +1,19 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -49,7 +46,6 @@ export default function Login() {
       return res.json();
     },
     onSuccess: async () => {
-      // Refetch user to update auth context before navigating
       const user = await refetchUser();
       
       if (user) {
@@ -57,10 +53,8 @@ export default function Login() {
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
-        // Navigate to home page after auth context is updated
         setLocation("/");
       } else {
-        // Retry once more if first refetch didn't get user
         const retryUser = await refetchUser();
         if (retryUser) {
           toast({
@@ -85,81 +79,90 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Log in to your 10 on 10 account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
+      <div className="flex flex-col items-center gap-12 w-full max-w-sm">
+        <div className="relative w-48 h-48 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-[3px] border-white" />
+          <span 
+            className="text-white text-4xl tracking-wider font-light"
+            style={{ fontFamily: "'Courier New', Courier, monospace" }}
+          >
+            10/10
+          </span>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap">
+                      EMAIL:
+                    </span>
                     <FormControl>
                       <Input 
                         type="email"
-                        placeholder="your@email.com" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-email"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1" />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap">
+                      PASSWORD:
+                    </span>
                     <FormControl>
                       <PasswordInput 
-                        placeholder="••••••" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>button]:text-black [&>button]:hover:bg-gray-100"
                         {...field} 
                         testid="input-password"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1" />
+                </FormItem>
+              )}
+            />
 
+            <div className="pt-2">
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-10 border-0 hover:from-gray-200 hover:to-gray-400"
                 disabled={loginMutation.isPending}
                 data-testid="button-login"
               >
-                {loginMutation.isPending ? "Logging in..." : "Log In"}
+                {loginMutation.isPending ? "ENTERING..." : "ENTER"}
               </Button>
+            </div>
 
-              <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{" "}
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={() => setLocation("/register")}
-                  data-testid="link-register"
-                >
-                  Create account
-                </button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            <div className="text-center text-sm text-gray-400 pt-2">
+              Don't have an account?{" "}
+              <button
+                type="button"
+                className="text-white underline-offset-4 hover:underline"
+                onClick={() => setLocation("/register")}
+                data-testid="link-register"
+              >
+                Create account
+              </button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

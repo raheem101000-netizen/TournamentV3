@@ -1,23 +1,19 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -58,7 +54,6 @@ export default function Register() {
       return res.json();
     },
     onSuccess: async () => {
-      // Refresh user to verify session was set
       const user = await refetchUser();
       
       if (user) {
@@ -66,10 +61,8 @@ export default function Register() {
           title: "Account created!",
           description: "You're now logged in.",
         });
-        // Navigate to home page after auth context is updated
         setLocation("/");
       } else {
-        // Retry once more if first refetch didn't get user
         const retryUser = await refetchUser();
         if (retryUser) {
           toast({
@@ -94,117 +87,134 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join the 10 on 10 tournament platform</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
+      <div className="flex flex-col items-center gap-10 w-full max-w-sm">
+        <div className="relative w-36 h-36 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-[3px] border-white" />
+          <span 
+            className="text-white text-3xl tracking-wider font-light"
+            style={{ fontFamily: "'Courier New', Courier, monospace" }}
+          >
+            10/10
+          </span>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                      NAME:
+                    </span>
                     <FormControl>
                       <Input 
-                        placeholder="John Doe" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-fullname"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                      EMAIL:
+                    </span>
                     <FormControl>
                       <Input 
                         type="email"
-                        placeholder="your@email.com" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-email"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                      PASSWORD:
+                    </span>
                     <FormControl>
                       <PasswordInput 
-                        placeholder="••••••" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>button]:text-black [&>button]:hover:bg-gray-100"
                         {...field} 
                         testid="input-password"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                      CONFIRM:
+                    </span>
                     <FormControl>
                       <PasswordInput 
-                        placeholder="••••••" 
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>button]:text-black [&>button]:hover:bg-gray-100"
                         {...field} 
                         testid="input-confirm-password"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                </FormItem>
+              )}
+            />
 
+            <div className="pt-2">
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-10 border-0 hover:from-gray-200 hover:to-gray-400"
                 disabled={registerMutation.isPending}
                 data-testid="button-register"
               >
-                {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                {registerMutation.isPending ? "CREATING..." : "CREATE ACCOUNT"}
               </Button>
+            </div>
 
-              <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={() => setLocation("/login")}
-                  data-testid="link-login"
-                >
-                  Log in
-                </button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            <div className="text-center text-sm text-gray-400 pt-2">
+              Already have an account?{" "}
+              <button
+                type="button"
+                className="text-white underline-offset-4 hover:underline"
+                onClick={() => setLocation("/login")}
+                data-testid="link-login"
+              >
+                Log in
+              </button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }
