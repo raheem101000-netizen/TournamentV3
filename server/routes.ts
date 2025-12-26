@@ -435,6 +435,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Automatically log in the user after registration
       req.session.userId = user.id;
+      
+      // Wait for session to be saved before responding
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
       res.status(201).json({ 
         message: "Registration successful",
@@ -486,6 +494,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create session
       req.session.userId = user.id;
+      
+      // Wait for session to be saved before responding
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
       res.json({
         message: "Login successful",
