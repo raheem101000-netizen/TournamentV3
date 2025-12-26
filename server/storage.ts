@@ -1404,17 +1404,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFriendRequestBetweenUsers(userId1: string, userId2: string): Promise<FriendRequest | undefined> {
-    const [request] = await db
+    // First look for pending requests (priority)
+    const [pendingRequest] = await db
       .select()
       .from(friendRequests)
       .where(
-        or(
-          and(eq(friendRequests.senderId, userId1), eq(friendRequests.recipientId, userId2)),
-          and(eq(friendRequests.senderId, userId2), eq(friendRequests.recipientId, userId1))
+        and(
+          or(
+            and(eq(friendRequests.senderId, userId1), eq(friendRequests.recipientId, userId2)),
+            and(eq(friendRequests.senderId, userId2), eq(friendRequests.recipientId, userId1))
+          ),
+          eq(friendRequests.status, 'pending')
         )
       )
       .limit(1);
-    return request || undefined;
+    
+    if (pendingRequest) return pendingRequest;
+    
+    // Then look for accepted friendships
+    const [acceptedRequest] = await db
+      .select()
+      .from(friendRequests)
+      .where(
+        and(
+          or(
+            and(eq(friendRequests.senderId, userId1), eq(friendRequests.recipientId, userId2)),
+            and(eq(friendRequests.senderId, userId2), eq(friendRequests.recipientId, userId1))
+          ),
+          eq(friendRequests.status, 'accepted')
+        )
+      )
+      .limit(1);
+    
+    return acceptedRequest || undefined;
   }
 
   async getPendingFriendRequests(userId: string): Promise<FriendRequest[]> {
