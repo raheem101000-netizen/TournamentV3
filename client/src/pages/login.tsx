@@ -82,7 +82,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
       <div className="flex flex-col items-center gap-6 w-full max-w-[280px]">
-        <LogoTenOnTen size={280} />
+        <LogoTenOnTen size={320} />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3">

@@ -77,9 +77,9 @@ export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
   const totalWidth = chars.length * charWidth + (chars.length - 1) * charSpacing + slashExtraSpace * 2;
   const totalHeight = 5 * (dotSize + gap);
   
-  const outerRingThickness = size * 0.008;
-  const ringGap = size * 0.035;
-  const innerRingThickness = size * 0.02;
+  const outerRingThickness = size * 0.012;
+  const ringGap = size * 0.05;
+  const innerRingThickness = size * 0.03;
   
   return (
     <div 
