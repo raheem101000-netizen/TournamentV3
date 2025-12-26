@@ -358,7 +358,7 @@ export default function PreviewMyServers() {
               <ScrollArea className="max-h-[50vh] pr-4">
                 <div className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="welcome-message">Welcome Message *</Label>
+                    <Label htmlFor="welcome-message">Welcome Message (Optional)</Label>
                     <Textarea
                       id="welcome-message"
                       placeholder="Welcome to our server! Here you'll find..."
@@ -403,7 +403,7 @@ export default function PreviewMyServers() {
                 <Button
                   className="flex-1"
                   onClick={handleCreateServer}
-                  disabled={createServerMutation.isPending || welcomeMessage.length < 10 || !serverIconUrl || !serverBackgroundUrl}
+                  disabled={createServerMutation.isPending || !serverIconUrl || !serverBackgroundUrl}
                   data-testid="button-confirm-create"
                 >
                   {createServerMutation.isPending ? "Creating..." : "Create Server"}
