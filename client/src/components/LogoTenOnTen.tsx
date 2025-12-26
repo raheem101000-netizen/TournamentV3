@@ -67,19 +67,19 @@ function renderCharacter(char: string, offsetX: number, dotSize: number, gap: nu
 }
 
 export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
-  const dotSize = size * 0.022;
-  const gap = size * 0.01;
+  const dotSize = size * 0.028;
+  const gap = size * 0.012;
   const charWidth = 3 * (dotSize + gap);
-  const charSpacing = size * 0.018;
+  const charSpacing = size * 0.02;
   
   const chars = ["1", "0", "/", "1", "0"];
   const slashExtraSpace = size * 0.03;
   const totalWidth = chars.length * charWidth + (chars.length - 1) * charSpacing + slashExtraSpace * 2;
   const totalHeight = 5 * (dotSize + gap);
   
-  const outerRingThickness = size * 0.012;
-  const ringGap = size * 0.05;
-  const innerRingThickness = size * 0.03;
+  const outerRingThickness = size * 0.008;
+  const ringGap = size * 0.035;
+  const innerRingThickness = size * 0.02;
   
   return (
     <div 
