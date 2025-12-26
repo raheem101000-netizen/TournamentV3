@@ -89,29 +89,29 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
-      <div className="flex flex-col items-center gap-10 w-full max-w-sm">
-        <LogoTenOnTen size={144} />
+      <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+        <LogoTenOnTen size={200} />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3">
             <FormField
               control={form.control}
               name="fullName"
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center gap-3">
-                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap w-20 text-right">
                       NAME:
                     </span>
                     <FormControl>
                       <Input 
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-fullname"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                  <FormMessage className="text-red-400 mt-1 pl-24 text-xs" />
                 </FormItem>
               )}
             />
@@ -122,19 +122,19 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center gap-3">
-                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap w-20 text-right">
                       EMAIL:
                     </span>
                     <FormControl>
                       <Input 
                         type="email"
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                         {...field} 
                         data-testid="input-email"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                  <FormMessage className="text-red-400 mt-1 pl-24 text-xs" />
                 </FormItem>
               )}
             />
@@ -145,18 +145,18 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center gap-3">
-                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap w-20 text-right">
                       PASSWORD:
                     </span>
                     <FormControl>
                       <PasswordInput 
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>button]:text-black [&>button]:hover:bg-gray-100"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-7 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-7"
                         {...field} 
                         testid="input-password"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                  <FormMessage className="text-red-400 mt-1 pl-24 text-xs" />
                 </FormItem>
               )}
             />
@@ -167,18 +167,18 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center gap-3">
-                    <span className="text-white text-sm font-medium tracking-wide uppercase whitespace-nowrap w-24 text-right">
+                    <span className="text-white text-xs font-medium tracking-wide uppercase whitespace-nowrap w-20 text-right">
                       CONFIRM:
                     </span>
                     <FormControl>
                       <PasswordInput 
-                        className="flex-1 bg-white text-black border-0 rounded-sm h-8 focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>button]:text-black [&>button]:hover:bg-gray-100"
+                        className="flex-1 bg-white text-black border-0 rounded-sm h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-7 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-7"
                         {...field} 
                         testid="input-confirm-password"
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 mt-1 pl-28" />
+                  <FormMessage className="text-red-400 mt-1 pl-24 text-xs" />
                 </FormItem>
               )}
             />
@@ -186,7 +186,7 @@ export default function Register() {
             <div className="pt-2">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-10 border-0 hover:from-gray-200 hover:to-gray-400"
+                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-medium uppercase tracking-wider rounded-sm h-8 text-sm border-0 hover:from-gray-200 hover:to-gray-400"
                 disabled={registerMutation.isPending}
                 data-testid="button-register"
               >
