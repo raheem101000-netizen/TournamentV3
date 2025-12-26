@@ -49,16 +49,27 @@ export default function Login() {
       return res.json();
     },
     onSuccess: async () => {
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
-      
       // Refetch user to update auth context before navigating
-      await refetchUser();
+      const user = await refetchUser();
       
-      // Navigate to home page
-      setLocation("/");
+      if (user) {
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully logged in.",
+        });
+        // Navigate to home page after auth context is updated
+        setLocation("/");
+      } else {
+        // Retry once more if first refetch didn't get user
+        const retryUser = await refetchUser();
+        if (retryUser) {
+          toast({
+            title: "Welcome back!",
+            description: "You've successfully logged in.",
+          });
+          setLocation("/");
+        }
+      }
     },
     onError: (error: any) => {
       toast({

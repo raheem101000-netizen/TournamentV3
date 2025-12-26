@@ -58,16 +58,27 @@ export default function Register() {
       return res.json();
     },
     onSuccess: async () => {
-      toast({
-        title: "Account created!",
-        description: "Logging you in now...",
-      });
-      
       // Refresh user to verify session was set
-      await refetchUser();
+      const user = await refetchUser();
       
-      // Navigate to home page
-      setLocation("/");
+      if (user) {
+        toast({
+          title: "Account created!",
+          description: "You're now logged in.",
+        });
+        // Navigate to home page after auth context is updated
+        setLocation("/");
+      } else {
+        // Retry once more if first refetch didn't get user
+        const retryUser = await refetchUser();
+        if (retryUser) {
+          toast({
+            title: "Account created!",
+            description: "You're now logged in.",
+          });
+          setLocation("/");
+        }
+      }
     },
     onError: (error: any) => {
       toast({
