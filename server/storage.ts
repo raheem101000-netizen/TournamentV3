@@ -1129,6 +1129,11 @@ export class DatabaseStorage implements IStorage {
         eq(serverMembers.serverId, serverId),
         eq(serverMembers.userId, userId)
       ));
+    
+    // Decrement member count
+    await db.update(servers)
+      .set({ memberCount: sql`GREATEST(${servers.memberCount} - 1, 0)` })
+      .where(eq(servers.id, serverId));
   }
 
   async getEffectivePermissions(serverId: string, userId: string): Promise<string[]> {
