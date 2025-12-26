@@ -669,23 +669,21 @@ export default function PreviewHome() {
               variant="outline"
               data-testid="button-join-server"
               onClick={() => {
-                if (joinModal?.id && joinModal.serverId) {
-                  registerTournamentMutation.mutate({ 
-                    tournamentId: joinModal.id,
-                    serverId: joinModal.serverId 
-                  });
+                if (joinModal?.serverId) {
+                  joinServerMutation.mutate(joinModal.serverId);
+                  setJoinModal(null);
                 }
               }}
-              disabled={registerTournamentMutation.isPending}
+              disabled={joinServerMutation.isPending}
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10">
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold">{registerTournamentMutation.isPending ? "Joining..." : "Join Server & Tournament"}</p>
+                  <p className="font-semibold">{joinServerMutation.isPending ? "Joining..." : "Join Server"}</p>
                   <p className="text-xs text-muted-foreground">
-                    Join {joinModal?.serverName} and register
+                    Join {joinModal?.serverName}
                   </p>
                 </div>
               </div>
@@ -708,9 +706,9 @@ export default function PreviewHome() {
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold">Go to Sign-Up Page</p>
+                  <p className="font-semibold">Sign Up for Tournament</p>
                   <p className="text-xs text-muted-foreground">
-                    View full tournament details & register
+                    View tournament details and register
                   </p>
                 </div>
               </div>
