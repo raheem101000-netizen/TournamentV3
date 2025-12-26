@@ -2,11 +2,11 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users, Crown, Search } from "lucide-react";
+import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen, ArrowLeft, BookOpen, Users, Crown, Search, LogOut, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useState, useCallback, useEffect } from "react";
 import type { Server, Tournament, Channel, ChannelCategory } from "@shared/schema";
@@ -18,6 +18,10 @@ import ManageCategoriesDialog from "@/components/ManageCategoriesDialog";
 import useEmblaCarousel from "embla-carousel-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserProfileModal from "@/components/UserProfileModal";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -32,9 +36,11 @@ export default function PreviewServerDetail() {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [leaveServerDialogOpen, setLeaveServerDialogOpen] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
+  const { toast } = useToast();
 
   const { data: userPermissions, isError: permissionsError, isLoading: permissionsLoading } = useQuery<{ permissions: string[] }>({
     queryKey: [`/api/servers/${serverId}/members/${currentUserId}/permissions`],
@@ -80,6 +86,29 @@ export default function PreviewServerDetail() {
 
   const { data: tournaments } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
+  });
+
+  const isOwner = server?.ownerId === currentUserId;
+
+  const leaveServerMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('DELETE', `/api/servers/${serverId}/members/${currentUserId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Left server",
+        description: "You have successfully left the server.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/servers`] });
+      setLocation('/myservers');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to leave server",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filter upcoming tournaments for this server
@@ -265,17 +294,57 @@ export default function PreviewServerDetail() {
                   <h1 className="text-lg font-bold truncate">Welcome</h1>
                 </div>
               </div>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
-                data-testid="button-server-settings"
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" data-testid="button-server-menu-welcome">
+                    <MoreVertical className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isOwner && (
+                    <DropdownMenuItem 
+                      onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
+                      data-testid="menu-item-settings-welcome"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                  )}
+                  {!isOwner && (
+                    <DropdownMenuItem 
+                      onClick={() => setLeaveServerDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                      data-testid="menu-item-leave-server-welcome"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Leave Server
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
+
+        <AlertDialog open={leaveServerDialogOpen} onOpenChange={setLeaveServerDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Leave Server</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to leave {server.name}? You will need to rejoin through an invite link or the Discovery page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => leaveServerMutation.mutate()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {leaveServerMutation.isPending ? "Leaving..." : "Leave Server"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
           <Card>
@@ -440,17 +509,61 @@ export default function PreviewServerDetail() {
                 </button>
               </div>
             </div>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
-              data-testid="button-server-settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid="button-server-menu">
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isOwner && (
+                  <DropdownMenuItem 
+                    onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
+                    data-testid="menu-item-settings"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                )}
+                {!isOwner && (
+                  <>
+                    {isOwner && <DropdownMenuSeparator />}
+                    <DropdownMenuItem 
+                      onClick={() => setLeaveServerDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                      data-testid="menu-item-leave-server"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Leave Server
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
+
+      <AlertDialog open={leaveServerDialogOpen} onOpenChange={setLeaveServerDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Server</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave {server.name}? You will need to rejoin through an invite link or the Discovery page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-leave">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => leaveServerMutation.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-leave"
+            >
+              {leaveServerMutation.isPending ? "Leaving..." : "Leave Server"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <main className="container max-w-lg mx-auto px-4 py-4 space-y-4">
         {serverTournaments.length > 0 && (

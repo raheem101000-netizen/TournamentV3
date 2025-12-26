@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Trophy, Server as ServerIcon, Search, Crown, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { Server, ServerRole } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,6 +18,7 @@ interface ServerWithRoles extends Server {
 
 export default function PreviewMyServers() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [filter, setFilter] = useState<ServerFilter>("all");
   
   // Fetch servers where user is a member
@@ -57,7 +58,7 @@ export default function PreviewMyServers() {
         <div className="container max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl font-bold">My Servers</h1>
-            <Button size="sm" data-testid="button-create-server">
+            <Button size="sm" onClick={() => setLocation("/create-server")} data-testid="button-create-server">
               <Plus className="w-4 h-4 mr-2" />
               Create
             </Button>
