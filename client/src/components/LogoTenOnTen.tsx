@@ -73,7 +73,8 @@ export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
   const charSpacing = size * 0.02;
   
   const chars = ["1", "0", "/", "1", "0"];
-  const totalWidth = chars.length * charWidth + (chars.length - 1) * charSpacing;
+  const slashExtraSpace = size * 0.03;
+  const totalWidth = chars.length * charWidth + (chars.length - 1) * charSpacing + slashExtraSpace * 2;
   const totalHeight = 5 * (dotSize + gap);
   
   const outerRingThickness = size * 0.012;
@@ -109,7 +110,9 @@ export function LogoTenOnTen({ size = 192, className }: LogoTenOnTenProps) {
         className="relative z-10"
       >
         {chars.map((char, index) => {
-          const offsetX = index * (charWidth + charSpacing);
+          let offsetX = index * (charWidth + charSpacing);
+          if (index >= 2) offsetX += slashExtraSpace;
+          if (index >= 3) offsetX += slashExtraSpace;
           return renderCharacter(char, offsetX, dotSize, gap);
         })}
       </svg>
