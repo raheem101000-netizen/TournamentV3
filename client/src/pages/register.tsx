@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
+import { LogoTenOnTen } from "@/components/LogoTenOnTen";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -89,15 +90,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
       <div className="flex flex-col items-center gap-10 w-full max-w-sm">
-        <div className="relative w-36 h-36 flex items-center justify-center">
-          <div className="absolute inset-0 rounded-full border-[3px] border-white" />
-          <span 
-            className="text-white text-3xl tracking-wider font-light"
-            style={{ fontFamily: "'Courier New', Courier, monospace" }}
-          >
-            10/10
-          </span>
-        </div>
+        <LogoTenOnTen size={144} />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5">

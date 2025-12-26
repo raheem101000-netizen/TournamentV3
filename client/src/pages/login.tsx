@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
+import { LogoTenOnTen } from "@/components/LogoTenOnTen";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -81,15 +82,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
       <div className="flex flex-col items-center gap-12 w-full max-w-sm">
-        <div className="relative w-48 h-48 flex items-center justify-center">
-          <div className="absolute inset-0 rounded-full border-[3px] border-white" />
-          <span 
-            className="text-white text-4xl tracking-wider font-light"
-            style={{ fontFamily: "'Courier New', Courier, monospace" }}
-          >
-            10/10
-          </span>
-        </div>
+        <LogoTenOnTen size={192} />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
