@@ -183,7 +183,7 @@ export default function PreviewDiscovery() {
     categories: s.gameTags && s.gameTags.length > 0 ? s.gameTags : ["Gaming"],
   }));
 
-  const allServers = serverCards.length > 0 ? serverCards : mockServers;
+  const allServers = serverCards;
   
   // Filter servers based on search query
   const displayServers = allServers.filter(server => {
