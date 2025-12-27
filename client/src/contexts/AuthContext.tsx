@@ -34,8 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    setIsAuthenticated(!!user);
-  }, [user]);
+    if (!isLoading) {
+      setIsAuthenticated(!!user);
+    }
+  }, [user, isLoading]);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
