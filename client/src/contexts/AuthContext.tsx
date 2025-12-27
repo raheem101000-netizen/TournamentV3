@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 
 interface User {
   id: string;
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [, setLocation] = useLocation();
 
   const { data: user, isLoading, refetch } = useQuery<User>({
     queryKey: ['/api/auth/me'],
@@ -51,10 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 2. Clear all sensitive data
       queryClient.clear();
       
-      // 3. Centralized logout always goes to login
-      // We use window.location.replace to prevent 'Back' button returning to private pages
-      // but without the white screen delay by doing it after state updates
-      window.location.replace('/login');
+      // 3. Centralized logout always goes to login via client-side routing
+      setLocation('/login');
     },
   });
 
