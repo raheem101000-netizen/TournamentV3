@@ -10,7 +10,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 *   **Technology Stack**: React 18 with TypeScript, Wouter for routing, TanStack Query for state management, Radix UI primitives with shadcn/ui for UI components, Tailwind CSS for styling, and Vite for building.
-*   **Authentication**: Session-based with bcrypt. Optimized for zero-latency UI updates by using `queryClient.setQueryData` on login and instant client-side redirection via `wouter`. Includes a themed loading spinner in `App.tsx` to prevent white screens during state transitions.
+*   **Authentication**: Session-based with bcrypt. Optimized for zero-latency UI updates. 
+    *   **Login Flow**: Uses `queryClient.setQueryData` for instant state updates and `wouter` for smooth client-side redirection. Includes a themed loading spinner in `App.tsx` to prevent white screens.
+    *   **Logout Flow**: Centralized in `AuthContext.tsx`. Immediately clears local state via `queryClient.setQueryData(['/api/auth/me'], null)` and `queryClient.clear()`, then performs an instant client-side redirect using `setLocation('/login')` from `wouter`. This avoids full page reloads and eliminates white screen delays.
+    *   **Security**: Uses `window.location.replace` or `setLocation` after state clearing to ensure session termination and prevent unauthorized back-button access.
 *   **Design System**: Gaming-inspired aesthetic (Discord, Challonge/Battlefy, Linear) with custom typography, responsive 12-column grid layouts, standardized spacing, and dark/light theme support. Login and registration pages feature a distinctive "10/10" circular logo design with monospace typography on a dark background (inspired by the 'dara' visual style).
 *   **Key Features**: Server and channel management (including a dedicated Tournament Dashboard with access enforcement), robust member permissions system, tournament creation and visualization (brackets, standings, match tracking), and real-time match chat.
 *   **Routing**: Structured for mobile preview pages, server-specific views (`/server/:serverId`), tournament details (`/tournament/:id`), a home page, and user account management.
