@@ -44,8 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest('POST', '/api/auth/logout', {});
     },
     onSuccess: () => {
+      // Set user to null immediately to trigger the loading/auth check logic in App.tsx
+      queryClient.setQueryData(['/api/auth/me'], null);
       queryClient.clear();
       setIsAuthenticated(false);
+      // Hard redirect to login to ensure all state is wiped
       window.location.href = '/login';
     },
   });
