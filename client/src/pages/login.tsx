@@ -47,28 +47,17 @@ export default function Login() {
       });
       return res.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       // Clear the user query cache to ensure the next fetch gets the fresh session
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      const user = await refetchUser();
+      queryClient.setQueryData(['/api/auth/me'], data.user);
       
-      if (user) {
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in.",
-        });
-        // Use window.location.href for a hard redirect to ensure session is fully picked up
-        window.location.href = "/";
-      } else {
-        const retryUser = await refetchUser();
-        if (retryUser) {
-          toast({
-            title: "Welcome back!",
-            description: "You've successfully logged in.",
-          });
-          window.location.href = "/";
-        }
-      }
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in.",
+      });
+      
+      // Navigate immediately using wouter's setLocation for a smoother transition
+      setLocation("/");
     },
     onError: (error: any) => {
       toast({
