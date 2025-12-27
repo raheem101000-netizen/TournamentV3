@@ -642,7 +642,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tournaments", async (req, res) => {
     try {
-      console.log('[DEBUG] Tournament creation request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTournamentSchema.parse(req.body);
       
       // Extract registration config and team names (don't save these to tournament table)

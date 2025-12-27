@@ -109,6 +109,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         name: data.name,
         game: data.game,
         format: data.format,
+        visibility: data.visibility,
+        paymentLink: data.paymentLink,
         hasRegistrationConfig: !!data.registrationConfig,
         registrationConfigSteps: data.registrationConfig?.steps?.length || 0,
         registrationConfigData: JSON.stringify(data.registrationConfig, null, 2)
