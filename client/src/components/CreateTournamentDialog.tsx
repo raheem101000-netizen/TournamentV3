@@ -50,25 +50,10 @@ export default function CreateTournamentDialog({
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
   const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
   const [maxTeams, setMaxTeams] = useState("16");
-  const [paymentMethod, setPaymentMethod] = useState<"none" | "stripe" | "paypal" | "cryptocurrency">("none");
-  const [paymentLink, setPaymentLink] = useState("");
-  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   
   // Use ref to store the latest config from RegistrationFormBuilder
   const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
-
-  const getPaymentMethodInfo = () => {
-    switch (paymentMethod) {
-      case "stripe":
-        return "Provide your Stripe payment link or account details so participants can pay via Stripe";
-      case "paypal":
-        return "Provide your PayPal payment link or email address for participants";
-      case "cryptocurrency":
-        return "Provide your wallet address and any payment instructions for cryptocurrency payments";
-      default:
-        return "";
-    }
-  };
 
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
     console.log('[CREATE-DIALOG] Registration config updated:', JSON.stringify(config, null, 2));
@@ -129,9 +114,9 @@ export default function CreateTournamentDialog({
       format: format as any,
       totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
-      paymentMethod: paymentMethod,
-      paymentLink: paymentLink || null,
-      paymentInstructions: paymentInstructions || null,
+      visibility: visibility,
+      paymentLink: null,
+      paymentInstructions: null,
       teamNames: [],
       registrationConfig: finalConfig,
     });
@@ -157,9 +142,7 @@ export default function CreateTournamentDialog({
     setRegistrationConfig(undefined);
     setTeamCapacityMode("unlimited");
     setMaxTeams("16");
-    setPaymentMethod("none");
-    setPaymentLink("");
-    setPaymentInstructions("");
+    setVisibility("public");
     onOpenChange(false);
   };
 
@@ -353,118 +336,43 @@ export default function CreateTournamentDialog({
 
         {step === 3 && (
           <div className="space-y-4 py-4">
-            {/* Payment Method */}
+            {/* Tournament Visibility */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Payment Method</CardTitle>
-                <CardDescription>How participants will pay entry fees (if applicable)</CardDescription>
+                <CardTitle className="text-base">Tournament Visibility</CardTitle>
+                <CardDescription>Who can see and access this tournament</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
+                <RadioGroup value={visibility} onValueChange={(v) => setVisibility(v as any)}>
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="none" id="payment-none" />
-                      <Label htmlFor="payment-none" className="cursor-pointer font-normal">
-                        No Payment Required
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="stripe" id="payment-stripe" />
-                      <Label htmlFor="payment-stripe" className="cursor-pointer font-normal">
-                        Stripe
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="paypal" id="payment-paypal" />
-                      <Label htmlFor="payment-paypal" className="cursor-pointer font-normal">
-                        PayPal
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cryptocurrency" id="payment-crypto" />
-                      <Label htmlFor="payment-crypto" className="cursor-pointer font-normal">
-                        Cryptocurrency
-                      </Label>
-                    </div>
+                    <Label
+                      htmlFor="visibility-public"
+                      className="cursor-pointer flex items-start gap-3 p-3 border rounded-lg hover-elevate"
+                      data-testid="label-visibility-public"
+                    >
+                      <RadioGroupItem value="public" id="visibility-public" className="mt-1" />
+                      <div className="flex-1">
+                        <p className="font-medium">Public Tournament</p>
+                        <p className="text-sm text-muted-foreground">
+                          This tournament is posted on the homepage and is visible to everyone
+                        </p>
+                      </div>
+                    </Label>
+                    <Label
+                      htmlFor="visibility-private"
+                      className="cursor-pointer flex items-start gap-3 p-3 border rounded-lg hover-elevate"
+                      data-testid="label-visibility-private"
+                    >
+                      <RadioGroupItem value="private" id="visibility-private" className="mt-1" />
+                      <div className="flex-1">
+                        <p className="font-medium">Private Tournament</p>
+                        <p className="text-sm text-muted-foreground">
+                          This tournament is only visible and accessible within your server
+                        </p>
+                      </div>
+                    </Label>
                   </div>
                 </RadioGroup>
-
-                {paymentMethod !== "none" && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                      <p className="text-sm text-blue-900 dark:text-blue-100">
-                        {getPaymentMethodInfo()}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="paymentLink">Payment Link or Account</Label>
-                      <Input
-                        id="paymentLink"
-                        placeholder={
-                          paymentMethod === "stripe"
-                            ? "https://buy.stripe.com/..."
-                            : paymentMethod === "paypal"
-                            ? "https://www.paypal.com/paypalme/..."
-                            : "Wallet address or payment instructions"
-                        }
-                        value={paymentLink}
-                        onChange={(e) => setPaymentLink(e.target.value)}
-                        data-testid="input-payment-link"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {paymentMethod === "stripe"
-                          ? "Enter your Stripe payment link"
-                          : paymentMethod === "paypal"
-                          ? "Enter your PayPal.me link or email"
-                          : "Enter your cryptocurrency wallet address"}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="paymentInstructions">Additional Instructions (Optional)</Label>
-                      <Input
-                        id="paymentInstructions"
-                        placeholder="e.g., Reference code, payment deadline, special instructions"
-                        value={paymentInstructions}
-                        onChange={(e) => setPaymentInstructions(e.target.value)}
-                        data-testid="input-payment-instructions"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Optional: Any additional payment instructions for participants
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Payment Link */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Payment Link</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paymentLinkAdditionalInstructions">Additional Payment Instructions (Optional)</Label>
-                  <Input
-                    id="paymentLinkAdditionalInstructions"
-                    placeholder="e.g., enter your @username in the payment link when you pay"
-                    value={paymentInstructions}
-                    onChange={(e) => setPaymentInstructions(e.target.value)}
-                    data-testid="input-payment-instructions-additional"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paymentLinkSimple">Payment Link</Label>
-                  <Input
-                    id="paymentLinkSimple"
-                    placeholder="Enter your payment link or URL"
-                    value={paymentLink}
-                    onChange={(e) => setPaymentLink(e.target.value)}
-                    data-testid="input-payment-link-simple"
-                  />
-                </div>
               </CardContent>
             </Card>
 
