@@ -44,14 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest('POST', '/api/auth/logout', {});
     },
     onSuccess: () => {
-      // Set user to null immediately to trigger the loading/auth check logic in App.tsx
+      // 1. Immediately update UI state locally (Zero-latency)
       queryClient.setQueryData(['/api/auth/me'], null);
-      queryClient.clear();
       setIsAuthenticated(false);
-      // We rely on ProtectedRoute's logic to redirect naturally via wouter
-      // However, we need to ensure the location actually changes if we're not on a protected route
-      // or if we want an immediate jump.
-      window.location.href = '/login';
+      
+      // 2. Clear all sensitive data
+      queryClient.clear();
+      
+      // 3. Centralized logout always goes to login
+      // We use window.location.replace to prevent 'Back' button returning to private pages
+      // but without the white screen delay by doing it after state updates
+      window.location.replace('/login');
     },
   });
 
