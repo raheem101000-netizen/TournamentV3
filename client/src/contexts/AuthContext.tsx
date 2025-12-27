@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
       setIsAuthenticated(false);
       // We rely on ProtectedRoute's logic to redirect naturally via wouter
+      // However, we need to ensure the location actually changes if we're not on a protected route
+      // or if we want an immediate jump.
+      window.location.href = '/login';
     },
   });
 

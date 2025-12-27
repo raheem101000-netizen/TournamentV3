@@ -62,7 +62,7 @@ const passwordSchema = z.object({
 
 export default function AccountSettings() {
   const { toast } = useToast();
-  const { user: authUser, refetchUser } = useAuth();
+  const { user: authUser, refetchUser, logout } = useAuth();
 
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: [`/api/users/${authUser?.id}`],
@@ -236,15 +236,6 @@ export default function AccountSettings() {
     },
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/auth/logout", {});
-    },
-    onSuccess: () => {
-      // Success logic is now centralized in AuthContext's mutation
-      // and ProtectedRoute will handle the transition
-    },
-  });
 
   const onProfileSubmit = (data: z.infer<typeof profileSchema>) => {
     console.log('[ProfileSubmit] Submitting form data:', JSON.stringify(data, null, 2));
@@ -588,7 +579,7 @@ export default function AccountSettings() {
               <CardDescription>Sign out of your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending} data-testid="button-logout">
+              <Button variant="outline" className="w-full" onClick={logout} data-testid="button-logout">
                 Logout
               </Button>
             </CardContent>
