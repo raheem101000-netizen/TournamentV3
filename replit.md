@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 *   **Technology Stack**: React 18 with TypeScript, Wouter for routing, TanStack Query for state management, Radix UI primitives with shadcn/ui for UI components, Tailwind CSS for styling, and Vite for building.
+*   **Authentication**: Session-based with bcrypt. Optimized for zero-latency UI updates by using `queryClient.setQueryData` on login and instant client-side redirection via `wouter`. Includes a themed loading spinner in `App.tsx` to prevent white screens during state transitions.
 *   **Design System**: Gaming-inspired aesthetic (Discord, Challonge/Battlefy, Linear) with custom typography, responsive 12-column grid layouts, standardized spacing, and dark/light theme support. Login and registration pages feature a distinctive "10/10" circular logo design with monospace typography on a dark background (inspired by the 'dara' visual style).
 *   **Key Features**: Server and channel management (including a dedicated Tournament Dashboard with access enforcement), robust member permissions system, tournament creation and visualization (brackets, standings, match tracking), and real-time match chat.
 *   **Routing**: Structured for mobile preview pages, server-specific views (`/server/:serverId`), tournament details (`/tournament/:id`), a home page, and user account management.
