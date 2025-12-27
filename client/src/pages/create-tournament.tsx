@@ -37,7 +37,7 @@ const createTournamentSchema = z.object({
   imageUrl: z.string().optional(),
   imageFit: z.enum(["stretch", "contain", "cover"]).optional(),
   prizeReward: z.string().optional(),
-  entryFee: z.number().optional(),
+  entryFee: z.string().optional(),
   visibility: z.enum(["public", "private"], { required_error: "Visibility is required" }),
   organizerName: z.string().optional(),
   serverId: z.string().optional(),
@@ -59,7 +59,7 @@ export default function CreateTournament() {
       totalTeams: 8,
       imageFit: "cover",
       prizeReward: "",
-      entryFee: 0,
+      entryFee: "",
       visibility: "public",
       organizerName: "",
     },
@@ -307,15 +307,13 @@ export default function CreateTournament() {
                         <FormLabel>Entry Fee (Optional)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
+                            type="text"
+                            placeholder="e.g. $10 or Free"
                             data-testid="input-entry-fee"
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
-                        <FormDescription>Amount per team in USD</FormDescription>
+                        <FormDescription>Amount per team</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -376,6 +374,31 @@ export default function CreateTournament() {
                           </SelectContent>
                         </Select>
                         <FormDescription>How the image fits inside the poster</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="visibility"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Tournament Visibility</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-tournament-visibility">
+                              <SelectValue placeholder="Select visibility" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="public">Public (Posted on Homepage)</SelectItem>
+                            <SelectItem value="private">Private (Only in Server)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Who can see and join this tournament
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
