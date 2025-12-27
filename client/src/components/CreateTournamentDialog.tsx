@@ -51,6 +51,8 @@ export default function CreateTournamentDialog({
   const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
   const [maxTeams, setMaxTeams] = useState("16");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [paymentLink, setPaymentLink] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
   
   // Use ref to store the latest config from RegistrationFormBuilder
   const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
@@ -115,8 +117,8 @@ export default function CreateTournamentDialog({
       totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
       visibility: visibility,
-      paymentLink: null,
-      paymentInstructions: null,
+      paymentLink: paymentLink || null,
+      paymentInstructions: paymentInstructions || null,
       teamNames: [],
       registrationConfig: finalConfig,
     });
@@ -143,6 +145,8 @@ export default function CreateTournamentDialog({
     setTeamCapacityMode("unlimited");
     setMaxTeams("16");
     setVisibility("public");
+    setPaymentLink("");
+    setPaymentInstructions("");
     onOpenChange(false);
   };
 
@@ -373,6 +377,42 @@ export default function CreateTournamentDialog({
                     </Label>
                   </div>
                 </RadioGroup>
+              </CardContent>
+            </Card>
+
+            {/* Payment Link */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Payment Link</CardTitle>
+                <CardDescription>Optional payment link for entry fees</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentLink">Payment Link or URL</Label>
+                  <Input
+                    id="paymentLink"
+                    placeholder="Enter your payment link or URL"
+                    value={paymentLink}
+                    onChange={(e) => setPaymentLink(e.target.value)}
+                    data-testid="input-payment-link"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: Provide a payment link for participants
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentInstructions">Additional Instructions (Optional)</Label>
+                  <Input
+                    id="paymentInstructions"
+                    placeholder="e.g., enter your @username in the payment link when you pay"
+                    value={paymentInstructions}
+                    onChange={(e) => setPaymentInstructions(e.target.value)}
+                    data-testid="input-payment-instructions"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: Any additional payment instructions for participants
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
