@@ -18,7 +18,7 @@ export const tournaments = pgTable("tournaments", {
   posterHeight: integer("poster_height"),
   prizeReward: text("prize_reward"),
   entryFee: text("entry_fee"),
-  paymentMethod: text("payment_method", { enum: ["none", "stripe", "paypal", "cryptocurrency"] }).default("none"),
+  visibility: text("visibility", { enum: ["public", "private"] }).default("public"),
   paymentLink: text("payment_link"),
   paymentInstructions: text("payment_instructions"),
   organizerId: varchar("organizer_id"),
@@ -132,6 +132,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments)
     endDate: z.union([z.string(), z.date()]).transform((val) => 
       typeof val === 'string' ? new Date(val) : val
     ).nullable().optional(),
+    visibility: z.enum(["public", "private"]).optional(),
     // Allow extra fields needed by POST endpoint but not in DB
     teamNames: z.array(z.string()).optional(),
     registrationConfig: z.any().optional(),
