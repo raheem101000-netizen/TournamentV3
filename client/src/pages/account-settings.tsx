@@ -241,12 +241,8 @@ export default function AccountSettings() {
       return await apiRequest("POST", "/api/auth/logout", {});
     },
     onSuccess: () => {
-      queryClient.clear();
-      toast({
-        title: "Logged out",
-        description: "You have been logged out.",
-      });
-      window.location.href = "/login";
+      // Success logic is now centralized in AuthContext's mutation
+      // and ProtectedRoute will handle the transition
     },
   });
 
