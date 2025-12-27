@@ -198,6 +198,7 @@ export default function PreviewHome() {
         posterHeight: t.posterHeight,
         prize: t.prizeReward || "TBD",
         entryFee: t.entryFee || "Free",
+        visibility: t.visibility,
         startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
         startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
         participants: t.totalTeams === -1 ? "Unlimited" : `${t.totalTeams || 0}`,
