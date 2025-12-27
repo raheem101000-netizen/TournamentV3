@@ -38,7 +38,7 @@ const createTournamentSchema = z.object({
   imageFit: z.enum(["stretch", "contain", "cover"]).optional(),
   prizeReward: z.string().optional(),
   entryFee: z.number().optional(),
-  paymentMethod: z.enum(["none", "stripe", "paypal", "cryptocurrency"], { required_error: "Payment method is required" }),
+  visibility: z.enum(["public", "private"], { required_error: "Visibility is required" }),
   organizerName: z.string().optional(),
   serverId: z.string().optional(),
 });
@@ -60,7 +60,7 @@ export default function CreateTournament() {
       imageFit: "cover",
       prizeReward: "",
       entryFee: 0,
-      paymentMethod: "none",
+      visibility: "public",
       organizerName: "",
     },
   });
@@ -271,30 +271,28 @@ export default function CreateTournament() {
                 </div>
               )}
 
-              {/* STEP 3 - Payments & Appearance */}
+              {/* STEP 3 - Visibility & Appearance */}
               {currentStep === 3 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="paymentMethod"
+                    name="visibility"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
-                        <FormLabel>Payment Method</FormLabel>
-                        <Select value={field.value || "none"} onValueChange={field.onChange}>
+                        <FormLabel>Tournament Visibility</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-payment-method">
-                              <SelectValue placeholder="Select payment method" />
+                            <SelectTrigger data-testid="select-tournament-visibility">
+                              <SelectValue placeholder="Select visibility" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">No Payment Required</SelectItem>
-                            <SelectItem value="stripe">Stripe</SelectItem>
-                            <SelectItem value="paypal">PayPal</SelectItem>
-                            <SelectItem value="cryptocurrency">Cryptocurrency</SelectItem>
+                            <SelectItem value="public">Public (Posted on Homepage)</SelectItem>
+                            <SelectItem value="private">Private (Only in Server)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          How participants will pay entry fees (if applicable)
+                          Who can see and join this tournament
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

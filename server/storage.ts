@@ -489,7 +489,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRegistration(data: InsertRegistration): Promise<Registration> {
-    const [registration] = await db.insert(registrations).values(data).returning();
+    const [registration] = await db.insert(registrations).values({
+      ...data,
+      updatedAt: new Date()
+    }).returning();
     return registration;
   }
 
