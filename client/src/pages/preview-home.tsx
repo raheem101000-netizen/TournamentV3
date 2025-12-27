@@ -223,8 +223,11 @@ export default function PreviewHome() {
       if (!matchesSearch) return false;
     }
     
-    // If no filters active, show all
-    if (activeFilters.size === 0) return true;
+    // Check visibility filters
+    const visibilityFiltersActive = activeFilters.has("prize") || activeFilters.has("no-prize"); // This logic seems to be about prizes, let's add visibility
+    
+    // Visibility filter (Only show public tournaments in home preview by default)
+    if (poster.visibility === "private") return false;
     
     // Normalize values for filtering
     const prizeNormalized = (poster.prize || "").toLowerCase().trim();

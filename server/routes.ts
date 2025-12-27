@@ -649,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Keep serverId - it needs to be saved!
       const { teamNames, registrationConfig, ...tournamentData } = validatedData;
       
-      const tournament = await storage.createTournament(tournamentData);
+      const tournament = await storage.createTournament(tournamentData as any);
 
       if (teamNames && teamNames.length > 0) {
         const createdTeams = await Promise.all(

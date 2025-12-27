@@ -13,6 +13,8 @@ export default function MobilePreviewHome() {
     queryKey: ["/api/tournaments"],
   });
 
+  const publicTournaments = tournaments?.filter(t => t.visibility !== "private");
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -34,7 +36,7 @@ export default function MobilePreviewHome() {
       
       {/* Responsive Grid: 1 column on mobile (phone), 3 columns on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {tournaments?.map((tournament) => (
+        {publicTournaments?.map((tournament) => (
           <Card 
             key={tournament.id}
             className="overflow-hidden hover-elevate"
@@ -129,7 +131,7 @@ export default function MobilePreviewHome() {
         ))}
       </div>
 
-      {!tournaments || tournaments.length === 0 && (
+      {!publicTournaments || publicTournaments.length === 0 && (
         <div className="text-center py-12" data-testid="no-tournaments-message">
           <p className="text-muted-foreground">No tournaments available</p>
         </div>
