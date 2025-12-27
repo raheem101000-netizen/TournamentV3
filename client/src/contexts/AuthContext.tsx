@@ -48,8 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(['/api/auth/me'], null);
       queryClient.clear();
       setIsAuthenticated(false);
-      // Hard redirect to login to ensure all state is wiped
-      window.location.href = '/login';
+      // HARD REDIRECT is what causes the white screen (page reload)
+      // We will avoid window.location.href if possible, but since we cleared queryClient, 
+      // the ProtectedRoute will naturally redirect to /login via wouter.
     },
   });
 
