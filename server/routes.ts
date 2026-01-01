@@ -9,7 +9,7 @@ import multer from "multer";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { SESSION_SECRET } from "./index";
+import { SESSION_SECRET } from "./app";
 import { sendVerificationEmail } from "./email";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 
