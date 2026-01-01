@@ -19,14 +19,14 @@ export async function setupVite(app: Express, server: Server) {
   const viteModule = await import("vite");
   const viteConfigModule = await import("../vite.config");
   const nanoidModule = await import("nanoid");
-  
+
   const createViteServer = viteModule.createServer;
   const createLogger = viteModule.createLogger;
   const viteConfig = viteConfigModule.default;
   const nanoid = nanoidModule.nanoid;
-  
+
   const viteLogger = createLogger();
-  
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -77,12 +77,12 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   // Try multiple path resolution strategies for production compatibility
   let distPath = path.resolve(import.meta.dirname, "public");
-  
+
   // Fallback: try relative to cwd/dist/public
   if (!fs.existsSync(distPath)) {
     distPath = path.resolve(process.cwd(), "dist", "public");
   }
-  
+
   // Fallback: try relative to cwd/public (in case we're already in dist)
   if (!fs.existsSync(distPath)) {
     distPath = path.resolve(process.cwd(), "public");
@@ -104,7 +104,13 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // BUT don't catch API routes
+  app.use("*", (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+
     if (!fs.existsSync(indexPath)) {
       console.error(`[serveStatic] index.html not found at: ${indexPath}`);
       return res.status(500).send("index.html not found");
