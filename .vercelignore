@@ -1,0 +1,6 @@
+attached_assets/10-on-10-develop
+attached_assets/backend10on10-main
+attached_assets/*.zip
+attached_assets/*.gz
+attached_assets/*.txt
+**.DS_Store
