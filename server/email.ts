@@ -5,7 +5,7 @@ let resendClient: Resend | null = null;
 async function getResendClient(): Promise<{ client: Resend; fromEmail: string }> {
   // Try to use environment variable first (simpler)
   const apiKey = process.env.RESEND_API_KEY;
-  
+
   if (apiKey) {
     return {
       client: new Resend(apiKey),
@@ -112,7 +112,7 @@ export async function sendVerificationEmail(
     console.log('[EMAIL] Verification email sent successfully:', {
       to: recipientEmail,
       from: fromEmail,
-      messageId: result.id
+      messageId: result.data?.id
     });
 
     return true;

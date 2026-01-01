@@ -121,22 +121,22 @@ export interface IStorage {
   getRegistrationConfigByTournament(tournamentId: string): Promise<RegistrationConfig | undefined>;
   updateRegistrationConfig(id: string, data: Partial<RegistrationConfig>): Promise<RegistrationConfig | undefined>;
   deleteRegistrationConfig(configId: string): Promise<void>;
-  
+
   createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep>;
   getStepsByConfig(configId: string): Promise<RegistrationStep[]>;
   updateRegistrationStep(id: string, data: Partial<RegistrationStep>): Promise<RegistrationStep | undefined>;
   deleteRegistrationStep(id: string): Promise<void>;
-  
+
   createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField>;
   getFieldsByStep(stepId: string): Promise<RegistrationField[]>;
   updateRegistrationField(id: string, data: Partial<RegistrationField>): Promise<RegistrationField | undefined>;
   deleteRegistrationField(id: string): Promise<void>;
-  
+
   createRegistration(data: InsertRegistration): Promise<Registration>;
   getRegistration(id: string): Promise<Registration | undefined>;
   getRegistrationsByTournament(tournamentId: string): Promise<Registration[]>;
   updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined>;
-  
+
   createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse>;
   getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
 
@@ -148,48 +148,48 @@ export interface IStorage {
   getServersByUser(userId: string): Promise<Server[]>;
   isUserInServer(serverId: string, userId: string): Promise<boolean>;
   getServerMember(serverId: string, userId: string): Promise<ServerMember | undefined>;
-  
+
   // Channel operations
   createChannel(data: InsertChannel): Promise<Channel>;
   getChannelsByServer(serverId: string): Promise<Channel[]>;
   getChannel(id: string): Promise<Channel | undefined>;
   updateChannel(id: string, data: Partial<Channel>): Promise<Channel | undefined>;
   deleteChannel(id: string): Promise<void>;
-  
+
   // Channel category operations
   createChannelCategory(data: InsertChannelCategory): Promise<ChannelCategory>;
   getCategoriesByServer(serverId: string): Promise<ChannelCategory[]>;
   updateChannelCategory(id: string, data: Partial<ChannelCategory>): Promise<ChannelCategory | undefined>;
   deleteChannelCategory(id: string): Promise<void>;
-  
+
   // Channel message operations
   createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage>;
   getChannelMessages(channelId: string, limit?: number): Promise<ChannelMessage[]>;
   searchChannelMessages(channelId: string, query: string): Promise<ChannelMessage[]>;
   deleteChannelMessage(id: string): Promise<void>;
-  
+
   // Server role operations
   createServerRole(data: InsertServerRole): Promise<ServerRole>;
   getRolesByServer(serverId: string): Promise<ServerRole[]>;
   getRolesByUser(userId: string, serverId: string): Promise<ServerRole[]>;
   updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined>;
   deleteServerRole(id: string): Promise<void>;
-  
+
   // Server ban operations
   createServerBan(data: InsertServerBan): Promise<ServerBan>;
   getBansByServer(serverId: string): Promise<ServerBan[]>;
   deleteBan(serverId: string, userId: string): Promise<void>;
-  
+
   // Server invite operations
   createServerInvite(data: InsertServerInvite): Promise<ServerInvite>;
   getInvitesByServer(serverId: string): Promise<ServerInvite[]>;
   getInviteByCode(code: string): Promise<ServerInvite | undefined>;
   incrementInviteUse(code: string): Promise<void>;
   deleteInvite(id: string): Promise<void>;
-  
+
   // Server update operations
   updateServer(id: string, data: Partial<Server>): Promise<Server | undefined>;
-  
+
   // Mobile preview operations
   getAllMessageThreads(): Promise<MessageThread[]>;
   getMessageThreadsByUser(userId: string): Promise<MessageThread[]>;
@@ -215,7 +215,7 @@ export interface IStorage {
   getPosterTemplate(id: string): Promise<PosterTemplate | undefined>;
   updatePosterTemplate(id: string, data: Partial<PosterTemplate>): Promise<PosterTemplate | undefined>;
   deletePosterTemplate(id: string): Promise<void>;
-  
+
   createPosterTemplateTag(data: InsertPosterTemplateTag): Promise<PosterTemplateTag>;
   getTagsByTemplate(templateId: string): Promise<PosterTemplateTag[]>;
   deleteTagsByTemplate(templateId: string): Promise<void>;
@@ -271,7 +271,7 @@ export interface IStorage {
   updateReport(reportId: string, data: Partial<Report>): Promise<Report | undefined>;
   getAllCustomerServiceMessages(): Promise<CustomerServiceMessage[]>;
   updateCustomerServiceMessage(messageId: string, data: Partial<CustomerServiceMessage>): Promise<CustomerServiceMessage | undefined>;
-  
+
   // Admin moderation  
   banUser(userId: string): Promise<User | undefined>;
   unbanUser(userId: string): Promise<User | undefined>;
@@ -416,7 +416,7 @@ export class DatabaseStorage implements IStorage {
 
       if (steps.length > 0) {
         const stepIds = steps.map(s => s.id);
-        
+
         const allFields: { id: string }[] = [];
         for (const stepId of stepIds) {
           const fields = await tx
@@ -428,7 +428,7 @@ export class DatabaseStorage implements IStorage {
 
         if (allFields.length > 0) {
           const fieldIds = allFields.map(f => f.id);
-          
+
           for (const fieldId of fieldIds) {
             await tx
               .delete(registrationResponses)
@@ -498,8 +498,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRegistration(data: InsertRegistration): Promise<Registration> {
+    if (!data.userId) {
+      throw new Error("userId is required for registration");
+    }
     const [registration] = await db.insert(registrations).values({
       ...data,
+      userId: data.userId,
       updatedAt: new Date()
     }).returning();
     return registration;
@@ -553,12 +557,12 @@ export class DatabaseStorage implements IStorage {
       userId,
       role: "Member",
     }).returning();
-    
+
     // Increment member count
     await db.update(servers)
       .set({ memberCount: sql`${servers.memberCount} + 1` })
       .where(eq(servers.id, serverId));
-    
+
     return member;
   }
 
@@ -567,9 +571,9 @@ export class DatabaseStorage implements IStorage {
       .select({ serverId: serverMembers.serverId })
       .from(serverMembers)
       .where(eq(serverMembers.userId, userId));
-    
+
     if (userServerIds.length === 0) return [];
-    
+
     return await db.select()
       .from(servers)
       .where(sql`${servers.id} IN (${sql.join(userServerIds.map(s => sql`${s.serverId}`), sql`, `)})`);
@@ -619,7 +623,7 @@ export class DatabaseStorage implements IStorage {
 
   async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
     console.log("[MSG-THREADS] Starting getMessageThreadsForParticipant for user:", userId);
-    
+
     // Get all tournaments where user has approved registrations  
     const userTournaments = await db
       .select({ tournamentId: registrations.tournamentId })
@@ -647,7 +651,7 @@ export class DatabaseStorage implements IStorage {
           isNull(messageThreads.matchId)
         )
       );
-    
+
     console.log("[MSG-THREADS] Direct threads query result:", directThreads.map(t => ({ id: t.id, userId: t.userId, participantId: t.participantId, matchId: t.matchId })));
 
     console.log("[MSG-THREADS] Direct threads found:", directThreads.length);
@@ -685,7 +689,7 @@ export class DatabaseStorage implements IStorage {
     // Get all match threads for this user (where matchId IS NOT NULL)
     // These include both shared threads (userId IS NULL) and per-user threads (userId = current user)
     console.log("[MSG-THREADS] Querying for match threads");
-    
+
     try {
       const matchThreads = await db
         .select()
@@ -710,7 +714,7 @@ export class DatabaseStorage implements IStorage {
       const finalThreads = allThreads.sort(
         (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
       );
-      
+
       console.log("[MSG-THREADS] Final threads to return:", finalThreads.length);
       return finalThreads;
     } catch (error) {
@@ -773,7 +777,7 @@ export class DatabaseStorage implements IStorage {
   async deleteThreadMessageAndSyncPreview(threadId: string, messageId: string): Promise<void> {
     // Delete the message first
     await db.delete(threadMessages).where(eq(threadMessages.id, messageId));
-    
+
     // Query for the latest remaining message directly (fresh query after delete)
     const [latestMessage] = await db
       .select()
@@ -781,7 +785,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(threadMessages.threadId, threadId))
       .orderBy(desc(threadMessages.createdAt))
       .limit(1);
-    
+
     if (latestMessage) {
       // Update thread with the latest remaining message
       await db
@@ -959,13 +963,13 @@ export class DatabaseStorage implements IStorage {
       .set(data)
       .where(eq(users.id, id))
       .returning();
-    
+
     // Fallback: if returning() returns nothing, fetch the user after update
     if (!user) {
       const [fetchedUser] = await db.select().from(users).where(eq(users.id, id));
       return fetchedUser || undefined;
     }
-    
+
     return user;
   }
 
@@ -974,18 +978,18 @@ export class DatabaseStorage implements IStorage {
     if (!user || !user.passwordHash) {
       return false;
     }
-    
+
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isValid) {
       return false;
     }
-    
+
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     await db
       .update(users)
       .set({ passwordHash: newPasswordHash })
       .where(eq(users.id, id));
-    
+
     return true;
   }
 
@@ -1018,7 +1022,7 @@ export class DatabaseStorage implements IStorage {
     }).from(achievements)
       .where(eq(achievements.userId, userId))
       .orderBy(achievements.achievedAt);
-    
+
     // Fetch server names for achievements that have a serverId
     const withServerNames = await Promise.all(
       achievementsList.map(async (ach) => {
@@ -1029,7 +1033,7 @@ export class DatabaseStorage implements IStorage {
         return ach;
       })
     );
-    
+
     return withServerNames;
   }
 
@@ -1146,7 +1150,7 @@ export class DatabaseStorage implements IStorage {
         eq(serverMembers.serverId, serverId),
         eq(serverMembers.userId, userId)
       ));
-    
+
     // Decrement member count
     await db.update(servers)
       .set({ memberCount: sql`GREATEST(${servers.memberCount} - 1, 0)` })
@@ -1267,11 +1271,11 @@ export class DatabaseStorage implements IStorage {
     if (!member || !member.roleId) {
       return [];
     }
-    
+
     // Get the specific role(s) assigned to this user
     const [role] = await db.select().from(serverRoles)
       .where(eq(serverRoles.id, member.roleId));
-    
+
     return role ? [role] : [];
   }
 
@@ -1495,9 +1499,9 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .limit(1);
-    
+
     if (pendingRequest) return pendingRequest;
-    
+
     // Then look for accepted friendships
     const [acceptedRequest] = await db
       .select()
@@ -1512,7 +1516,7 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .limit(1);
-    
+
     return acceptedRequest || undefined;
   }
 
