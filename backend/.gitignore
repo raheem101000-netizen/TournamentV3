@@ -1,0 +1,7 @@
+.env
+/lib
+/node_modules
+.graphql-editor-auth.json
+*.tsbuildinfo
+.env
+*.DS_Store

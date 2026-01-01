@@ -1,0 +1,76 @@
+{
+    "Tournament": "Tournament",
+    "InterestedUsers": {
+        "Users": "Users",
+        "SeeAllPlayers": "See all members"
+    },
+    "EmptyScreen": {
+        "FetchFailed": {
+            "Title": "Something went wrong",
+            "Description": "Something went wrong while fetching, try again",
+            "Button": "Try again"
+        },
+        "NoChannels": {
+            "Title": "No channels yet!",
+            "DescriptionHost": "Create one now",
+            "DescriptionUser": "Stay tuned for updates",
+            "Button": "Create one now"
+        }
+    },
+    "BottomSheet": {
+        "ChannelContent": "Channel Content",
+        "ChannelType": {
+            "Title": "Channel Type",
+            "Close": {
+                "Title": "Close Channel",
+                "Description": "(not possible to chat)"
+            },
+            "Open": {
+                "Title": "Open Channel",
+                "Description": "(possible to chat)"
+            }
+        },
+        "ChannelTournament": "Tournament Channel",
+        "Title": {
+            "Create": "New Channel",
+            "Edit": "Edit Channel"
+        },
+        "Done": "Done",
+        "ExitModal": {
+            "Title": "Abandon Channel Creation",
+            "Description": "You're about to leave this page. Any unsaved changes will be discarded.",
+            "ButtonConfirmTitle": "Discard & Exit"
+        },
+        "Placeholder": {
+            "name": "Channel Title",
+            "description": "Add Info"
+        },
+        "Delete": {
+            "Modal": {
+                "Title": "Delete channel",
+                "Description": "Are you sure you want to delete this Server?\nThis action cannot be undone.",
+                "ButtonConfirmTitle": "Delete"
+            },
+            "ButtonTitle": "Delete Channel"
+        }
+    },
+    "ChannelsSection": {
+        "Channels": "Channels",
+        "Join": "Join",
+        "Leave": "Leave",
+        "Edit": "Edit",
+        "DeleteServer": "Delete Server",
+        "AddChannel": "Add Channel"
+    },
+    "DeleteModal": {
+        "Title": "Delete server",
+        "Description": "Are you sure you want to delete this Server?\nThis action cannot be undone.",
+        "AdditionalDescription": "Enter the following to confirm:",
+        "ButtonTitle": "Delete"
+    },
+    "UnFollowModal": {
+        "Title": "Leave Server",
+        "Description": "Are you sure you want to leave this Server?",
+        "ButtonTitle": "Leave"
+    }
+}

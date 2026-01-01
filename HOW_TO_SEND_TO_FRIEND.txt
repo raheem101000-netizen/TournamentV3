@@ -1,0 +1,59 @@
+================================================================================
+HOW TO SEND THE PROJECT TO YOUR FRIEND - EASY STEPS
+================================================================================
+
+STEP 1: DOWNLOAD THE PROJECT FROM REPLIT
+================================================================================
+
+On Replit:
+1. Click the three dots menu (⋮) at the top
+2. Click "Download as ZIP"
+3. Wait for it to download
+4. It will be called something like "replit.zip" or "10-on-10.zip"
+
+================================================================================
+STEP 2: SEND THE ZIP FILE TO YOUR FRIEND
+================================================================================
+
+Send the ZIP file via:
+- Email (attach the ZIP file)
+- WhatsApp (send as document)
+- Google Drive / Dropbox (share the link)
+- WeTransfer.com (free, easy file sharing)
+- Any file sharing method
+
+================================================================================
+STEP 3: SEND THE INSTRUCTIONS
+================================================================================
+
+Also send your friend the file:
+"SIMPLE_INSTRUCTIONS_FOR_FRIEND.txt"
+
+(It's in your Replit files - download it and send it)
+
+================================================================================
+STEP 4: WAIT FOR YOUR FRIEND
+================================================================================
+
+Your friend will:
+- Extract the ZIP
+- Install the packages
+- Start the app
+- Send you a screenshot of the QR code
+
+================================================================================
+STEP 5: WHEN YOU GET THE QR CODE
+================================================================================
+
+1. Open the screenshot on your phone
+2. Use your phone's camera to scan the QR code
+3. Tap "Open in Expo Go"
+4. Your app opens with all 6 tabs!
+
+================================================================================
+THAT'S THE WHOLE PROCESS!
+================================================================================
+
+No GitHub needed. Just ZIP file + simple instructions = Success!
+
+================================================================================

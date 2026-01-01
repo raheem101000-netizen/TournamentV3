@@ -1,0 +1,42 @@
+{
+    "CreateServer": "Create Server",
+    "EditServer": "Edit Server",
+    "Cancel": "Cancel",
+    "Guest": "Guest",
+    "GuestMode": {
+        "EmptyScreen": {
+            "Title": "Guest mode",
+            "Description": "You are in guest mode,\n to see the full content, please log in.",
+            "Button": "Go to login"
+        }
+    },
+    "ReportMessage": {
+        "Title": "I want to report message {{messageId}} from user {{userId}} :\n {{text}}",
+        "Subject": "Report message"
+    },
+    "ReportServer": {
+        "Title": "I want to report server {{serverId}}",
+        "Subject": "Report server"
+    },
+    "TabsHeader": {
+        "Home": "Find Servers",
+        "MyServers": "My Servers",
+        "Account": "Account",
+        "PrivacyPolicy": "Privacy & Terms"
+    },
+    "Tabs": {
+        "Home": "Home",
+        "MyServers": "My Servers",
+        "Account": "Account"
+    },
+    "ExitModal": {
+        "Title": "Exit App",
+        "Description": "Do you want to close the application?",
+        "ConfirmButtonTitle": "Yes"
+    },
+    "NoInternetConnectionEmptyState": {
+        "Title": "Connection problem",
+        "Description": "There was a problem establishing a connection, try again",
+        "ButtonTitle": "Try again"
+    }
+}

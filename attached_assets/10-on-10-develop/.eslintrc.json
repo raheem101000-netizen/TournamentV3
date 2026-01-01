@@ -1,0 +1,76 @@
+{
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "patches",
+    "**/*.json",
+    "**/*.plist",
+    "**/*.yaml"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "universe"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "sourceType": "module",
+    "ecmaVersion": "latest"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "react",
+    "react-hooks",
+    "unused-imports",
+    "simple-import-sort",
+    "import"
+  ],
+  "rules": {
+    "eqeqeq": [
+      "error",
+      "always"
+    ],
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "@typescript-eslint/no-unused-vars": "off",
+    "unused-imports/no-unused-imports": "error",
+    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/no-var-requires": 0,
+    "react/prop-types": 0,
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "import/no-duplicates": "error",
+    "import/order": "off",
+    "unused-imports/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^_",
+        "args": "after-used",
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "double",
+      "avoid-escape"
+    ]
+  }
+}

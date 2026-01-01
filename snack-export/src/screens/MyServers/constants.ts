@@ -1,0 +1,4 @@
+export enum SCREENS {
+  HOSTED_SCREEN,
+  JOINED_SCREEN,
+}

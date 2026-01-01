@@ -1,0 +1,37 @@
+{
+    "Welcome": "Welcome to",
+    "Description": "Log in to access your account and continue your experience.",
+    "LogIn": "Log in",
+    "CreateAccount": "Create account",
+    "ResetPassword": "Reset Password",
+    "GuestMode": "Skip",
+    "Reset": {
+        "ForgotPassword": "Forgot your password?",
+        "DontHaveAnAccount": "Don't have an account?",
+        "RequestPasswordDescription": "Forgot your password? Don't worry, just enter the email associated with your account below, and we'll send you a TOKEN to reset your password.",
+        "ResetPasswordDescription": "Please check your inbox (and spam folder, just in case!) for further instructions on how to reset your password. If you don't receive the email within a few minutes, please try again or contact our support team for assistance.",
+        "EndResetPasswordDescription": "Success! Your password has been changed",
+        "SendLink": "Send Token",
+        "Confirm": "Confirm",
+        "BackToLogIn": "Back To Log In"
+    },
+    "Terms": {
+        "Main": "By creating an account you accept the",
+        "UnderLine": "Terms & Conditions and Privacy Policy"
+    },
+    "Form": {
+        "Placeholder": {
+            "fullName": "Username",
+            "email": "Email",
+            "password": "Password",
+            "newPassword": "New Password",
+            "forgotToken": "Reset Token"
+        },
+        "Helpers": {
+            "AtLeast8": "At least 8 characters",
+            "AtLeastOneNumber": "At least 1 number",
+            "UpperLowerCase": "Both upper and lower case letters",
+            "SpecialCharacterMissing": "Special character missing"
+        }
+    }
+}

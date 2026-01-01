@@ -1,0 +1,201 @@
+:\Users\46732\Downloads>dir
+ Volume in drive C is Windows
+ Volume Serial Number is AEA3-803F
+
+ Directory of C:\Users\46732\Downloads
+
+2025-11-13  21:14    <DIR>          .
+2025-10-04  18:04    <DIR>          ..
+2025-11-13  17:17         1 163 122 10-on-10-develop.zip
+2025-11-13  20:01           809 920 10-on-10-integrated.tar.gz
+2025-08-24  21:21           445 680 198201012203_SE_SSA_1400_B2_2_0953 (1).pdf
+2025-08-24  21:22           445 680 198201012203_SE_SSA_1400_B2_2_0953 (2).pdf
+2025-08-24  21:22           445 680 198201012203_SE_SSA_1400_B2_2_0953 (3).pdf
+2025-10-26  11:35           445 680 198201012203_SE_SSA_1400_B2_2_0953 (4).pdf
+2025-08-24  20:57           445 680 198201012203_SE_SSA_1400_B2_2_0953.pdf
+2024-01-28  14:09         3 134 541 20240128_140349.jpg
+2022-10-16  10:28           754 249 4.Pa_upptacksfard (1).pdf
+2022-10-16  10:32           754 249 4.Pa_upptacksfard (2).pdf
+2022-10-16  10:20           754 249 4.Pa_upptacksfard.pdf
+2023-05-26  08:37           188 872 4380752c-bcc3-4fcc-81b5-a2ae16695c9f.pdf
+2022-09-06  15:53           450 435 820101-2203_grundskolan.pdf
+2025-07-04  22:47           358 070 823244.pdf
+2023-10-26  19:09           188 479 a105b1e2-9d81-4f71-b91a-7a15f21a39c2.pdf
+2025-10-09  22:51            33 355 AbdirashiidSammantar (4) (1) (1).pdf
+2025-10-09  23:21            75 132 AbdirashiidSammantar (4) (1) (2).pdf
+2025-07-03  22:08            33 355 AbdirashiidSammantar (4) (1).pdf
+2022-10-15  08:14           210 492 admin-smtnr32010nacl (1).pdf
+2022-10-15  08:14           210 492 admin-smtnr32010nacl.pdf
+2023-01-03  13:14           265 251 allm-farm-instud-uppg-utl-sjksk-2019-10-31 (1).pdf
+2023-01-03  13:12           265 251 allm-farm-instud-uppg-utl-sjksk-2019-10-31.pdf
+2022-09-06  15:56            66 127 ansokan.PDF
+2025-10-26  17:48         7 189 128 avg_secure_browser_setup.exe
+2022-06-18  13:01            12 660 Berätta om varför du har sökt denna utbildning.docx
+2023-04-06  19:07            14 096 Betygsraporrtering B.docx
+2024-05-14  20:56           128 379 Bilaga.PDF
+2025-04-04  22:54            64 945 Björnstad 1-10.pdf
+2025-04-06  00:28            55 247 Björnstad 11-201.pdf
+2023-02-15  18:29           199 052 bokcirkel_vi (1).pdf
+2023-02-15  18:18           199 052 bokcirkel_vi.pdf
+2025-10-04  18:16            25 827 bonetider-goteborg-2025-10.pdf
+2025-06-02  20:50               158 certificate-report.csv
+2025-02-20  23:43         3 254 368 chrome.exe
+2025-03-27  13:58        10 781 056 ChromeSetup (1).exe
+2024-06-02  17:04         8 712 256 ChromeSetup.exe
+2024-02-11  17:43            45 928 CV (1) (1).pdf
+2025-11-06  21:49           409 781 CV RESUME.pdf
+2025-04-04  09:19             1 642 debug.log
+2023-01-23  17:17            45 756 Document 2 (1).pdf
+2023-01-23  17:17            45 756 Document 2.pdf
+2025-04-06  18:23            34 388 Document 8.pdf
+2025-04-13  15:02            23 630 Document 9 (1).pdf
+2025-04-13  15:06            23 233 Document 9 (2).pdf
+2025-04-13  19:28            26 660 Document 9 (3).pdf
+2025-04-13  15:36            12 820 Document 9.docx
+2025-04-12  22:24            40 784 Document 9.pdf
+2022-08-25  21:43            11 610 Dokument 11.docx
+2022-08-26  18:23            11 741 Dokument 12.docx
+2022-11-05  23:29            61 550 Dokument 17 (1).pdf
+2022-10-30  20:24            61 550 Dokument 17.pdf
+2023-02-06  11:51            83 112 Dokument 2 (1).pdf
+2022-05-17  18:56            11 858 Dokument 2.docx
+2023-02-06  11:48            83 076 Dokument 2.pdf
+2022-12-13  21:27           101 683 Dokument 23 (1).pdf
+2022-12-13  21:34            48 604 Dokument 23 (2).pdf
+2022-12-13  21:35            48 604 Dokument 23 (3).pdf
+2022-12-13  21:36            48 604 Dokument 23 (4).pdf
+2022-12-16  14:46           104 299 Dokument 23 (5).pdf
+2022-12-16  14:46           104 299 Dokument 23 (6).pdf
+2022-12-13  21:27           101 683 Dokument 23.pdf
+2022-12-26  13:21           102 359 Dokument 24 (1).pdf
+2022-12-26  13:19           102 365 Dokument 24.pdf
+2022-12-27  12:53           114 000 Dokument 25 (1).pdf
+2022-12-27  13:10            88 882 Dokument 25 (2).pdf
+2022-12-27  15:58            88 882 Dokument 25 (3) (1).pdf
+2022-12-27  15:58            88 882 Dokument 25 (3) (2).pdf
+2022-12-27  15:59            88 882 Dokument 25 (3) (3).pdf
+2022-12-27  13:10            88 882 Dokument 25 (3).pdf
+2022-12-27  12:53           114 000 Dokument 25.pdf
+2023-01-12  20:20            12 799 Dokument 30 (1).docx
+2023-01-13  23:10            99 660 Dokument 30 (1).pdf
+2023-01-12  20:25            12 807 Dokument 30 (2).docx
+2023-01-13  23:11           146 633 Dokument 30 (2).pdf
+2023-01-13  10:12            13 966 Dokument 30 (3).docx
+2023-01-13  23:13           146 611 Dokument 30 (3).pdf
+2023-01-11  22:21            12 907 Dokument 30.docx
+2023-01-13  23:05           147 031 Dokument 30.pdf
+2024-06-07  09:06           176 569 Eng 5 Essay Writing.pdf
+2023-01-20  22:18            38 400 etikspalt_pulsen_2_2008 (1).doc
+2023-01-20  22:17            38 400 etikspalt_pulsen_2_2008.doc
+2023-01-06  11:47            18 597 Fjädertvättning.docx
+2025-06-25  09:10           582 248 ForelaggandeFysiskPerson-1.pdf
+2025-06-25  08:08           383 297 ForstaUnderrattelseOvrigaMal-1 (1).pdf
+2025-06-25  08:00           383 297 ForstaUnderrattelseOvrigaMal-1.pdf
+2025-11-07  12:12            37 031 Förflyytningsutbildningar HMC Sverige.docx
+2022-08-11  19:40            54 159 Gerontologi och Geriatrik 2.pdf
+2025-04-22  21:45            99 203 Godkännande för timvikarier på vikarieenhet av kläd-_hygienrutiner, sekretess samt etik, bemötande och rapporteringsskyldighet - 200501.pdf
+2025-11-07  12:14            33 045 HLR_Vuxen_Utbildning_2025.docx
+2023-09-03  14:21            27 747 Inbjudan till kursprov 2023 (1).docx
+2023-08-22  17:47            27 747 Inbjudan till kursprov 2023.docx
+2025-07-04  22:47           230 240 Info Yohara (1).pdf
+2025-06-25  07:23           230 240 Info Yohara.pdf
+2022-10-22  12:43            13 984 Instuderings momenten av kapitel 3 + 4.docx
+2024-01-18  16:04           140 988 Instuderingsfrågor Omsorg 2 Första delen.pdf
+2023-12-08  07:38           109 457 Instuderingsfrågor Psykiatri 2  Kapitel1 (1).pdf
+2023-12-07  10:32           109 457 Instuderingsfrågor Psykiatri 2  Kapitel1.pdf
+2025-04-04  23:09            26 046 Jag kommer att läsa boken Björnstad av Fredrik Backman.pdf
+2022-09-07  09:35            11 773 Joharas CV (1).docx
+2022-09-07  09:32            11 773 Joharas CV.docx
+2022-08-03  19:42         1 002 673 Kap 1 del1 (1).pdf
+2022-08-03  19:42         1 002 673 Kap 1 del1.pdf
+2025-07-04  22:56           314 367 Komm Johara (1).pdf
+2025-07-04  22:57           314 367 Komm Johara (2).pdf
+2025-06-25  07:25           314 367 Komm Johara.pdf
+2025-10-26  11:26            13 070 Kvittens.pdf
+2023-12-07  07:51           117 574 Mariannes svar på Instuderingsrågor Psykiatri 2 Kapitel 2.pdf
+2025-10-26  09:53            68 716 Matematik Nationell delkurs 1 (1).pdf
+2025-11-11  22:55            68 716 Matematik Nationell delkurs 1 (2).pdf
+2025-07-11  21:25            68 716 Matematik Nationell delkurs 1.pdf
+2025-06-24  18:31            71 478 meddelande.pdf
+2023-01-18  18:43         1 423 688 MSTeamsSetup_c_l_.exe
+2023-03-08  15:15             8 446 Namnlöst dokument (1).docx
+2023-08-22  21:58            56 817 Namnlöst dokument (1).pdf
+2024-01-27  14:02            27 566 Namnlöst dokument (10).pdf
+2024-01-28  13:09           141 557 Namnlöst dokument (11).pdf
+2024-01-28  13:12           141 563 Namnlöst dokument (12).pdf
+2024-04-12  22:29            36 779 Namnlöst dokument (13).pdf
+2024-04-21  21:29            36 615 Namnlöst dokument (14) (1).pdf
+2024-04-21  21:29            36 615 Namnlöst dokument (14) (2).pdf
+2024-04-21  21:31            36 615 Namnlöst dokument (14) (3).pdf
+2024-04-12  22:35            36 615 Namnlöst dokument (14).pdf
+2024-04-21  21:06            43 615 Namnlöst dokument (15).pdf
+2024-04-21  21:29            42 228 Namnlöst dokument (16).pdf
+2024-04-21  21:34            42 228 Namnlöst dokument (17).pdf
+2024-04-21  21:36            42 202 Namnlöst dokument (18).pdf
+2025-04-23  18:27            38 889 Namnlöst dokument (19).pdf
+2023-10-04  20:22            11 131 Namnlöst dokument (2).docx
+2023-09-13  20:15            33 450 Namnlöst dokument (2).pdf
+2025-04-27  15:40            38 561 Namnlöst dokument (20).pdf
+2025-04-27  18:28            45 243 Namnlöst dokument (21).pdf
+2025-04-27  21:19            72 790 Namnlöst dokument (22).pdf
+2025-04-29  09:55            54 016 Namnlöst dokument (23).pdf
+2023-10-04  20:34            11 131 Namnlöst dokument (3).docx
+2023-09-15  09:22            31 843 Namnlöst dokument (3).pdf
+2023-10-04  20:44            11 131 Namnlöst dokument (4) (1).docx
+2023-10-04  20:41            11 131 Namnlöst dokument (4).docx
+2023-10-04  19:07            54 743 Namnlöst dokument (4).pdf
+2023-11-06  14:07            32 083 Namnlöst dokument (5).pdf
+2023-11-15  22:03            73 778 Namnlöst dokument (6) (1).pdf
+2023-11-15  22:03            73 778 Namnlöst dokument (6).pdf
+2024-01-16  20:07            33 256 Namnlöst dokument (7).pdf
+2024-01-18  13:21            60 623 Namnlöst dokument (8).pdf
+2024-01-27  14:04            27 154 Namnlöst dokument (9) (1).pdf
+2024-01-27  14:07            27 154 Namnlöst dokument (9) (2).pdf
+2024-01-27  14:22            27 154 Namnlöst dokument (9) (3).pdf
+2024-01-27  14:23            27 154 Namnlöst dokument (9) (4).pdf
+2024-01-22  12:56            27 154 Namnlöst dokument (9).pdf
+2023-03-08  15:07             8 446 Namnlöst dokument.docx
+2023-08-22  21:05            37 086 Namnlöst dokument.pdf
+2022-11-23  19:43         6 753 467 Nervsystemet del 6 (uppdaterad 201005).pdf
+2022-11-23  19:22           775 994 NeuroNEW MeningVentKärl SSK2019 (1).pdf
+2022-11-23  19:22           775 994 NeuroNEW MeningVentKärl SSK2019 (2).pdf
+2022-11-23  19:20           775 994 NeuroNEW MeningVentKärl SSK2019.pdf
+2022-08-01  13:32            19 580 Nivåtest_8201012203 (1).pdf
+2022-08-01  13:26            19 580 Nivåtest_8201012203.pdf
+2025-11-13  19:40        32 223 232 node-v24.11.1-x64.msi
+2025-10-25  21:20         1 858 864 Obekräftade 821431.crdownload
+2025-10-25  21:07         3 761 280 OperaGXSetup.exe
+2025-11-13  21:14                88 package-lock.json
+2025-11-07  16:38         7 764 103 Pitch Deck (2).pdf
+2022-09-27  21:57            25 471 Psykologi.docx
+2022-10-23  22:11           281 172 QOL kap 2.pdf
+2022-10-03  19:45         1 105 456 Referat.pptx
+2022-10-16  10:47           162 993 Samhällsplanering-storföreläsning-2september (1).pptx
+2022-10-15  09:07           162 993 Samhällsplanering-storföreläsning-2september.pptx
+2022-11-05  23:43            13 889 Sefinas biografi.docx
+2022-06-08  19:21            12 670 Skriv vad du skulle gjort om du fick en miljon kr.docx
+2024-01-18  15:51            93 034 Slutliga frågor inför provet (1).pdf
+2024-01-12  21:48            93 034 Slutliga frågor inför provet.pdf
+2025-11-13  21:09                 0 snack-ready (1).tar.gz
+2025-11-13  20:09                 0 snack-ready.tar.gz
+2025-04-09  14:39            29 874 Språk.pdf
+2022-05-17  13:32         1 424 200 TeamsSetup_c_w_.exe
+2024-01-28  13:56             7 950 Tyvärr fick du ingen rabatt (1).eml
+2024-01-28  13:59             7 950 Tyvärr fick du ingen rabatt (2).eml
+2024-01-28  13:54             7 950 Tyvärr fick du ingen rabatt.eml
+2022-08-12  20:28            14 916 Uppgift 1 (1).docx
+2023-01-07  11:43            15 558 Uppgift 1 (2).docx
+2023-01-10  14:26            15 558 Uppgift 1 (3).docx
+2023-01-21  15:23            14 872 Uppgift 1 (4).docx
+2022-08-12  20:26            14 916 Uppgift 1.docx
+2025-06-24  18:32           233 001 Utslag-1.pdf
+2025-08-17  20:01            47 817 veckobrev v 29.docx
+2022-08-01  13:22            45 398 Välkomstbrev - SVAgrund.docx
+2025-08-29  23:43         4 161 152 Windows11InstallationAssistant.exe
+2023-01-24  19:58         2 017 216 wzsus53.exe
+2023-03-15  20:52         2 624 098 Ämnen.pptx
+2025-10-08  18:07        24 019 248 قاعدة صومالية لحروف الهجائية(1).PDF
+             189 File(s)    146 185 469 bytes
+               2 Dir(s)     109 764 608 bytes free
+
+C:\Users\46732\Downloads>

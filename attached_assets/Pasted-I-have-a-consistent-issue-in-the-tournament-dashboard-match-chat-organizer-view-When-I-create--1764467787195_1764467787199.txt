@@ -1,0 +1,103 @@
+I have a consistent issue in the tournament dashboard → match chat (organizer view):
+
+When I create a match chat between two participants (example: Raheem vs Eli),
+
+The system does correctly detect the users
+
+The system does correctly deliver the match chat to their Message inbox
+
+Each participant sees the correct names and avatars
+
+BUT the organizer’s view inside the tournament dashboard shows “unknown” instead of the participant’s actual profile name and avatar
+
+This only happens in the organizer’s match chat UI, not in the participant’s UI.
+
+✔ What this proves
+
+The backend does know the correct user.
+
+I can select “Raheem” and choose him as a participant during match creation.
+
+The backend does correctly link the chat to the right user ID.
+
+Raheem receives the match chat in his inbox.
+
+The participant sees their own name correctly in the chat.
+
+Raheem sees “Raheem”
+
+Eli sees “Raheem”
+
+❌ What is failing
+
+Only the organizer UI fails to display the user’s name and avatar, showing “unknown” instead.
+
+This means:
+
+⚠️ The issue is NOT in the backend
+
+The backend clearly stores the user ID
+
+It correctly routes the match chat
+
+It correctly identifies the participants
+
+It correctly loads the participant’s profile in their own inbox
+
+So the backend is working.
+
+⚠️ The issue is in the FRONTEND of the organizer’s match chat view
+
+Specifically:
+
+The organizer’s match chat component is not fetching the user profile data (username + avatar) from the user ID.
+
+What’s likely happening:
+
+The match chat data contains valid user IDs (correct)
+
+The participant’s app screen uses the correct API to fetch profile data for each user ID (correct)
+
+The organizer’s dashboard uses a different or incorrect API call to fetch user info (incorrect)
+
+That call returns “null” or “undefined” for username/avatar
+
+The UI then displays the fallback placeholder → “unknown” and avatar “U”
+
+🧩 Why it only happens to one participant (e.g., Raheem)
+
+Because the bug is likely tied to:
+
+user IDs fetched in a loop
+
+the order in which participants are loaded
+
+or inconsistent mapping between participant objects and actual user accounts
+
+One participant’s data is probably linked correctly by coincidence, while the other is not fetched properly because:
+
+The frontend isn’t using the correct field (e.g., using form data instead of user profile data)
+
+Or the organizer dashboard is using an out-of-date or incorrect chat data structure
+
+Or the organizer dashboard UI never implemented profile fetching
+
+🛑 Replit saying “backend is fine” is correct
+
+The logic proves that the backend correctly identifies, selects, and routes users.
+
+The ONLY place the failure appears is:
+
+👉 The organizer chat UI is not pulling the real user profile data from the user account service.
+✅ What the fix should be
+
+In the tournament dashboard → match chat:
+
+For each message sender, fetch user profile by user ID
+(GET /user/{id} or whatever the profile endpoint is)
+
+Replace “unknown” with user.username
+
+Replace the “U” avatar with user.avatar or the auto-generated initials
+
+Ensure the frontend uses the same user lookup logic as the Messages inbox chat UI

@@ -1,0 +1,88 @@
+I encountered several issues and missing features that need to be addressed:
+
+⸻
+
+1. Tournament Details Not Matching Setup
+
+I created a tournament and posted its poster.
+When I opened the details, some of the information did not match what I originally set:
+	•	Date, player count, and format were correct
+	•	Platform and Region were incorrect and did not display the values I selected during creation
+
+This needs to be fixed so all tournament details show exactly what the organizer entered.
+
+⸻
+
+2. Cannot Edit Server Logo or Background
+
+I am unable to:
+	•	Add a server profile logo when creating a server
+	•	Add a server background image
+	•	Edit or update the server logo/background afterward
+
+Server owners must be able to upload and change both the logo and background at any time.
+
+⸻
+
+3. Poster Image Upload is Zoomed In
+
+When uploading an image for a tournament poster:
+	•	The image is automatically zoomed in
+	•	I cannot resize, zoom out, or fit the full image
+
+Add an image editor allowing:
+	•	Resize
+	•	Zoom in/out
+	•	Fit-to-frame
+
+So the poster can use the full image properly.
+
+⸻
+
+4. Forced Login Every Time
+
+The app requires me to log in every time I open it.
+
+Add:
+	•	Persistent login / Remember me
+	•	Save user session unless they manually log out
+
+⸻
+
+5. Game Selection is Too Limited
+
+When creating a server, I attempted to add the game Dragon Ball Z, but it was not available in the preset list.
+
+I want the ability to:
+	•	Add any game manually
+	•	Use text tags instead of a restricted list
+
+⸻
+
+6. Cannot Edit Profile Picture
+
+I cannot change my profile picture on my account.
+
+Users must be able to upload a new profile image from:
+	•	Files
+	•	Camera roll
+
+⸻
+
+7. Separate Server Lists
+
+I need two separate sections:
+	•	Servers I own
+	•	Servers I am a member of
+
+They should not be mixed together.
+
+⸻
+
+8. Direct Message Replies
+
+Inside servers and group chats, I need the ability to:
+	•	Tap or hold a message
+	•	Reply directly to that specific message, just like Discord’s reply system
+
+This is required for conversation clarity.

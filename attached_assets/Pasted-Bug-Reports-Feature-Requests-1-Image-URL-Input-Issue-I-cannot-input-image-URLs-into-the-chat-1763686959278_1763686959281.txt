@@ -1,0 +1,80 @@
+Bug Reports & Feature Requests
+1. Image URL Input
+
+Issue: I cannot input image URLs into the chat.
+
+Current behavior: I updated my server with image links from the internet, but the app does not accept them.
+
+Question: Does the app support image URLs, or is it limited to local files / camera roll uploads? I also attempted to upload from compute files, did not work either 
+
+2. Message Sending
+
+Issue: Messages are not sending.
+
+Current behavior: When I press Send, a popup appears saying “Message sent”, but the message is not delivered.
+
+Expected behavior: Messages should actually send; the popup is unnecessary.
+
+3. File & Image Upload
+
+Issue: File/image upload in chat does not work.
+
+Current behavior: Clicking the file/image button seems to do nothing — appears to be purely a UI element.
+
+Expected behavior: Clicking the button should allow the user to send files or images.
+
+4. Message Search
+
+Issue: Message search bar does not filter results.
+
+Expected behavior: Typing in the search bar should filter messages in real-time.
+
+5. Group Chat Creation (+ Button)
+
+Issue: The + button for creating group chats does not function.
+
+Expected behavior: Clicking the + button should actually allow the creation of a new group chat.
+
+1. Server Creation – Add Logo & Background Options
+
+Issue: When creating a new server, there is no option to upload a server logo or background.
+
+These options only appear after the server is already created.
+
+Expected behavior:
+
+Users should be able to upload a server logo and server background image during the server creation process, not only afterward.
+
+2. Profile Editing Not Working
+
+Issue: I cannot edit my account profile or change my profile picture.
+
+Expected behavior:
+
+Profile editing should be functional so users can update their profile information and upload a new profile picture.
+
+3. Server Logo Display in "My Servers"
+
+Issue: previously, The server icon shown in the "My Servers" list did not match the image uploaded by the server owner during server creation. Make sure it's connected.
+
+Expected behavior:
+
+The server logo displayed in “My Servers” should always be the same logo the owner uploaded when the server was created.
+
+Summary
+
+Enable image URL input and fix upload failures from URL or file sources.
+
+Fix message sending so messages deliver properly and remove the unnecessary “Message sent” popup.
+
+Make file/image upload buttons functional instead of UI-only.
+
+Activate the message search bar so it filters messages in real time.
+
+Make the + button create group chats as intended.
+
+Add server logo and background upload options during server creation, not only afterward.
+
+Fix account profile editing so users can update their details and profile pictures.
+
+Ensure the server logo shown in “My Servers” always matches the logo uploaded by the server owner.

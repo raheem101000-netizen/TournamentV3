@@ -1,0 +1,59 @@
+There is a difference in how the match chat works for the organiser vs the participants, and this difference is causing the “unknown” username problem.
+
+From the PARTICIPANT point of view (Message Inbox):
+
+The participant can see the match chat correctly.
+
+They see their own username.
+
+They see the other participant’s username.
+
+Everything appears normal.
+
+This means the system does know who the users are, and the backend is correctly linking the match chat to the right user accounts.
+
+From the ORGANISER point of view (Tournament Dashboard → Match Chat):
+
+The organiser opens the exact same match chat from the dashboard.
+
+But instead of seeing the correct usernames, the organiser sees “unknown” for some users.
+
+Only one of the participants gets shown correctly; the other one is always “unknown.”
+
+Why this matters:
+
+Since the system is able to:
+
+Recognise the user,
+
+Let the organiser select the user when creating a match chat,
+
+Send the match chat to the correct user’s message inbox,
+
+Display the correct name when the user is logged in,
+
+…it means the backend is working and the data does exist.
+
+The problem is NOT the backend.
+
+The problem is the organiser’s MATCH CHAT VIEW on the front-end.
+
+The front-end version of the match chat used by the organiser is using different code or different data mapping than the participants’ inbox version.
+
+This is why:
+
+The participant sees the correct username,
+
+But the organiser sees “unknown” for the same user.
+
+In simple terms:
+
+The match chat in the Messages inbox (participants' view) is using the correct component and correct user data.
+
+The match chat in the Tournament Dashboard (organiser’s view) is using an older or incorrect chat component that is not pulling user data properly, which causes the name to show as “unknown.”
+
+What Replit needs to fix:
+
+Make the organiser’s match chat use the same chat component and the same user lookup logic as the participant’s message inbox match chat.
+
+Until both views use the same chat system, the usernames will not match.
