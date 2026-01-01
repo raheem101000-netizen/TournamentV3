@@ -9,7 +9,9 @@
     "node_modules",
     "build",
     "dist",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "attached_assets",
+    "**/__MACOSX"
   ],
   "compilerOptions": {
     "incremental": true,
