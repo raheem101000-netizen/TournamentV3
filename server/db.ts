@@ -14,10 +14,12 @@ if (!process.env.DATABASE_URL) {
 
 console.log("[DB] Initializing database connection...");
 
-max: 20,               // Reduced from 100 to 20 for serverless stability
-  min: 0,                // Set to 0 for serverless (scale down when idle)
-    idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 20,              // Reduced from 100 to 20 for serverless stability
+  min: 0,               // Set to 0 for serverless (scale down when idle)
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Test pool connection
