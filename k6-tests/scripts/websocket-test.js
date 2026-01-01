@@ -21,7 +21,7 @@ export default function () {
     const password = 'TestPassword123!';
 
     const registerRes = http.post(
-        `${BASE_URL}/api/register`,
+        `${BASE_URL}/api/auth/register`,
         JSON.stringify({ username, email, password }),
         { headers: { 'Content-Type': 'application/json' } }
     );
@@ -32,7 +32,7 @@ export default function () {
     }
 
     const loginRes = http.post(
-        `${BASE_URL}/api/login`,
+        `${BASE_URL}/api/auth/login`,
         JSON.stringify({ username, password }),
         { headers: { 'Content-Type': 'application/json' } }
     );

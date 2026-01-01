@@ -26,7 +26,7 @@ export default function () {
     });
 
     const registerRes = http.post(
-        `${BASE_URL}/api/register`,
+        `${BASE_URL}/api/auth/register`,
         registerPayload,
         { headers: { 'Content-Type': 'application/json' } }
     );
@@ -47,7 +47,7 @@ export default function () {
     });
 
     const loginRes = http.post(
-        `${BASE_URL}/api/login`,
+        `${BASE_URL}/api/auth/login`,
         loginPayload,
         { headers: { 'Content-Type': 'application/json' } }
     );
