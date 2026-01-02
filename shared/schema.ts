@@ -142,10 +142,10 @@ export const insertTournamentSchema = createInsertSchema(tournaments)
     status: true,
   })
   .extend({
-    startDate: z.union([z.string(), z.date()]).transform((val) => 
+    startDate: z.union([z.string(), z.date()]).transform((val) =>
       typeof val === 'string' ? new Date(val) : val
     ).nullable().optional(),
-    endDate: z.union([z.string(), z.date()]).transform((val) => 
+    endDate: z.union([z.string(), z.date()]).transform((val) =>
       typeof val === 'string' ? new Date(val) : val
     ).nullable().optional(),
     visibility: z.enum(["public", "private"]).optional(),
@@ -208,7 +208,7 @@ export type Team = typeof teams.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
-export type ChatMessage = typeof chatMessages.$inferSelect & { 
+export type ChatMessage = typeof chatMessages.$inferSelect & {
   username?: string | null;
   avatarUrl?: string | null;
   displayName?: string | null;
@@ -668,3 +668,11 @@ export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertCustomerServiceMessage = z.infer<typeof insertCustomerServiceMessageSchema>;
 export type CustomerServiceMessage = typeof customerServiceMessages.$inferSelect;
+
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: text("sess").notNull(),
+  expire: timestamp("expire", { mode: 'date' }).notNull(),
+});
+
+export type Session = typeof session.$inferSelect;
