@@ -88,18 +88,20 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-start py-8 px-4 sm:justify-center sm:py-16 bg-black relative overflow-hidden">
-      {/* Gradient Background Orbs */}
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center py-8 px-4 bg-black relative overflow-hidden">
+      {/* Enhanced Gradient Background Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-radial from-primary/20 via-transparent to-transparent blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-radial from-purple-500/10 via-transparent to-transparent blur-3xl animate-pulse [animation-delay:1s]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-radial from-violet-500/20 via-fuchsia-500/10 to-transparent blur-[80px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-radial from-blue-500/20 via-cyan-500/10 to-transparent blur-[80px] animate-pulse [animation-delay:1s]" />
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[400px] relative z-10 animate-fade-in">
-        <LogoTenOnTen size={200} />
+        <div className="md:scale-110 transition-transform duration-500">
+          <LogoTenOnTen size={240} />
+        </div>
 
         {/* Glass Form Container */}
-        <div className="w-full mt-8 p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
+        <div className="w-full mt-6 p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 ring-1 ring-white/5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
               <FormField

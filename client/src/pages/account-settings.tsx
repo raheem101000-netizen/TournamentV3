@@ -120,7 +120,7 @@ export default function AccountSettings() {
     },
     onSuccess: (response: any) => {
       console.log('[UpdateMutation] onSuccess triggered, response:', response);
-      
+
       // Reset form with the response data to ensure UI updates immediately
       profileForm.reset({
         username: response.username || "",
@@ -129,37 +129,37 @@ export default function AccountSettings() {
         bio: response.bio || "",
         avatarUrl: response.avatarUrl || "",
       });
-      
+
       // Invalidate and immediately refetch user profile queries
       queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      
+
       // Explicitly refetch auth context to update avatar immediately across app
       refetchUser();
-      
+
       // Clear ALL cache related to messages and users to ensure fresh data
       queryClient.removeQueries({ queryKey: ['/api/matches'] });
-      
+
       // Invalidate all message queries with proper matching
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
-          return Array.isArray(queryKey) && 
-                 queryKey.some(key => typeof key === 'string' && key.includes('/messages'));
+          return Array.isArray(queryKey) &&
+            queryKey.some(key => typeof key === 'string' && key.includes('/messages'));
         },
       });
-      
+
       // Invalidate tournament queries
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
-          return Array.isArray(queryKey) && 
-                 typeof queryKey[0] === 'string' && 
-                 (queryKey[0].includes('/api/tournaments') || 
-                  queryKey[0].includes('/api/servers'));
+          return Array.isArray(queryKey) &&
+            typeof queryKey[0] === 'string' &&
+            (queryKey[0].includes('/api/tournaments') ||
+              queryKey[0].includes('/api/servers'));
         },
       });
-      
+
       toast({
         title: "Profile updated successfully",
         description: "Your changes have been saved and synchronized across all views.",
@@ -325,7 +325,7 @@ export default function AccountSettings() {
                     </div>
 
                     <div className="flex-1 space-y-4">
-                        <FormField
+                      <FormField
                         control={profileForm.control}
                         name="username"
                         render={({ field }) => (
@@ -504,8 +504,8 @@ export default function AccountSettings() {
                     };
 
                     return (
-                      <div 
-                        key={achievement.id} 
+                      <div
+                        key={achievement.id}
                         className="flex flex-col items-center gap-2 p-4 rounded-lg border hover-elevate"
                         data-testid={`achievement-${achievement.id}`}
                       >
