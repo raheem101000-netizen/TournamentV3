@@ -1,4 +1,4 @@
-import './tracing';  // Must be first - OpenTelemetry initialization
+// import './tracing';  // Disabled - OpenTelemetry packages causing Rollup build issues
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
