@@ -14,13 +14,18 @@ import {
  * Test authentication flow: registration, login, authenticated requests, logout
  */
 export default function () {
-    const username = randomUsername();
+    // Generate test data
+    // Note: Server generates username from fullName (lowercase, no spaces)
+    const rawName = randomUsername();
+    const fullName = rawName;
+    const username = rawName.toLowerCase().replace(/\s+/g, '');
     const email = randomEmail();
     const password = 'TestPassword123!';
 
     // 1. Register new user
+    // Schema expects: fullName, email, password
     const registerPayload = JSON.stringify({
-        username: username,
+        fullName: fullName,
         email: email,
         password: password,
     });
@@ -31,7 +36,8 @@ export default function () {
         { headers: { 'Content-Type': 'application/json' } }
     );
 
-    const registerSuccess = checkResponse(registerRes, 200, 'register');
+    // Expect 201 Created
+    const registerSuccess = checkResponse(registerRes, 201, 'register');
 
     if (!registerSuccess) {
         console.error('Registration failed:', registerRes.body);
@@ -41,8 +47,9 @@ export default function () {
     sleep(randomSleep(0.5, 1));
 
     // 2. Login
+    // Login uses email and password (based on server implementation)
     const loginPayload = JSON.stringify({
-        username: username,
+        email: email,
         password: password,
     });
 

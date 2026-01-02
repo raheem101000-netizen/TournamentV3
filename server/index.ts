@@ -1,3 +1,4 @@
+import './instrumentation.js';  // OpenTelemetry - must be first!
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
