@@ -1,4 +1,3 @@
-```javascript
 import { createApp } from "../server/app.js";
 import { registerRoutes } from "../server/routes.js";
 
