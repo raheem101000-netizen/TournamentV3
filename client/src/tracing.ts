@@ -10,23 +10,22 @@ export async function initTracing() {
     }
 
     try {
-        const [
-            { WebTracerProvider },
-            { SimpleSpanProcessor },
-            { OTLPTraceExporter },
-            { ZoneContextManager },
-            { FetchInstrumentation },
-            { registerInstrumentations },
-            { Resource },
-        ] = await Promise.all([
-            import('@opentelemetry/sdk-trace-web'),
-            import('@opentelemetry/sdk-trace-base'),
-            import('@opentelemetry/exporter-trace-otlp-http'),
-            import('@opentelemetry/context-zone'),
-            import('@opentelemetry/instrumentation-fetch'),
-            import('@opentelemetry/instrumentation'),
-            import('@opentelemetry/resources'),
-        ]);
+        // Import modules - access default or named exports correctly
+        const traceWebModule = await import('@opentelemetry/sdk-trace-web');
+        const traceBaseModule = await import('@opentelemetry/sdk-trace-base');
+        const exporterModule = await import('@opentelemetry/exporter-trace-otlp-http');
+        const contextModule = await import('@opentelemetry/context-zone');
+        const fetchModule = await import('@opentelemetry/instrumentation-fetch');
+        const instrumentationModule = await import('@opentelemetry/instrumentation');
+        const resourcesModule = await import('@opentelemetry/resources');
+
+        const WebTracerProvider = traceWebModule.WebTracerProvider;
+        const SimpleSpanProcessor = traceBaseModule.SimpleSpanProcessor;
+        const OTLPTraceExporter = exporterModule.OTLPTraceExporter;
+        const ZoneContextManager = contextModule.ZoneContextManager;
+        const FetchInstrumentation = fetchModule.FetchInstrumentation;
+        const registerInstrumentations = instrumentationModule.registerInstrumentations;
+        const Resource = resourcesModule.Resource;
 
         const resource = new Resource({
             'service.name': 'tournamentv3-frontend',
