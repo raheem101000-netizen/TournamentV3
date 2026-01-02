@@ -1,4 +1,4 @@
-import type { Team, Match, InsertMatch } from "@shared/schema";
+import type { Team, Match, InsertMatch } from "../shared/schema.js";
 
 export interface BracketGenerationResult {
   matches: InsertMatch[];
@@ -89,7 +89,7 @@ export function generateSingleEliminationBracket(
   teams: Team[]
 ): BracketGenerationResult {
   const matches: InsertMatch[] = [];
-  
+
   if (teams.length < 2) {
     return { matches };
   }
@@ -137,7 +137,7 @@ export function generateSingleEliminationBracket(
   let previousRoundMatches = firstRoundMatches;
   for (let round = 2; round <= totalRounds; round++) {
     const currentRoundMatches: number[] = [];
-    
+
     for (let i = 0; i < previousRoundMatches.length; i += 2) {
       matches.push({
         tournamentId,
@@ -152,7 +152,7 @@ export function generateSingleEliminationBracket(
       });
       currentRoundMatches.push(matchCounter++);
     }
-    
+
     previousRoundMatches = currentRoundMatches;
   }
 
@@ -166,7 +166,7 @@ export function generateSwissSystemRound(
   previousMatches: Match[]
 ): BracketGenerationResult {
   const matches: InsertMatch[] = [];
-  
+
   if (teams.length < 2) {
     return { matches };
   }
@@ -208,7 +208,7 @@ export function generateSwissSystemRound(
       const bWins = b.wins ?? 0;
       const aLosses = a.losses ?? 0;
       const bLosses = b.losses ?? 0;
-      
+
       if (bPoints !== aPoints) return bPoints - aPoints;
       if (bWins !== aWins) return bWins - aWins;
       return aLosses - bLosses;
@@ -237,7 +237,7 @@ export function generateSwissSystemRound(
       for (let j = i + 1; j < sortedTeams.length; j++) {
         const candidate = sortedTeams[j];
         if (paired.has(candidate.id)) continue;
-        
+
         const opponents = previousOpponents.get(team1.id);
         if (!opponents || !opponents.has(candidate.id)) {
           team2 = candidate;

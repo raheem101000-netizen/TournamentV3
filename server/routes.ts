@@ -86,7 +86,7 @@ import {
   insertTeamProfileSchema,
   insertTeamMemberSchema,
   insertServerMemberSchema,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { z } from "zod";
 import {
   generateRoundRobinBracket,
@@ -4116,7 +4116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all accepted friend requests where user is sender or recipient
       const { eq, and, or } = await import("drizzle-orm");
-      const { friendRequests } = await import("@shared/schema");
+      const { friendRequests } = await import("../shared/schema.js");
       const { db } = await import("./db");
 
       const acceptedRequests = await db.select().from(friendRequests)

@@ -89,7 +89,7 @@ import {
   friendRequests,
   type FriendRequest,
   type InsertFriendRequest,
-} from "@shared/schema";
+} from "../shared/schema.js";
 
 export interface IStorage {
   // Tournament operations
