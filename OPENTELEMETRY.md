@@ -1,141 +1,54 @@
-# SkyView OpenTelemetry Integration
+# SkyView Integration (Lightweight)
 
-This document describes the observability setup for TournamentV3, integrating with SkyView/ObseraCloud.
+This document describes the observability setup for TournamentV3 using a custom lightweight client for Vercel/Serverless compatibility.
 
 ## Overview
 
-TournamentV3 sends **traces** and **metrics** to SkyView for monitoring:
+We use a custom manual telemetry client (`server/lib/skyview.ts`) instead of the official OpenTelemetry SDK. This avoids bundle size limits and compatibility issues with Vercel/Rollup.
 
-| Component | Service Name | What it tracks |
-|-----------|--------------|----------------|
-| Backend | `tournamentv3-backend` | API requests, database queries, Express middleware |
-| Frontend | `tournamentv3-frontend` | Fetch calls, page interactions |
-
-**SkyView Endpoint**: `http://46.62.229.59:4319`
+**SkyView Endpoint**: `https://46.62.229.59:4319`
 
 ---
 
-## Files Created
+## Files
 
-### Backend: `server/instrumentation.ts`
+### `server/lib/skyview.ts`
+A lightweight client that:
+- Uses `fetch` to send data directly to SkyView OTLP HTTP endpoints
+- Manages trace context using `AsyncLocalStorage`
+- Buffers traces/logs and flushes them at the end of the request
+- **No external dependencies** (uses native node fetch/async_hooks)
 
-Initializes OpenTelemetry SDK with:
-- **Trace Exporter** → sends spans to `/v1/traces`
-- **Metric Exporter** → sends metrics to `/v1/metrics` every 30s
-- **Auto-instrumentation** → automatically traces Express, HTTP, database calls
-
-```typescript
-// Key configuration
-traceExporter: new OTLPTraceExporter({
-  url: `${OTEL_ENDPOINT}/v1/traces`,
-  headers: { 'X-API-Key': API_KEY },
-}),
-```
-
-### Backend: `server/index.ts`
-
-Added import at top of file:
-```typescript
-import './instrumentation.js';  // Must be first!
-```
-
-### Frontend: `client/src/tracing.ts`
-
-Lazy-loaded OpenTelemetry for browser:
-- Uses **dynamic imports** to avoid Rollup build issues
-- Instruments **fetch** calls automatically
-- Exports `initTracing()` function
-
-### Frontend: `client/src/main.tsx`
-
-Calls tracing after React loads:
-```typescript
-import('./tracing').then(({ initTracing }) => initTracing());
-```
+### `server/routes.ts`
+Includes global middleware that:
+1. Starts a trace for every incoming request (`Request Started`)
+2. Log request details (method, url, user-agent)
+3. Captures response finish event
+4. Ends the trace (`Request Completed` with status code)
+5. **Flushes** telemetry to SkyView before response closes
 
 ---
 
 ## Environment Variables
 
-### Backend (Server)
-```env
-SKYVIEW_API_KEY=TIZmGdT-VDtRe60pckQTX5_NuMes9OhcMDyaOJhh0wA
-OTEL_EXPORTER_OTLP_ENDPOINT=http://46.62.229.59:4319
-```
+Ensure these are set in Vercel:
 
-### Frontend (Vite - baked at build time)
-```env
-VITE_SKYVIEW_API_KEY=TIZmGdT-VDtRe60pckQTX5_NuMes9OhcMDyaOJhh0wA
-VITE_OTEL_ENDPOINT=http://46.62.229.59:4319/v1/traces
-```
-
-> ⚠️ **Vercel**: Add these in Dashboard → Settings → Environment Variables
+| Variable | Value |
+|----------|-------|
+| `SKYVIEW_API_KEY` | `pjDYo7sDwWF26nacUaPvfYQd4xTNGQHb-H633H04he0` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `https://46.62.229.59:4319` |
 
 ---
 
-## Dependencies Installed
+## Verification
 
-### Backend (root package.json)
-```
-@opentelemetry/api
-@opentelemetry/sdk-node
-@opentelemetry/auto-instrumentations-node
-@opentelemetry/exporter-trace-otlp-proto
-@opentelemetry/exporter-metrics-otlp-proto
-@opentelemetry/exporter-logs-otlp-proto
-@opentelemetry/resources
-@opentelemetry/sdk-metrics
-```
-
-### Frontend (client)
-```
-@opentelemetry/sdk-trace-web
-@opentelemetry/sdk-trace-base
-@opentelemetry/exporter-trace-otlp-http
-@opentelemetry/context-zone
-@opentelemetry/instrumentation-fetch
-@opentelemetry/instrumentation
-@opentelemetry/resources
-```
-
----
-
-## What Gets Traced
-
-### Backend Traces
-| Type | Example |
-|------|---------|
-| HTTP requests | `GET /api/tournaments` |
-| Database queries | `SELECT * FROM users` |
-| Express middleware | `bodyParser`, `cors` |
-
-### Frontend Traces
-| Type | Example |
-|------|---------|
-| Fetch calls | `fetch('/api/auth/me')` |
-| XHR requests | Any AJAX call |
-
----
-
-## Verifying Integration
-
-1. **Console logs** when running:
-   - `✅ OpenTelemetry instrumentation started` (backend)
-   - `✅ Frontend OpenTelemetry tracing started` (frontend)
-
-2. **SkyView Dashboard** at `http://46.62.229.59/`:
-   - Look for `tournamentv3-backend` service
-   - Look for `tournamentv3-frontend` service
-
-3. **Perform actions** in the app (login, view tournaments) to generate traces
-
----
+1. **Deploy** to Vercel
+2. **Perform actions** (Log in, view tournaments)
+3. **Check SkyView Dashboard**:
+   - Service: `tournamentv3-backend`
+   - You should see traces for `GET /api/tournaments`, `POST /api/auth/login`, etc.
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Missing env vars" warning | Add `SKYVIEW_API_KEY` and `OTEL_*` to Vercel env vars |
-| No traces in SkyView | Check if port 4319 is open on the SkyView server |
-| Frontend traces missing | Ensure `VITE_*` vars are set, then redeploy |
-| Build fails | Dynamic imports should fix Rollup issues |
+- **No traces?** Check Vercel logs. The client logs errors to console: `SkyView Trace Error: ...`
+- **500 Errors?** The manual client is wrapped in try/catch blocks so it shouldn't crash the app.
