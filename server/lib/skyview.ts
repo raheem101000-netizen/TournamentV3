@@ -78,12 +78,38 @@ export function metric(name: string, value: number) {
   pendingMetrics.push({ name, value, timestamp: Date.now() });
 }
 
+// Debug environment (redacted)
+console.log(`[SkyView Init] Endpoint: ${ENDPOINT ? 'Set' : 'Missing'}, Key: ${API_KEY ? 'Set' : 'Missing'}`);
+
 export async function flush() {
-  if (!ENDPOINT || !API_KEY) return;
+  if (!ENDPOINT || !API_KEY) {
+    console.warn('[SkyView] Missing configuration, skipping flush');
+    return;
+  }
 
   const headers = {
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY,
+  };
+
+  const send = async (path: string, payload: any, type: string) => {
+    try {
+      console.log(`[SkyView] Sending ${type}...`);
+      const res = await fetch(`${ENDPOINT}${path}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`[SkyView] ${type} Failed: ${res.status} ${res.statusText} - ${text}`);
+      } else {
+        console.log(`[SkyView] ${type} Sent Successfully: ${res.status}`);
+      }
+    } catch (err: any) {
+      console.error(`[SkyView] ${type} Network Error:`, err.message);
+    }
   };
 
   // Send traces
@@ -104,16 +130,16 @@ export async function flush() {
             startTimeUnixNano: String(s.startTime * 1_000_000),
             endTimeUnixNano: String((s.endTime || Date.now()) * 1_000_000),
             status: { code: s.status === 'ERROR' ? 2 : 1 },
+            attributes: s.attributes ? Object.keys(s.attributes).map(k => ({
+              key: k,
+              value: { stringValue: String(s.attributes![k]) }
+            })) : []
           }))
         }]
       }]
     };
 
-    await fetch(`${ENDPOINT}/v1/traces`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(tracePayload),
-    }).catch(err => console.error('SkyView Trace Error:', err));
+    await send('/v1/traces', tracePayload, 'Traces');
   }
 
   // Send logs
@@ -139,11 +165,7 @@ export async function flush() {
       }]
     };
 
-    await fetch(`${ENDPOINT}/v1/logs`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(logsPayload),
-    }).catch(err => console.error('SkyView Log Error:', err));
+    await send('/v1/logs', logsPayload, 'Logs');
   }
 
   // Send metrics
@@ -169,11 +191,7 @@ export async function flush() {
       }]
     };
 
-    await fetch(`${ENDPOINT}/v1/metrics`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(metricsPayload),
-    }).catch(err => console.error('SkyView Metric Error:', err));
+    await send('/v1/metrics', metricsPayload, 'Metrics');
   }
 
   // Clear all - careful with concurrency here in a real app, 
