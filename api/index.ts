@@ -1,4 +1,4 @@
-import "../server/instrumentation.js";  // OpenTelemetry - SkyView fix applied
+```javascript
 import { createApp } from "../server/app.js";
 import { registerRoutes } from "../server/routes.js";
 
