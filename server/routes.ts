@@ -4052,6 +4052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all friends for current user
+  // Get all friends for current user
   app.get("/api/friends", async (req, res) => {
     try {
       if (!req.session?.userId) {
@@ -4060,11 +4061,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const currentUserId = req.session.userId;
 
-      // Get all accepted friend requests where user is sender or recipient
       const { eq, and, or } = await import("drizzle-orm");
-      const { friendRequests } = await import("../shared/schema.js");
-      const { db } = await import("./db");
+      const { friendRequests, users } = await import("../shared/schema.js");
+      const { db } = await import("./db.js"); // Fixed import path with .js
+      const { alias } = await import("drizzle-orm/pg-core");
 
+      // Use an alias to join users table twice if needed, or just simple logic
+      // Since Drizzle join syntax can be verbose, we can do a raw query or a verified select
+
+      // Get all accepted friend requests
       const acceptedRequests = await db.select().from(friendRequests)
         .where(
           and(
@@ -4076,17 +4081,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      // Get friend user info
-      const friends = await Promise.all(
-        acceptedRequests.map(async (request) => {
-          const friendId = request.senderId === currentUserId ? request.recipientId : request.senderId;
-          const friend = await storage.getUser(friendId);
-          return friend;
-        })
+      // Collect IDs to fetch
+      const friendIds = acceptedRequests.map(req =>
+        req.senderId === currentUserId ? req.recipientId : req.senderId
       );
 
-      res.json(friends.filter(Boolean));
+      if (friendIds.length === 0) {
+        return res.json([]);
+      }
+
+      // Fetch all friends in ONE query instead of looping
+      const { inArray } = await import("drizzle-orm");
+      const friends = await db.select().from(users).where(inArray(users.id, friendIds));
+
+      res.json(friends);
     } catch (error: any) {
+      console.error("Error fetching friends:", error);
       res.status(500).json({ error: error.message });
     }
   });
