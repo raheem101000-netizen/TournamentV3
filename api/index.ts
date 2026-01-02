@@ -1,5 +1,4 @@
-// OpenTelemetry disabled - compatibility issues with Vercel TypeScript
-// import "../server/instrumentation.js";
+import "../server/instrumentation.js";  // OpenTelemetry - SkyView fix applied
 import { createApp } from "../server/app.js";
 import { registerRoutes } from "../server/routes.js";
 

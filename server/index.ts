@@ -1,5 +1,4 @@
-// OpenTelemetry disabled - compatibility issues with Vercel TypeScript
-// import './instrumentation.js';
+import './instrumentation.js';  // OpenTelemetry - SkyView fix applied
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
