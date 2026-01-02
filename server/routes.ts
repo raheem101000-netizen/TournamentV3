@@ -39,25 +39,12 @@ const writeRateLimiter = rateLimit({
 import fs from "fs";
 import path from "path";
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// File storage configuration - save to disk instead of memory
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const fileId = randomUUID();
-    const ext = path.extname(file.originalname);
-    cb(null, `${fileId}${ext}`);
-  }
+// File storage configuration - use memory for Vercel + DB Persistence
+const fileStorage = multer.memoryStorage();
+const upload = multer({
+  storage: fileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-
-const upload = multer({ storage: fileStorage });
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage.js";
 import { ObjectPermission } from "./objectAcl.js";
 import {
@@ -2953,35 +2940,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload endpoint - saves to disk using multer with thumbnail generation
+  // File upload endpoint - saves to DB
   app.post("/api/objects/upload", requireAuth, upload.single("file"), async (req, res) => {
     try {
-      const file = req.file as Express.Multer.File | undefined;
+      const file = req.file;
       if (!file) {
         return res.status(400).json({ error: "No file provided" });
       }
 
-      // Extract just the filename without extension
-      const filename = path.basename(file.filename, path.extname(file.filename));
-      const filePath = path.join(uploadsDir, file.filename);
+      const fileId = randomUUID();
+      const ext = path.extname(file.originalname);
+      const filename = `${fileId}${ext}`;
 
-      // Generate thumbnails for images using sharp
-      const isImage = file.mimetype.startsWith('image/');
-      if (isImage) {
-        try {
-          const sharp = (await import('sharp')).default;
-          const thumbnailSizes = [64, 150, 300];
+      // Store in DB
+      const { uploadedFiles } = await import("../shared/schema.js");
+      const { db } = await import("./db.js");
 
-          for (const size of thumbnailSizes) {
-            const thumbPath = path.join(uploadsDir, `${filename}_thumb_${size}.webp`);
-            await sharp(filePath)
-              .resize(size, size, { fit: 'cover', position: 'center' })
-              .webp({ quality: 75 })
-              .toFile(thumbPath);
-          }
-        } catch (thumbError) {
-          console.warn("Thumbnail generation failed, continuing without thumbnails:", thumbError);
-        }
-      }
+      const fileData = file.buffer.toString('base64');
+
+      await db.insert(uploadedFiles).values({
+        id: filename, // Use filename as ID for simplicity
+        filename: file.originalname,
+        mimeType: file.mimetype,
+        data: fileData,
+      });
 
       // Return a URL to retrieve the file
       const fileUrl = `/api/uploads/${filename}`;
@@ -2992,74 +2974,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Retrieve uploaded file thumbnails
+  // Retrieve uploaded file thumbnails - REDIRECT to main image (Simplified for Quick Fix)
   app.get("/api/uploads/:fileId/thumbnail", (req, res) => {
-    try {
-      const size = parseInt(req.query.size as string) || 150;
-      const validSizes = [64, 150, 300];
-      const targetSize = validSizes.includes(size) ? size : 150;
-
-      const thumbFilename = `${req.params.fileId}_thumb_${targetSize}.webp`;
-      const thumbPath = path.join(uploadsDir, thumbFilename);
-
-      if (fs.existsSync(thumbPath)) {
-        res.set("Content-Type", "image/webp");
-        res.set("Cache-Control", "public, max-age=31536000, immutable");
-        res.set("ETag", `"${req.params.fileId}-${targetSize}"`);
-        return res.sendFile(thumbPath);
-      }
-
-      // Fallback to original if thumbnail doesn't exist
-      const files = fs.readdirSync(uploadsDir);
-      const uploadedFile = files.find(f => {
-        const baseName = path.basename(f, path.extname(f));
-        return baseName === req.params.fileId && !f.includes('_thumb_');
-      });
-
-      if (!uploadedFile) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      const filePath = path.join(uploadsDir, uploadedFile);
-      res.set("Cache-Control", "public, max-age=31536000, immutable");
-      res.sendFile(filePath);
-    } catch (error: any) {
-      console.error("Error retrieving thumbnail:", error);
-      res.status(500).json({ error: error.message });
-    }
+    // Just redirect to the main image for now to avoid complexity
+    // The frontend will display the full image scaled down
+    // Strip any existing extension logic if needed, but usually fileId is just the UUID
+    res.redirect(`/api/uploads/${req.params.fileId}`);
   });
 
   // Retrieve uploaded files from disk with cache headers
-  app.get("/api/uploads/:fileId", (req, res) => {
+  // Retrieve uploaded files from DB
+  app.get("/api/uploads/:fileId", async (req, res) => {
     try {
-      // Search for file with any extension (exclude thumbnails)
-      const files = fs.readdirSync(uploadsDir);
-      const uploadedFile = files.find(f => {
-        const baseName = path.basename(f, path.extname(f));
-        return baseName === req.params.fileId && !f.includes('_thumb_');
-      });
+      const { uploadedFiles } = await import("../shared/schema.js");
+      const { db } = await import("./db.js");
+      const { eq } = await import("drizzle-orm");
 
-      if (!uploadedFile) {
+      const [file] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, req.params.fileId)).limit(1);
+
+      if (!file) {
+        // Fallback for thumbnails - just fail gracefully for now
+        if (req.params.fileId.includes('_thumb_')) {
+          return res.status(404).send('Not found');
+        }
         return res.status(404).json({ error: "File not found" });
       }
 
-      const filePath = path.join(uploadsDir, uploadedFile);
+      const fileBuffer = Buffer.from(file.data, 'base64');
 
-      // Detect content type from file magic numbers
-      let contentType = "application/octet-stream";
-      const buffer = fs.readFileSync(filePath);
-      if (buffer.length > 4) {
-        const magic = buffer.slice(0, 4).toString("hex");
-        if (magic.startsWith("ffd8ff")) contentType = "image/jpeg";
-        else if (magic.startsWith("89504e47")) contentType = "image/png";
-        else if (magic.startsWith("47494638")) contentType = "image/gif";
-        else if (magic.startsWith("52494646") && buffer.length > 12) contentType = "image/webp";
-      }
-
-      res.set("Content-Type", contentType);
+      res.set("Content-Type", file.mimeType);
       res.set("Cache-Control", "public, max-age=31536000, immutable");
-      res.set("ETag", `"${req.params.fileId}"`);
-      res.sendFile(filePath);
+      res.set("ETag", `"${file.id}"`);
+      res.send(fileBuffer);
     } catch (error: any) {
       console.error("Error retrieving file:", error);
       res.status(500).json({ error: error.message });

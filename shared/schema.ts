@@ -676,3 +676,13 @@ export const session = pgTable("session", {
 });
 
 export type Session = typeof session.$inferSelect;
+
+export const uploadedFiles = pgTable("uploaded_files", {
+  id: varchar("id").primaryKey(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  data: text("data").notNull(), // Base64 encoded content
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type UploadedFile = typeof uploadedFiles.$inferSelect;
