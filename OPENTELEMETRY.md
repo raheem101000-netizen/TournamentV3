@@ -36,7 +36,7 @@ Ensure these are set in Vercel:
 | Variable | Value |
 |----------|-------|
 | `SKYVIEW_API_KEY` | `pjDYo7sDwWF26nacUaPvfYQd4xTNGQHb-H633H04he0` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `https://46.62.229.59:4319` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://46.62.229.59:80` |
 
 ---
 
