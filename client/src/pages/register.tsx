@@ -56,7 +56,7 @@ export default function Register() {
     },
     onSuccess: async () => {
       const user = await refetchUser();
-      
+
       if (user) {
         toast({
           title: "Account created!",
@@ -88,125 +88,134 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-start py-8 px-4 sm:justify-center sm:py-16 bg-black">
-      <div className="flex flex-col items-center w-full max-w-[360px]">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-start py-8 px-4 sm:justify-center sm:py-16 bg-black relative overflow-hidden">
+      {/* Gradient Background Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-radial from-primary/20 via-transparent to-transparent blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-radial from-purple-500/10 via-transparent to-transparent blur-3xl animate-pulse [animation-delay:1s]" />
+      </div>
+
+      <div className="flex flex-col items-center w-full max-w-[400px] relative z-10 animate-fade-in">
         <LogoTenOnTen size={200} />
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-10 space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
-                      NAME:
-                    </span>
-                    <FormControl>
-                      <Input 
-                        className="flex-1 bg-white text-black border-0 rounded-full h-8 text-sm px-4 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        {...field} 
-                        data-testid="input-fullname"
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
-                </FormItem>
-              )}
-            />
+        {/* Glass Form Container */}
+        <div className="w-full mt-8 p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem className="animate-slide-up [animation-delay:100ms]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
+                        NAME:
+                      </span>
+                      <FormControl>
+                        <Input
+                          className="flex-1 bg-white/90 text-black border-0 rounded-full h-9 text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
+                          {...field}
+                          data-testid="input-fullname"
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
-                      EMAIL:
-                    </span>
-                    <FormControl>
-                      <Input 
-                        type="email"
-                        className="flex-1 bg-white text-black border-0 rounded-full h-8 text-sm px-4 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        {...field} 
-                        data-testid="input-email"
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="animate-slide-up [animation-delay:150ms]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
+                        EMAIL:
+                      </span>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          className="flex-1 bg-white/90 text-black border-0 rounded-full h-9 text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
+                          {...field}
+                          data-testid="input-email"
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
-                      PASSWORD:
-                    </span>
-                    <FormControl>
-                      <PasswordInput 
-                        className="flex-1 bg-white text-black border-0 rounded-full h-8 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-8 [&>input]:text-sm [&>input]:px-4 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-8 [&>button]:w-8"
-                        {...field} 
-                        testid="input-password"
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="animate-slide-up [animation-delay:200ms]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
+                        PASSWORD:
+                      </span>
+                      <FormControl>
+                        <PasswordInput
+                          className="flex-1 bg-white/90 text-black border-0 rounded-full h-9 text-sm focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 [&>input]:bg-transparent [&>input]:text-black [&>input]:h-9 [&>input]:text-sm [&>input]:px-4 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-9 [&>button]:w-9"
+                          {...field}
+                          testid="input-password"
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
-                      CONFIRM:
-                    </span>
-                    <FormControl>
-                      <PasswordInput 
-                        className="flex-1 bg-white text-black border-0 rounded-full h-8 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 [&>input]:bg-white [&>input]:text-black [&>input]:h-8 [&>input]:text-sm [&>input]:px-4 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-8 [&>button]:w-8"
-                        {...field} 
-                        testid="input-confirm-password"
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem className="animate-slide-up [animation-delay:250ms]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[90px] text-right shrink-0">
+                        CONFIRM:
+                      </span>
+                      <FormControl>
+                        <PasswordInput
+                          className="flex-1 bg-white/90 text-black border-0 rounded-full h-9 text-sm focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 [&>input]:bg-transparent [&>input]:text-black [&>input]:h-9 [&>input]:text-sm [&>input]:px-4 [&>button]:text-black [&>button]:hover:bg-gray-100 [&>button]:h-9 [&>button]:w-9"
+                          {...field}
+                          testid="input-confirm-password"
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage className="text-red-400 mt-1 text-xs pl-[102px]" />
+                  </FormItem>
+                )}
+              />
 
-            <div className="pt-3 pl-[102px]">
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-b from-gray-300 to-gray-500 text-black font-semibold uppercase tracking-widest rounded-md h-9 text-sm border-0 hover:from-gray-200 hover:to-gray-400 shadow-sm"
-                disabled={registerMutation.isPending}
-                data-testid="button-register"
-              >
-                {registerMutation.isPending ? "CREATING..." : "CREATE ACCOUNT"}
-              </Button>
-            </div>
+              <div className="pt-3 pl-[102px] animate-slide-up [animation-delay:300ms]">
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-b from-gray-200 to-gray-400 text-black font-semibold uppercase tracking-widest rounded-full h-10 text-sm border-2 border-white/50 hover:from-white hover:to-gray-300 hover:border-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-white/20 active:scale-95"
+                  disabled={registerMutation.isPending}
+                  data-testid="button-register"
+                >
+                  {registerMutation.isPending ? "CREATING..." : "CREATE ACCOUNT"}
+                </Button>
+              </div>
 
-            <div className="text-center text-xs text-gray-400 pt-3">
-              Already have an account?{" "}
-              <button
-                type="button"
-                className="text-white underline-offset-4 hover:underline"
-                onClick={() => setLocation("/login")}
-                data-testid="link-login"
-              >
-                Log in
-              </button>
-            </div>
-          </form>
-        </Form>
+              <div className="text-center text-xs text-gray-400 pt-2 animate-slide-up [animation-delay:350ms]">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="text-white underline-offset-4 hover:underline hover:text-primary transition-colors"
+                  onClick={() => setLocation("/login")}
+                  data-testid="link-login"
+                >
+                  Log in
+                </button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );

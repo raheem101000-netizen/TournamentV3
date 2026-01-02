@@ -25,38 +25,60 @@ export function BottomNavigation() {
   const unreadCount = unreadData?.count || 0;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-        {navItems.map((item) => {
-          const isActive = location === item.path;
-          const Icon = item.icon;
-          const showBadge = item.path === "/messages" && unreadCount > 0;
-          
-          return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors hover-elevate active-elevate-2",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
-              data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
-            >
-              <div className="relative">
-                <Icon className={cn("w-5 h-5", isActive && "fill-current")} />
-                {showBadge && (
-                  <span 
-                    className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full"
-                    data-testid="badge-unread-messages"
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
+      {/* Glass container with floating effect */}
+      <div className="mx-4 mb-4 rounded-2xl glass-heavy border-white/10 shadow-lg shadow-black/5 overflow-hidden">
+        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+          {navItems.map((item) => {
+            const isActive = location === item.path;
+            const Icon = item.icon;
+            const showBadge = item.path === "/messages" && unreadCount > 0;
+
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 relative group",
                 )}
-              </div>
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+                data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
+              >
+                {/* Active Indicator Glow */}
+                {isActive && (
+                  <div className="absolute inset-0 bg-primary/10 rounded-xl mx-2 my-1 animate-fade-in" />
+                )}
+
+                <div className="relative z-10 transition-transform duration-300 group-hover:-translate-y-1 group-active:scale-95">
+                  <Icon
+                    className={cn(
+                      "w-5 h-5 transition-all duration-300",
+                      isActive ? "text-primary fill-primary/20 scale-110" : "text-muted-foreground group-hover:text-primary/80"
+                    )}
+                  />
+                  {showBadge && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full animate-pulse shadow-md"
+                      data-testid="badge-unread-messages"
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium transition-all duration-300",
+                  isActive ? "text-primary translate-y-0 opacity-100" : "text-muted-foreground translate-y-1 opacity-70 group-hover:translate-y-0 group-hover:opacity-100"
+                )}>
+                  {item.label}
+                </span>
+
+                {/* Bottom Active Dot */}
+                {isActive && (
+                  <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary shadow-glow animate-scale-in" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
