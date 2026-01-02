@@ -267,38 +267,38 @@ export default function AccountSettings() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
+    <div className="container max-w-4xl mx-auto p-4 pb-24 md:p-6 md:pb-6 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-3xl font-bold" data-testid="heading-settings">Account Settings</h1>
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile" data-testid="tab-profile">
+        <TabsList className="w-full flex overflow-x-auto hide-scrollbar justify-start mb-4 h-auto p-1 gap-1 bg-transparent md:bg-muted/50 md:grid md:grid-cols-5">
+          <TabsTrigger value="profile" className="flex-1 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-profile">
             <User className="w-4 h-4 mr-2" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="security" data-testid="tab-security">
+          <TabsTrigger value="security" className="flex-1 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-security">
             <Lock className="w-4 h-4 mr-2" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="achievements" data-testid="tab-achievements">
+          <TabsTrigger value="achievements" className="flex-1 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-achievements">
             <Trophy className="w-4 h-4 mr-2" />
             Achievements
           </TabsTrigger>
-          <TabsTrigger value="preferences" data-testid="tab-preferences">
+          <TabsTrigger value="preferences" className="flex-1 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-preferences">
             <Globe className="w-4 h-4 mr-2" />
             Preferences
           </TabsTrigger>
-          <TabsTrigger value="danger" data-testid="tab-danger">
+          <TabsTrigger value="danger" className="flex-1 min-w-[100px] data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive" data-testid="tab-danger">
             <UserX className="w-4 h-4 mr-2" />
             Danger Zone
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
-          <Card>
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Update your public profile information</CardDescription>
@@ -306,8 +306,8 @@ export default function AccountSettings() {
             <CardContent>
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                  <div className="flex items-start gap-6">
-                    <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                    <div className="flex flex-col items-center gap-4 w-full md:w-auto">
                       <Avatar className="w-24 h-24">
                         <AvatarImage src={profileForm.watch('avatarUrl') || user?.avatarUrl || ""} />
                         <AvatarFallback>
@@ -324,7 +324,7 @@ export default function AccountSettings() {
                       />
                     </div>
 
-                    <div className="flex-1 space-y-4">
+                    <div className="flex-1 space-y-4 w-full">
                       <FormField
                         control={profileForm.control}
                         name="username"
