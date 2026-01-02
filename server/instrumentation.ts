@@ -3,7 +3,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { Resource } from '@opentelemetry/resources';
+import * as resources from '@opentelemetry/resources';
 
 const OTEL_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const API_KEY = process.env.SKYVIEW_API_KEY;
@@ -11,6 +11,8 @@ const API_KEY = process.env.SKYVIEW_API_KEY;
 if (!OTEL_ENDPOINT || !API_KEY) {
     console.warn('⚠️ OpenTelemetry disabled: Missing OTEL_EXPORTER_OTLP_ENDPOINT or SKYVIEW_API_KEY');
 } else {
+    const Resource = resources.Resource;
+
     const sdk = new NodeSDK({
         resource: new Resource({
             'service.name': 'tournamentv3-backend',
