@@ -1,29 +1,33 @@
-// OpenTelemetry Frontend Tracing for SkyView
-// This file must be imported first in main.tsx
+// Frontend Tracing for SkyView - Lazy loaded to avoid Rollup build issues
 
-// Only initialize if environment variables are available
-const OTEL_ENDPOINT = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OTEL_ENDPOINT) || '';
-const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SKYVIEW_API_KEY) || '';
+export async function initTracing() {
+    const OTEL_ENDPOINT = import.meta.env.VITE_OTEL_ENDPOINT;
+    const API_KEY = import.meta.env.VITE_SKYVIEW_API_KEY;
 
-if (OTEL_ENDPOINT && API_KEY) {
-    // Dynamic import to avoid build issues
-    Promise.all([
-        import('@opentelemetry/sdk-trace-web'),
-        import('@opentelemetry/sdk-trace-base'),
-        import('@opentelemetry/exporter-trace-otlp-http'),
-        import('@opentelemetry/context-zone'),
-        import('@opentelemetry/instrumentation-fetch'),
-        import('@opentelemetry/instrumentation'),
-        import('@opentelemetry/resources'),
-    ]).then(([
-        { WebTracerProvider },
-        { SimpleSpanProcessor },
-        { OTLPTraceExporter },
-        { ZoneContextManager },
-        { FetchInstrumentation },
-        { registerInstrumentations },
-        { Resource },
-    ]) => {
+    if (!OTEL_ENDPOINT || !API_KEY) {
+        console.warn('⚠️ Frontend OpenTelemetry disabled: Missing VITE_OTEL_ENDPOINT or VITE_SKYVIEW_API_KEY');
+        return;
+    }
+
+    try {
+        const [
+            { WebTracerProvider },
+            { SimpleSpanProcessor },
+            { OTLPTraceExporter },
+            { ZoneContextManager },
+            { FetchInstrumentation },
+            { registerInstrumentations },
+            { Resource },
+        ] = await Promise.all([
+            import('@opentelemetry/sdk-trace-web'),
+            import('@opentelemetry/sdk-trace-base'),
+            import('@opentelemetry/exporter-trace-otlp-http'),
+            import('@opentelemetry/context-zone'),
+            import('@opentelemetry/instrumentation-fetch'),
+            import('@opentelemetry/instrumentation'),
+            import('@opentelemetry/resources'),
+        ]);
+
         const resource = new Resource({
             'service.name': 'tournamentv3-frontend',
             'service.version': '3.0.0',
@@ -47,11 +51,7 @@ if (OTEL_ENDPOINT && API_KEY) {
         });
 
         console.log('✅ Frontend OpenTelemetry tracing started');
-    }).catch((error) => {
-        console.warn('⚠️ Failed to initialize OpenTelemetry:', error);
-    });
-} else {
-    console.warn('⚠️ Frontend OpenTelemetry disabled: Missing VITE_OTEL_ENDPOINT or VITE_SKYVIEW_API_KEY');
+    } catch (error) {
+        console.error('⚠️ Failed to initialize OpenTelemetry:', error);
+    }
 }
-
-export { };
