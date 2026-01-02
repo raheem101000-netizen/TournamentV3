@@ -1,5 +1,5 @@
 import { eq, and, or, sql, ilike, isNull, desc } from "drizzle-orm";
-import { db } from "./db";
+import { db } from "./db.js";
 import bcrypt from "bcrypt";
 import {
   tournaments,

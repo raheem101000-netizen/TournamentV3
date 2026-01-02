@@ -7,11 +7,11 @@ import { randomUUID } from "crypto";
 import { randomBytes } from "crypto";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
-import { storage } from "./storage";
-import { pool } from "./db";
-import { SESSION_SECRET } from "./app";
-import { sendVerificationEmail } from "./email";
-import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
+import { storage } from "./storage.js";
+import { pool } from "./db.js";
+import { SESSION_SECRET } from "./app.js";
+import { sendVerificationEmail } from "./email.js";
+import { cache, CACHE_KEYS, CACHE_TTL } from "./cache.js";
 
 const generalRateLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -58,8 +58,8 @@ const fileStorage = multer.diskStorage({
 });
 
 const upload = multer({ storage: fileStorage });
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { ObjectPermission } from "./objectAcl";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage.js";
+import { ObjectPermission } from "./objectAcl.js";
 import {
   insertTournamentSchema,
   insertTeamSchema,
@@ -92,7 +92,7 @@ import {
   generateRoundRobinBracket,
   generateSingleEliminationBracket,
   generateSwissSystemRound,
-} from "./bracket-generator";
+} from "./bracket-generator.js";
 
 /**
  * PERMANENT: Creates match chat threads for all team members when a match is created.

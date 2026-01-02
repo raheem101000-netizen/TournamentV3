@@ -1,7 +1,7 @@
 import express from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import { pool } from "./db.js";
 import path from "path";
 
 // Shared session secret for both session middleware and WebSocket authentication
