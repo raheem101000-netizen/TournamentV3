@@ -308,7 +308,7 @@ export default function PreviewHome() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20 animate-fade-in">
+    <div className="flex flex-col min-h-screen bg-background pb-24 animate-fade-in">
       {/* Search Header - Semi-transparent glass effect */}
       <header className="sticky top-0 z-40">
         <div className={`container max-w-lg mx-auto px-4 transition-all duration-300 ${showSearch ? "py-3 space-y-2 bg-background/80 backdrop-blur-md border-b border-white/5 shadow-sm" : "py-2 bg-transparent"}`}>
@@ -390,7 +390,7 @@ export default function PreviewHome() {
       </header>
 
       <main className="px-3 py-4">
-        <div className="space-y-6 max-w-sm mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
           {isLoading ? (
             <div className="text-center py-12 animate-pulse">
               <p className="text-muted-foreground">Loading tournaments...</p>
@@ -405,7 +405,7 @@ export default function PreviewHome() {
             displayPosters.map((poster, index) => (
               <div
                 key={poster.id}
-                className="glass-card rounded-xl overflow-hidden cursor-pointer w-full group animate-slide-up"
+                className="glass-card rounded-xl overflow-hidden cursor-pointer w-full group animate-slide-up h-full flex flex-col"
                 style={{ animationDelay: `${index * 100}ms` }}
                 data-testid={`tournament-poster-${poster.id}`}
                 onClick={() => setDetailsModal(poster)}

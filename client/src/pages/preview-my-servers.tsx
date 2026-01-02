@@ -38,7 +38,7 @@ export default function PreviewMyServers() {
   const [serverIconUrl, setServerIconUrl] = useState("");
   const [serverBackgroundUrl, setServerBackgroundUrl] = useState("");
   const [createServerStep, setCreateServerStep] = useState(1);
-  
+
   // Fetch servers where user is a member
   const { data: memberServersData, isLoading: memberLoading } = useQuery<Server[]>({
     queryKey: [`/api/users/${user?.id}/servers`],
@@ -106,10 +106,10 @@ export default function PreviewMyServers() {
 
   const myServers = memberServersData || [];
   const userRoles = userRolesData || [];
-  
+
   // Get unique server IDs where user has roles
   const serverIdsWithRoles = new Set(userRoles.map(role => role.serverId));
-  
+
   // Separate servers into owned, member, and role-based servers
   const ownedServers = myServers.filter(server => server.ownerId === user?.id);
   const memberServers = myServers.filter(server => server.ownerId !== user?.id && !serverIdsWithRoles.has(server.id));
@@ -117,14 +117,14 @@ export default function PreviewMyServers() {
     ...server,
     userRoles: userRoles.filter(r => r.serverId === server.id).map(r => r.name)
   }));
-  
+
   // Filter servers based on selection
   const displayedServers = filter === "owned" ? ownedServers : filter === "member" ? memberServers : filter === "roles" ? roleServers : myServers;
-  
+
   const isLoading = memberLoading;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
+    <div className="flex flex-col min-h-screen bg-background pb-24 relative">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
@@ -197,9 +197,9 @@ export default function PreviewMyServers() {
                     )}
                     <div className="flex items-center gap-4">
                       <Avatar className="w-14 h-14">
-                        <AvatarImage 
-                          src={server.iconUrl || undefined} 
-                          alt={server.name} 
+                        <AvatarImage
+                          src={server.iconUrl || undefined}
+                          alt={server.name}
                         />
                         <AvatarFallback className="text-xl font-semibold">
                           {server.name.charAt(0).toUpperCase()}

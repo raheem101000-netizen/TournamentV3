@@ -1,5 +1,0 @@
-export enum RESET_PASSWORD_STAGE {
-  REQUEST,
-  RESET,
-  END,
-}

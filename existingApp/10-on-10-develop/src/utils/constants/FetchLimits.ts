@@ -1,3 +1,0 @@
-export const SERVER_FETCH_LIMIT = 20
-export const MESSAGE_FETCH_LIMIT = 20
-export const CATEGORIES_FETCH_LIMIT = 10
