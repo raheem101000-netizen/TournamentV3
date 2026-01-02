@@ -75,8 +75,11 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Fallback: try relative to cwd/dist
-  if (!fs.existsSync(distPath)) {
+  // Try multiple path resolution strategies
+  let distPath = import.meta.dirname;
+
+  // If index.html not found here, try cwd/dist
+  if (!fs.existsSync(path.join(distPath, "index.html"))) {
     distPath = path.resolve(process.cwd(), "dist");
   }
 
