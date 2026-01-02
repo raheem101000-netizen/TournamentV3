@@ -15,7 +15,7 @@ import { cache, CACHE_KEYS, CACHE_TTL } from "./cache.js";
 
 const generalRateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5000, // INCREASED: 100 → 5000 for 1000+ concurrent users
+  max: 100000, // INCREASED for Load Testing: 5000 -> 100000
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -23,7 +23,7 @@ const generalRateLimiter = rateLimit({
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500, // INCREASED: 10 → 500 for 1000+ concurrent users
+  max: 50000, // INCREASED for Load Testing: 500 -> 50000
   message: { error: "Too many authentication attempts, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -31,7 +31,7 @@ const authRateLimiter = rateLimit({
 
 const writeRateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 1000, // INCREASED: 30 → 1000 for 1000+ concurrent users
+  max: 50000, // INCREASED for Load Testing: 1000 -> 50000
   message: { error: "Too many write operations, please slow down." },
   standardHeaders: true,
   legacyHeaders: false,
