@@ -172,7 +172,8 @@ async function createMatchThreadsForAllMembers(
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint - no dependencies
-  app.get('/health', (_req, res) => {
+  // Health check endpoint
+  app.get('/api/health', (_req, res) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
