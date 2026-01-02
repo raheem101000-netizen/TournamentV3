@@ -38,6 +38,72 @@ Ensure these are set in Vercel:
 | `SKYVIEW_API_KEY` | `pjDYo7sDwWF26nacUaPvfYQd4xTNGQHb-H633H04he0` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://46.62.229.59:80` |
 
+## Usage Guide
+
+You can instrument any API route or function using the helpers exported from `server/lib/skyview.ts`.
+
+### Basic Route Tracing
+
+```typescript
+import { startTrace, endTrace, log, metric, flush } from '../lib/skyview';
+
+export default async function handler(req, res) {
+  // 1. Start Trace
+  startTrace(`${req.method} ${req.url}`);
+  const startTime = Date.now();
+
+  try {
+    // 2. Log Context
+    log('INFO', 'Processing request', { path: req.url, userId: req.session?.userId });
+    
+    // ... business logic ...
+    
+    // 3. Track Custom Metrics
+    metric('db_query_count', 1);
+    
+    endTrace('OK');
+    res.json({ success: true });
+  } catch (error) {
+    // 4. Log Errors
+    log('ERROR', 'Request failed', { error: error.message });
+    endTrace('ERROR');
+    res.status(500).json({ error: 'Internal Error' });
+  } finally {
+    // 5. CRITICAL: Flush before Vercel freezes the generic function
+    metric('response_time_ms', Date.now() - startTime);
+    await flush(); 
+  }
+}
+```
+
+### Custom Metrics
+
+Track business KPIs directly in your code:
+
+```typescript
+// Count events
+metric('new_user_signups', 1);
+metric('match_created', 1);
+
+// Track values/money
+metric('order_value', 49.99);
+
+// Measure durations
+const start = Date.now();
+await db.query(...);
+metric('db_query_duration_ms', Date.now() - start);
+```
+
+### Structured Logging
+
+Logs are automatically correlated with the current trace:
+
+```typescript
+log('INFO', 'User logged in', { userId: '123', plan: 'pro' });
+log('WARN', 'Rate limit approaching', { remaining: 5 });
+log('ERROR', 'Payment gateway timeout', { gateway: 'stripe' });
+```
+
 ---
 
 ## Verification
