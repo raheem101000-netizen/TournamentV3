@@ -1,4 +1,5 @@
-import "../server/instrumentation.js";  // OpenTelemetry - must be first!
+// OpenTelemetry disabled - compatibility issues with Vercel TypeScript
+// import "../server/instrumentation.js";
 import { createApp } from "../server/app.js";
 import { registerRoutes } from "../server/routes.js";
 
