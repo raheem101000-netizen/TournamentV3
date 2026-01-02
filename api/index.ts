@@ -1,5 +1,5 @@
-import { createApp } from "../server/app";
-import { registerRoutes } from "../server/routes";
+import { createApp } from "../server/app.js";
+import { registerRoutes } from "../server/routes.js";
 
 // Initialize the app
 const app = createApp();
