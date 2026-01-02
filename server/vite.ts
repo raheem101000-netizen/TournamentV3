@@ -75,17 +75,14 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Try multiple path resolution strategies for production compatibility
-  let distPath = path.resolve(import.meta.dirname, "public");
-
-  // Fallback: try relative to cwd/dist/public
+  // Fallback: try relative to cwd/dist
   if (!fs.existsSync(distPath)) {
-    distPath = path.resolve(process.cwd(), "dist", "public");
+    distPath = path.resolve(process.cwd(), "dist");
   }
 
-  // Fallback: try relative to cwd/public (in case we're already in dist)
+  // Fallback: try relative to cwd (in case we're already in dist)
   if (!fs.existsSync(distPath)) {
-    distPath = path.resolve(process.cwd(), "public");
+    distPath = path.resolve(process.cwd());
   }
 
   console.log(`[serveStatic] Final distPath: ${distPath}`);
