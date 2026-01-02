@@ -1,3 +1,4 @@
+import "../server/instrumentation.js";  // OpenTelemetry - must be first!
 import { createApp } from "../server/app.js";
 import { registerRoutes } from "../server/routes.js";
 
