@@ -8,7 +8,7 @@ import {
   canAccessObject,
   getObjectAclPolicy,
   setObjectAclPolicy,
-} from "./objectAcl";
+} from "./objectAcl.js";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
@@ -39,7 +39,7 @@ export class ObjectNotFoundError extends Error {
 }
 
 export class ObjectStorageService {
-  constructor() {}
+  constructor() { }
 
   getPublicObjectSearchPaths(): Array<string> {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
@@ -54,7 +54,7 @@ export class ObjectStorageService {
     if (paths.length === 0) {
       throw new Error(
         "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
-          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+        "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
       );
     }
     return paths;
@@ -65,7 +65,7 @@ export class ObjectStorageService {
     if (!dir) {
       throw new Error(
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
     return dir;
@@ -93,13 +93,12 @@ export class ObjectStorageService {
       const [metadata] = await file.getMetadata();
       const aclPolicy = await getObjectAclPolicy(file);
       const isPublic = aclPolicy?.visibility === "public";
-      
+
       res.set({
         "Content-Type": metadata.contentType || "application/octet-stream",
         "Content-Length": metadata.size,
-        "Cache-Control": `${
-          isPublic ? "public" : "private"
-        }, max-age=${cacheTtlSec}`,
+        "Cache-Control": `${isPublic ? "public" : "private"
+          }, max-age=${cacheTtlSec}`,
       });
 
       const stream = file.createReadStream();
@@ -125,7 +124,7 @@ export class ObjectStorageService {
     if (!privateObjectDir) {
       throw new Error(
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
 
@@ -159,7 +158,7 @@ export class ObjectStorageService {
 
     // entityId is everything after "/objects/" - e.g., "uploads/123"
     const entityId = parts.slice(1).join("/");
-    
+
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
@@ -200,53 +199,53 @@ export class ObjectStorageService {
     if (!rawPath.startsWith("https://storage.googleapis.com/")) {
       return rawPath;
     }
-  
+
     const url = new URL(rawPath);
     // Pathname format: /bucket-name/.private/uploads/uuid or /bucket-name/uploads/uuid
     const rawObjectPath = url.pathname;
-  
+
     // Split path into segments
     const pathSegments = rawObjectPath.split("/").filter(p => p);
     if (pathSegments.length < 2) {
       throw new Error("Invalid upload URL format");
     }
-  
+
     // First segment is bucket name
     const bucketName = pathSegments[0];
     const objectSegments = pathSegments.slice(1);
-  
+
     // Get private object directory and extract its segments without bucket
     const privateObjectDir = this.getPrivateObjectDir();
     const privateDirSegments = privateObjectDir.replace(/^\//, "").split("/").filter(p => p);
-    
+
     // Remove bucket name from private dir segments to get the directory structure
     const privateDirWithoutBucket = privateDirSegments.slice(1);
-    
+
     // Expected: [...privateDirWithoutBucket, "uploads", uuid]
     // Check if objectSegments starts with privateDirWithoutBucket
     const expectedLength = privateDirWithoutBucket.length + 2; // dir + "uploads" + uuid
     if (objectSegments.length < expectedLength) {
       throw new Error(`Upload URL too short. Expected at least ${expectedLength} segments after bucket`);
     }
-    
+
     // Verify the directory structure matches
     for (let i = 0; i < privateDirWithoutBucket.length; i++) {
       if (objectSegments[i] !== privateDirWithoutBucket[i]) {
         throw new Error(`Upload URL does not match expected directory structure at segment ${i}`);
       }
     }
-    
+
     // Verify "uploads" follows the private directory
     if (objectSegments[privateDirWithoutBucket.length] !== "uploads") {
       throw new Error(`Expected "uploads" directory after private directory`);
     }
-    
+
     // Extract the UUID (everything after "uploads/")
     const entityId = objectSegments.slice(privateDirWithoutBucket.length + 1).join("/");
     if (!entityId) {
       throw new Error("No entity ID found in upload URL");
     }
-    
+
     return `/objects/uploads/${entityId}`;
   }
 
@@ -332,7 +331,7 @@ async function signObjectURL({
   if (!response.ok) {
     throw new Error(
       `Failed to sign object URL, errorcode: ${response.status}, ` +
-        `make sure you're running on Replit`
+      `make sure you're running on Replit`
     );
   }
 
