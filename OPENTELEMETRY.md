@@ -1,120 +1,100 @@
-# SkyView Integration (Lightweight)
+# SkyView OpenTelemetry Implementation 🔭
 
-This document describes the observability setup for TournamentV3 using a custom lightweight client for Vercel/Serverless compatibility.
+This project uses **SkyView** for full-stack observability, implementing OpenTelemetry traces, logs, and metrics across key API endpoints.
 
-## Overview
+## 🛠 Configuration
+The SkyView client is implemented in `server/lib/skyview.ts` and handles:
+- **Trace Context**: Manages `traceId` propagation using `AsyncLocalStorage`.
+- **Batching**: Collects logs and metrics during a request.
+- **Flushing**: Sends telemetry data to the SkyView via OTLP over HTTP.
 
-We use a custom manual telemetry client (`server/lib/skyview.ts`) instead of the official OpenTelemetry SDK. This avoids bundle size limits and compatibility issues with Vercel/Rollup.
+### Configuration
+The SkyView client (`server/lib/skyview.ts`) is pre-configured with:
+- **Service Name**: `tourni1010-backend`
+- **Tenant ID**: `touni1010` (Hardcoded for correlation)
 
-**SkyView Endpoint**: `https://46.62.229.59:4319`
+### Environment Variables
+Required in your `.env` or Vercel config:
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: Your SkyView endpoint URL.
+- `SKYVIEW_API_KEY`: Authentication key for SkyView.
 
----
+## 📊 Instrumentation Overview
 
-## Files
+### Key Instrumented Endpoints
+The following API routes in `server/routes.ts` are fully instrumented:
 
-### `server/lib/skyview.ts`
-A lightweight client that:
-- Uses `fetch` to send data directly to SkyView OTLP HTTP endpoints
-- Manages trace context using `AsyncLocalStorage`
-- Buffers traces/logs and flushes them at the end of the request
-- **No external dependencies** (uses native node fetch/async_hooks)
+| Method | Endpoint | Description | Telemetry |
+|--------|----------|-------------|-----------|
+| `POST` | `/api/auth/login` | User login | Traces, Logs, Metrics (`logins_total`, `login_failures_total`, `login_duration_ms`) |
+| `POST` | `/api/auth/register` | User registration | Traces, Logs, Metrics (`registrations_total`) |
+| `GET` | `/api/tournaments` | List tournaments | Traces, Logs (count) |
+| `POST` | `/api/tournaments` | Create tournament | Traces, Logs, Metrics (`tournaments_created_total`) |
+| `PATCH` | `/api/matches/:id` | Update match score | Traces, Logs, Metrics (`matches_updated_total`) |
+| `POST` | `/api/matches/:id/winner` | Set match winner | Traces, Logs, Metrics (`matches_completed_total`) |
 
-### `server/routes.ts`
-Includes global middleware that:
-1. Starts a trace for every incoming request (`Request Started`)
-2. Log request details (method, url, user-agent)
-3. Captures response finish event
-4. Ends the trace (`Request Completed` with status code)
-5. **Flushes** telemetry to SkyView before response closes
+## 📈 Metrics Reference
 
----
+| Metric Name | Type | Description |
+|-------------|------|-------------|
+| `logins_total` | Counter | Total number of successful logins |
+| `login_failures_total` | Counter | Total number of failed login attempts |
+| `login_duration_ms` | Histogram/Gauge | Time taken for login process in milliseconds |
+| `registrations_total` | Counter | Total number of new user registrations |
+| `tournaments_created_total` | Counter | Total number of tournaments created |
+| `matches_updated_total` | Counter | Total number of match score updates |
+| `matches_completed_total` | Counter | Total number of matches marked as completed (winner selected) |
 
-## Environment Variables
+## 📝 Logging Standards
 
-Ensure these are set in Vercel:
+Logs are automatically correlated with the current Trace ID.
 
-| Variable | Value |
-|----------|-------|
-| `SKYVIEW_API_KEY` | `pjDYo7sDwWF26nacUaPvfYQd4xTNGQHb-H633H04he0` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://46.62.229.59:80` |
+| Level | Severity | Use Case | SkyView Display |
+|-------|----------|----------|-----------------|
+| **INFO** | 9 | Normal operations (e.g., "Login successful") | 🔵 Blue Badge |
+| **WARN** | 13 | Business logic issues (e.g., "Invalid password", "Email exists") | 🟡 Yellow Badge |
+| **ERROR** | 17 | System failures / Exceptions | 🔴 Red Badge + **AI Debug** |
 
-## Usage Guide
+## 💻 Code Usage Example
 
-You can instrument any API route or function using the helpers exported from `server/lib/skyview.ts`.
-
-### Basic Route Tracing
+To instrument a new endpoint, follow this pattern:
 
 ```typescript
-import { startTrace, endTrace, log, metric, flush } from '../lib/skyview';
+import { startTrace, endTrace, log, metric, flush } from './lib/skyview.js';
 
-export default async function handler(req, res) {
+app.post("/api/new-feature", async (req, res) => {
   // 1. Start Trace
-  startTrace(`${req.method} ${req.url}`);
+  startTrace('POST /api/new-feature'); 
   const startTime = Date.now();
 
   try {
-    // 2. Log Context
-    log('INFO', 'Processing request', { path: req.url, userId: req.session?.userId });
-    
+    // 2. Log Info
+    log('INFO', 'Starting operation', { userId: req.session.userId });
+
     // ... business logic ...
+
+    if (!valid) {
+      // 3. Log Warning
+      log('WARN', 'Validation failed', { reason: 'invalid_input' });
+      endTrace('ERROR'); // Mark trace as error
+      await flush();     // Send data
+      return res.status(400).json({ error: "Invalid" });
+    }
+
+    // 4. Log Success & Metric
+    log('INFO', 'Operation successful');
+    metric('feature_usage_total', 1);
     
-    // 3. Track Custom Metrics
-    metric('db_query_count', 1);
-    
+    // 5. End Trace & Flush
     endTrace('OK');
+    await flush();
     res.json({ success: true });
+
   } catch (error) {
-    // 4. Log Errors
-    log('ERROR', 'Request failed', { error: error.message });
+    // 6. Log Error (triggers AI Debug)
+    log('ERROR', 'System failure', { error: error.message });
     endTrace('ERROR');
-    res.status(500).json({ error: 'Internal Error' });
-  } finally {
-    // 5. CRITICAL: Flush before Vercel freezes the generic function
-    metric('response_time_ms', Date.now() - startTime);
-    await flush(); 
+    await flush();
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+});
 ```
-
-### Custom Metrics
-
-Track business KPIs directly in your code:
-
-```typescript
-// Count events
-metric('new_user_signups', 1);
-metric('match_created', 1);
-
-// Track values/money
-metric('order_value', 49.99);
-
-// Measure durations
-const start = Date.now();
-await db.query(...);
-metric('db_query_duration_ms', Date.now() - start);
-```
-
-### Structured Logging
-
-Logs are automatically correlated with the current trace:
-
-```typescript
-log('INFO', 'User logged in', { userId: '123', plan: 'pro' });
-log('WARN', 'Rate limit approaching', { remaining: 5 });
-log('ERROR', 'Payment gateway timeout', { gateway: 'stripe' });
-```
-
----
-
-## Verification
-
-1. **Deploy** to Vercel
-2. **Perform actions** (Log in, view tournaments)
-3. **Check SkyView Dashboard**:
-   - Service: `tournamentv3-backend`
-   - You should see traces for `GET /api/tournaments`, `POST /api/auth/login`, etc.
-
-## Troubleshooting
-
-- **No traces?** Check Vercel logs. The client logs errors to console: `SkyView Trace Error: ...`
-- **500 Errors?** The manual client is wrapped in try/catch blocks so it shouldn't crash the app.
