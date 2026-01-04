@@ -838,17 +838,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", async (req, res) => {
+    startTrace('GET /api/auth/me');
     try {
       if (!req.session.userId) {
+        log('WARN', 'Auth check - not authenticated');
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "Not authenticated" });
       }
 
       const user = await storage.getUser(req.session.userId);
       if (!user) {
+        log('WARN', 'Auth check - user not found', { userId: req.session.userId });
         req.session.destroy(() => { });
+        endTrace('ERROR');
+        await flush();
         return res.status(404).json({ error: "User not found" });
       }
 
+      log('INFO', 'Auth check successful', { userId: user.id });
+      endTrace('OK');
+      await flush();
       res.json({
         id: user.id,
         username: user.username,
@@ -860,6 +870,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         language: user.language,
       });
     } catch (error: any) {
+      log('ERROR', 'Auth check failed', { error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
@@ -890,13 +903,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id", async (req, res) => {
+    startTrace('GET /api/tournaments/:id');
     try {
       const tournament = await storage.getTournament(req.params.id);
       if (!tournament) {
+        log('WARN', 'Tournament not found', { tournamentId: req.params.id });
+        endTrace('ERROR');
+        await flush();
         return res.status(404).json({ error: "Tournament not found" });
       }
+      log('INFO', 'Tournament fetched', { tournamentId: req.params.id });
+      endTrace('OK');
+      await flush();
       res.json(tournament);
     } catch (error: any) {
+      log('ERROR', 'Tournament fetch failed', { tournamentId: req.params.id, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
@@ -1098,27 +1121,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id/registration/config", async (req, res) => {
+    startTrace('GET /api/tournaments/:id/registration/config');
     try {
       const tournamentId = req.params.id;
-      console.log('[REGISTRATION-GET] Querying config for tournament:', tournamentId);
+      log('INFO', 'Fetching registration config', { tournamentId });
 
       const config = await storage.getRegistrationConfigByTournament(tournamentId);
-      console.log('[REGISTRATION-GET] Config found:', config ? `Yes - ID: ${config.id}` : 'No');
 
       // If no config exists, return null - do NOT auto-create defaults
       if (!config) {
-        console.log('[REGISTRATION-GET] Returning null - no config for this tournament');
+        log('INFO', 'No registration config found', { tournamentId });
+        endTrace('OK');
+        await flush();
         return res.json(null);
       }
 
-      console.log('[REGISTRATION-GET] Fetching steps for config:', config.id);
       const steps = await storage.getStepsByConfig(config.id);
-      console.log('[REGISTRATION-GET] Steps found:', steps.length);
 
       const stepsWithFields = await Promise.all(
         steps.map(async (step) => {
           const fields = await storage.getFieldsByStep(step.id);
-          console.log('[REGISTRATION-GET] Step', step.id, 'has', fields.length, 'fields');
           return {
             ...step,
             fields: fields.sort((a, b) => a.displayOrder - b.displayOrder)
@@ -1126,11 +1148,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
+      log('INFO', 'Registration config fetched', { tournamentId, stepsCount: steps.length });
+      endTrace('OK');
+      await flush();
       res.json({
         ...config,
         steps: stepsWithFields.sort((a, b) => a.stepNumber - b.stepNumber)
       });
     } catch (error: any) {
+      log('ERROR', 'Registration config fetch failed', { tournamentId: req.params.id, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
@@ -1944,8 +1972,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registration submission routes
   app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
+    startTrace('POST /api/tournaments/:tournamentId/registrations');
     try {
       if (!req.session.userId) {
+        log('WARN', 'Registration attempt - not authenticated');
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "You must be logged in to register" });
       }
 
@@ -2110,8 +2142,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      log('INFO', 'Registration successful', { tournamentId: req.params.tournamentId, registrationId: registration.id });
+      metric('registrations_total', 1);
+      endTrace('OK');
+      await flush();
       res.status(201).json(registration);
     } catch (error: any) {
+      log('ERROR', 'Registration failed', { tournamentId: req.params.tournamentId, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(400).json({ error: error.message });
     }
   });
@@ -2369,8 +2408,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Server routes
   app.post("/api/servers", async (req, res) => {
+    startTrace('POST /api/servers');
     try {
       if (!req.session.userId) {
+        log('WARN', 'Server creation - not authenticated');
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "Unauthorized" });
       }
 
@@ -2409,8 +2452,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.joinServer(server.id, req.session.userId);
 
       cache.delete(CACHE_KEYS.SERVERS_LIST);
+      log('INFO', 'Server created', { serverId: server.id, serverName: server.name });
+      metric('servers_created_total', 1);
+      endTrace('OK');
+      await flush();
       res.status(201).json(server);
     } catch (error: any) {
+      log('ERROR', 'Server creation failed', { error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(400).json({ error: error.message });
     }
   });
@@ -2434,9 +2484,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/servers/:serverId/join", async (req, res) => {
+    startTrace('POST /api/servers/:serverId/join');
     try {
       const { userId } = req.body;
       if (!userId) {
+        log('WARN', 'Server join - userId missing', { serverId: req.params.serverId });
+        endTrace('ERROR');
+        await flush();
         return res.status(400).json({ error: "userId is required" });
       }
 
@@ -2444,6 +2498,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingMember = await storage.getServerMember(req.params.serverId, userId);
       if (existingMember) {
         // Return success with alreadyMember flag - idempotent behavior
+        log('INFO', 'Server join - already member', { serverId: req.params.serverId, userId });
+        endTrace('OK');
+        await flush();
         return res.status(200).json({
           member: existingMember,
           alreadyMember: true,
@@ -2452,12 +2509,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const member = await storage.joinServer(req.params.serverId, userId);
+      log('INFO', 'Server join successful', { serverId: req.params.serverId, userId });
+      metric('server_joins_total', 1);
+      endTrace('OK');
+      await flush();
       res.status(201).json({
         member,
         alreadyMember: false,
         serverId: req.params.serverId
       });
     } catch (error: any) {
+      log('ERROR', 'Server join failed', { serverId: req.params.serverId, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(400).json({ error: error.message });
     }
   });
