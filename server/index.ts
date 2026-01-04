@@ -67,6 +67,11 @@ app.use((req, res, next) => {
       reusePort: true,
     }, () => {
       log(`serving on port ${port}`);
+
+      // SkyView Confirmation Log
+      console.log('🔭 SkyView Observability: ACTIVE');
+      console.log('   Tenant ID: Tournament1010');
+      console.log('   Service: tourni1010-backend');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
