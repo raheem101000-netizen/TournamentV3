@@ -1,8 +1,11 @@
-// server/lib/skyview.ts - Lightweight SkyView client for Vercel serverless
+
 import { AsyncLocalStorage } from 'async_hooks';
 
-const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || '';
-const API_KEY = process.env.SKYVIEW_API_KEY || '';
+// CONFIGURATION
+const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59:4318';
+const API_KEY = process.env.SKYVIEW_API_KEY || 'demo123';
+const SERVICE_NAME = 'tourni1010-backend';
+const TENANT_ID = 'touni1010'; // 🔴 CRITICAL
 
 interface Span {
   name: string;
@@ -21,44 +24,36 @@ interface LogEntry {
   attributes?: Record<string, string | number>;
 }
 
-// Generate random hex ID
-const randomId = (len: number) =>
-  [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-
-// Trace context storage
 const traceContext = new AsyncLocalStorage<{ traceId: string; spanId: string }>();
-
 const pendingSpans: Span[] = [];
 const pendingLogs: LogEntry[] = [];
 const pendingMetrics: { name: string; value: number; timestamp: number }[] = [];
 
-export function startTrace(name: string): string {
-  const currentTraceId = randomId(32);
-  const currentSpanId = randomId(16);
+// HELPERS
+const randomId = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
-  // Store context for this request
-  traceContext.enterWith({ traceId: currentTraceId, spanId: currentSpanId });
+// --- PUBLIC API ---
+
+export function startTrace(name: string): string {
+  const traceId = randomId(32);
+  const spanId = randomId(16);
+  traceContext.enterWith({ traceId, spanId });
 
   pendingSpans.push({
     name,
-    traceId: currentTraceId,
-    spanId: currentSpanId,
+    traceId,
+    spanId,
     startTime: Date.now(),
-    attributes: { 'service.name': 'tournamentv3-backend' },
+    attributes: { 'service.name': SERVICE_NAME, 'tenant_id': TENANT_ID }
   });
-
-  return currentTraceId;
+  return traceId;
 }
 
 export function endTrace(status: 'OK' | 'ERROR' = 'OK') {
   const store = traceContext.getStore();
   if (!store) return;
-
   const span = pendingSpans.find(s => s.spanId === store.spanId);
-  if (span) {
-    span.endTime = Date.now();
-    span.status = status;
-  }
+  if (span) { span.endTime = Date.now(); span.status = status; }
 }
 
 export function log(level: 'INFO' | 'WARN' | 'ERROR', message: string, attrs?: Record<string, any>) {
@@ -67,10 +62,7 @@ export function log(level: 'INFO' | 'WARN' | 'ERROR', message: string, attrs?: R
     message,
     level,
     timestamp: Date.now(),
-    attributes: {
-      traceId: store?.traceId || '',
-      ...attrs
-    },
+    attributes: { traceId: store?.traceId || '', spanId: store?.spanId || '', ...attrs }
   });
 }
 
@@ -78,7 +70,7 @@ export function metric(name: string, value: number) {
   pendingMetrics.push({ name, value, timestamp: Date.now() });
 }
 
-// Debug environment (redacted)
+// Debug environment
 console.log(`[SkyView Init] Endpoint: ${ENDPOINT ? 'Set' : 'Missing'}, Key: ${API_KEY ? 'Set' : 'Missing'}`);
 
 export async function flush() {
@@ -87,41 +79,27 @@ export async function flush() {
     return;
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-API-Key': API_KEY,
-  };
+  const headers = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
 
   const send = async (path: string, payload: any, type: string) => {
     try {
       console.log(`[SkyView] Sending ${type}...`);
-      const res = await fetch(`${ENDPOINT}${path}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
+      const res = await fetch(`${ENDPOINT}${path}`, { method: 'POST', headers, body: JSON.stringify(payload) });
       if (!res.ok) {
         const text = await res.text();
         console.error(`[SkyView] ${type} Failed: ${res.status} ${res.statusText} - ${text}`);
       } else {
         console.log(`[SkyView] ${type} Sent Successfully: ${res.status}`);
       }
-    } catch (err: any) {
-      console.error(`[SkyView] ${type} Network Error:`, err.message);
     }
+    catch (e: any) { console.error(`[SkyView] ${type} Network Error:`, e.message); }
   };
 
-  // Send traces
-  if (pendingSpans.length > 0) {
-    const tracePayload = {
+  // TRACES
+  if (pendingSpans.length) {
+    await send('/v1/traces', {
       resourceSpans: [{
-        resource: {
-          attributes: [
-            { key: 'service.name', value: { stringValue: 'tournamentv3-backend' } },
-            { key: 'service.version', value: { stringValue: '3.0.0' } },
-          ]
-        },
+        resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] },
         scopeSpans: [{
           spans: pendingSpans.map(s => ({
             name: s.name,
@@ -137,18 +115,17 @@ export async function flush() {
           }))
         }]
       }]
-    };
-
-    await send('/v1/traces', tracePayload, 'Traces');
+    }, 'Traces');
   }
 
-  // Send logs
-  if (pendingLogs.length > 0) {
+  // LOGS
+  if (pendingLogs.length) {
     const logsPayload = {
       resourceLogs: [{
         resource: {
           attributes: [
-            { key: 'service.name', value: { stringValue: 'tournamentv3-backend' } },
+            { key: 'service.name', value: { stringValue: SERVICE_NAME } },
+            { key: 'tenant_id', value: { stringValue: TENANT_ID } }
           ]
         },
         scopeLogs: [{
@@ -169,17 +146,17 @@ export async function flush() {
         }]
       }]
     };
-
     await send('/v1/logs', logsPayload, 'Logs');
   }
 
-  // Send metrics
-  if (pendingMetrics.length > 0) {
+  // METRICS
+  if (pendingMetrics.length) {
     const metricsPayload = {
       resourceMetrics: [{
         resource: {
           attributes: [
-            { key: 'service.name', value: { stringValue: 'tournamentv3-backend' } },
+            { key: 'service.name', value: { stringValue: SERVICE_NAME } },
+            { key: 'tenant_id', value: { stringValue: TENANT_ID } }
           ]
         },
         scopeMetrics: [{
@@ -195,14 +172,9 @@ export async function flush() {
         }]
       }]
     };
-
     await send('/v1/metrics', metricsPayload, 'Metrics');
   }
 
-  // Clear all - careful with concurrency here in a real app, 
-  // but for Vercel lambda this array is per-instance and often one request at a time.
-  // In a real sustained server, we'd filter by traceId or just clear what we sent.
-  // For simplicity and matching the user snippet, we clear.
   pendingSpans.length = 0;
   pendingLogs.length = 0;
   pendingMetrics.length = 0;
