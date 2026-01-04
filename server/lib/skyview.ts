@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59:4318';
 const API_KEY = process.env.SKYVIEW_API_KEY || 'demo123';
 const SERVICE_NAME = 'tourni1010-backend';
-const TENANT_ID = 'Tournament1010'; // 🔴 CORRECT ID
+const TENANT_ID = 'Tourni1010'; // 🔴 CORRECT ID
 
 interface Span {
   name: string;

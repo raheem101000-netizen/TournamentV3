@@ -11,7 +11,7 @@ The SkyView client is implemented in `server/lib/skyview.ts` and handles:
 ### Configuration
 The SkyView client (`server/lib/skyview.ts`) is pre-configured with:
 - **Service Name**: `tourni1010-backend`
-- **Tenant ID**: `Tournament1010` (Hardcoded for correlation)
+- **Tenant ID**: `Tourni1010` (Hardcoded for correlation)
 
 ### Environment Variables
 Required in your `.env` or Vercel config:

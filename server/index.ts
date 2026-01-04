@@ -70,7 +70,7 @@ app.use((req, res, next) => {
 
       // SkyView Confirmation Log
       console.log('🔭 SkyView Observability: ACTIVE');
-      console.log('   Tenant ID: Tournament1010');
+      console.log('   Tenant ID: Tourni1010');
       console.log('   Service: tourni1010-backend');
     });
   } catch (error) {
