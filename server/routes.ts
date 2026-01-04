@@ -170,20 +170,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Add traceId to response headers for debugging
     res.setHeader('X-Trace-Id', traceId);
 
-    // Convert headers to record<string, string> safely
-    const safeHeaders: Record<string, any> = {};
-    Object.keys(req.headers).forEach(k => {
-      const v = req.headers[k];
-      if (v) safeHeaders[k] = Array.isArray(v) ? v.join(',') : v;
-    });
-
-    log('INFO', 'Incoming Request', {
-      method: req.method,
-      url: req.url,
-      userAgent: req.get('user-agent') || 'unknown',
-      ...safeHeaders
-    });
-
     // Capture response finish
     res.on('finish', async () => {
       const duration = Date.now() - startTime;
@@ -191,11 +177,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       metric('http.server.duration', duration);
       metric('http.server.requests', 1);
-
-      log('INFO', 'Request Completed', {
-        status,
-        durationMs: duration
-      });
 
       if (status >= 500) {
         endTrace('ERROR');
