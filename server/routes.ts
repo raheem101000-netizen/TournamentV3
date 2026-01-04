@@ -12,6 +12,7 @@ import { pool } from "./db.js";
 import { SESSION_SECRET } from "./app.js";
 import { sendVerificationEmail } from "./email.js";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache.js";
+import { startTrace, endTrace, log, metric, flush } from "./lib/skyview.js";
 
 const generalRateLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -535,6 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
+    startTrace('POST /api/auth/register');
     try {
       const registerSchema = z.object({
         fullName: z.string().min(2),
@@ -542,6 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: z.string().min(6),
       });
       const validatedData = registerSchema.parse(req.body);
+      log('INFO', 'User registration attempt', { email: validatedData.email });
 
       // Check if email verification should be skipped
       const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true';
@@ -549,6 +552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user with email already exists - always reject duplicates
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
+        log('WARN', 'Registration failed - email exists', { email: validatedData.email });
+        endTrace('ERROR');
+        await flush();
         return res.status(409).json({
           error: "An account with this email already exists. Please log in instead."
         });
@@ -601,6 +607,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
 
+      log('INFO', 'User registered successfully', { userId: user.id, email: validatedData.email });
+      metric('registrations_total', 1);
+      endTrace('OK');
+      await flush();
+
       res.status(201).json({
         message: "Account created successfully!",
         user: {
@@ -615,6 +626,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error: any) {
+      log('ERROR', 'Registration failed', { error: error.message });
+      endTrace('ERROR');
+      await flush();
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid input data" });
       }
@@ -623,34 +637,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/login", async (req, res) => {
+    startTrace('POST /api/auth/login');
+    const startTime = Date.now();
     try {
       const loginSchema = z.object({
         email: z.string().email(),
         password: z.string(),
       });
       const validatedData = loginSchema.parse(req.body);
+      log('INFO', 'Login attempt', { email: validatedData.email });
 
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
 
       if (!user) {
+        log('WARN', 'Login failed - user not found', { email: validatedData.email });
+        metric('login_failures_total', 1);
+        metric('login_duration_ms', Date.now() - startTime);
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
       // Verify password
       const bcrypt = await import('bcrypt');
       if (!user.passwordHash) {
+        log('WARN', 'Login failed - no password hash', { email: validatedData.email });
+        metric('login_failures_total', 1);
+        metric('login_duration_ms', Date.now() - startTime);
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "Invalid email or password" });
       }
       const passwordValid = await bcrypt.compare(validatedData.password, user.passwordHash);
 
       if (!passwordValid) {
+        log('WARN', 'Login failed - invalid password', { email: validatedData.email });
+        metric('login_failures_total', 1);
+        metric('login_duration_ms', Date.now() - startTime);
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
       // Check if email is verified (skip if SKIP_EMAIL_VERIFICATION is true)
       const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true';
       if (user.emailVerified === 0 && !skipEmailVerification) {
+        log('WARN', 'Login failed - email not verified', { email: validatedData.email });
+        metric('login_duration_ms', Date.now() - startTime);
+        endTrace('ERROR');
+        await flush();
         return res.status(403).json({
           error: "Please verify your email before logging in",
           unverified: true,
@@ -674,6 +710,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
 
+      log('INFO', 'Login successful', { userId: user.id, email: validatedData.email });
+      metric('logins_total', 1);
+      metric('login_duration_ms', Date.now() - startTime);
+      endTrace('OK');
+      await flush();
+
       res.json({
         message: "Login successful",
         user: {
@@ -688,6 +730,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: "session-based-auth",
       });
     } catch (error: any) {
+      log('ERROR', 'Login error', { error: error.message });
+      metric('login_failures_total', 1);
+      metric('login_duration_ms', Date.now() - startTime);
+      endTrace('ERROR');
+      await flush();
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid input data" });
       }
@@ -819,15 +866,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tournament routes
   app.get("/api/tournaments", async (req, res) => {
+    startTrace('GET /api/tournaments');
     try {
       const cached = cache.get<any[]>(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       if (cached) {
+        log('INFO', 'Tournaments fetched from cache', { count: cached.length });
+        endTrace('OK');
+        await flush();
         return res.json(cached);
       }
       const tournaments = await storage.getAllTournaments();
       cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, CACHE_TTL.MEDIUM);
+      log('INFO', 'Tournaments fetched from DB', { count: tournaments.length });
+      endTrace('OK');
+      await flush();
       res.json(tournaments);
     } catch (error: any) {
+      log('ERROR', 'Failed to fetch tournaments', { error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
@@ -904,9 +961,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/tournaments", async (req, res) => {
+    startTrace('POST /api/tournaments');
     try {
+      log('INFO', 'Tournament creation attempt', { userId: req.session?.userId });
       // Check if user is authenticated
       if (!req.session?.userId) {
+        log('WARN', 'Tournament creation unauthorized - not logged in');
+        endTrace('ERROR');
+        await flush();
         return res.status(401).json({ error: "You must be logged in to create a tournament" });
       }
 
@@ -1016,9 +1078,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
+      log('INFO', 'Tournament created', { tournamentId: tournament.id, name: tournament.name });
+      metric('tournaments_created_total', 1);
+      endTrace('OK');
+      await flush();
       res.status(201).json(tournament);
     } catch (error: any) {
+      log('ERROR', 'Tournament creation failed', { error: error.message });
+      endTrace('ERROR');
+      await flush();
       console.error('[DEBUG] Tournament creation error:', error);
       if (error.errors) {
         console.error('[DEBUG] Zod validation errors:', JSON.stringify(error.errors, null, 2));
@@ -1236,15 +1306,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/matches/:id", async (req, res) => {
+    startTrace(`PATCH /api/matches/${req.params.id}`);
     try {
+      log('INFO', 'Match update attempt', { matchId: req.params.id });
       const currentMatch = await storage.getMatch(req.params.id);
       if (!currentMatch) {
+        log('WARN', 'Match not found', { matchId: req.params.id });
+        endTrace('ERROR');
+        await flush();
         return res.status(404).json({ error: "Match not found" });
       }
 
       if (req.body.winnerId) {
         const validTeams = [currentMatch.team1Id, currentMatch.team2Id].filter(Boolean);
         if (!validTeams.includes(req.body.winnerId)) {
+          log('WARN', 'Invalid winner ID', { matchId: req.params.id, winnerId: req.body.winnerId });
+          endTrace('ERROR');
+          await flush();
           return res.status(400).json({ error: "Winner must be one of the match participants" });
         }
       }
@@ -1253,6 +1331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const match = await storage.updateMatch(req.params.id, req.body);
       if (!match) {
+        endTrace('ERROR');
+        await flush();
         return res.status(404).json({ error: "Match not found after update" });
       }
 
@@ -1302,11 +1382,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (tournament && tournament.format === "swiss") {
           const allMatches = await storage.getMatchesByTournament(tournament.id);
-          const currentRoundMatches = allMatches.filter((m) => m.round === tournament.currentRound);
-          const allCompleted = currentRoundMatches.every((m) => m.status === "completed");
+          const currentRound = match.round;
+          const pendingMatches = allMatches.filter(
+            (m) => m.round === currentRound && m.status !== "completed"
+          );
 
-          const currentRound = tournament.currentRound ?? 1;
-          if (allCompleted && currentRound < (tournament.swissRounds ?? 5)) {
+          if (pendingMatches.length === 0) {
             const teams = await storage.getTeamsByTournament(tournament.id);
             const nextRound = currentRound + 1;
             const newMatches = generateSwissSystemRound(tournament.id, teams, nextRound, allMatches).matches;
@@ -1321,8 +1402,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      log('INFO', 'Match updated', { matchId: req.params.id });
+      metric('matches_updated_total', 1);
+      endTrace('OK');
+      await flush();
       res.json(match);
     } catch (error: any) {
+      log('ERROR', 'Match update failed', { matchId: req.params.id, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
@@ -1342,20 +1430,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Select winner endpoint (marks match complete and removes loser)
   app.post("/api/matches/:matchId/winner", async (req, res) => {
+    startTrace(`POST /api/matches/${req.params.matchId}/winner`);
     try {
       const { winnerId } = req.body;
+      log('INFO', 'Match winner selection', { matchId: req.params.matchId, winnerId });
       const match = await storage.getMatch(req.params.matchId);
 
       if (!match) {
+        log('WARN', 'Match not found', { matchId: req.params.matchId });
+        endTrace('ERROR');
+        await flush();
         return res.status(404).json({ error: "Match not found" });
       }
 
       if (!winnerId) {
+        log('WARN', 'Winner ID missing', { matchId: req.params.matchId });
+        endTrace('ERROR');
+        await flush();
         return res.status(400).json({ error: "Winner ID is required" });
       }
 
       const validTeams = [match.team1Id, match.team2Id].filter(Boolean);
       if (!validTeams.includes(winnerId)) {
+        log('WARN', 'Invalid winner ID', { matchId: req.params.matchId, winnerId });
+        endTrace('ERROR');
+        await flush();
         return res.status(400).json({ error: "Winner must be one of the match participants" });
       }
 
@@ -1385,8 +1484,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      log('INFO', 'Match completed', { matchId: req.params.matchId, winnerId });
+      metric('matches_completed_total', 1);
+      endTrace('OK');
+      await flush();
       res.json(updatedMatch);
     } catch (error: any) {
+      log('ERROR', 'Match winner selection failed', { matchId: req.params.matchId, error: error.message });
+      endTrace('ERROR');
+      await flush();
       res.status(500).json({ error: error.message });
     }
   });
