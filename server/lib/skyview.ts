@@ -152,15 +152,20 @@ export async function flush() {
           ]
         },
         scopeLogs: [{
-          logRecords: pendingLogs.map(l => ({
-            timeUnixNano: String((l.timestamp || Date.now()) * 1_000_000),
-            severityText: l.level,
-            body: { stringValue: l.message },
-            attributes: Object.entries(l.attributes || {}).map(([k, v]) => ({
-              key: k,
-              value: typeof v === 'number' ? { intValue: v } : { stringValue: String(v) }
-            }))
-          }))
+          logRecords: pendingLogs.map(l => {
+            // OpenTelemetry severity numbers: INFO=9, WARN=13, ERROR=17
+            const severityNumber = l.level === 'ERROR' ? 17 : l.level === 'WARN' ? 13 : 9;
+            return {
+              timeUnixNano: String((l.timestamp || Date.now()) * 1_000_000),
+              severityText: l.level,
+              severityNumber: severityNumber,
+              body: { stringValue: l.message },
+              attributes: Object.entries(l.attributes || {}).map(([k, v]) => ({
+                key: k,
+                value: typeof v === 'number' ? { intValue: v } : { stringValue: String(v) }
+              }))
+            };
+          })
         }]
       }]
     };
