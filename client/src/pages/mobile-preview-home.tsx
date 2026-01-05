@@ -9,7 +9,7 @@ import type { Tournament, Server } from "@shared/schema";
 
 export default function MobilePreviewHome() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  
+
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
   });
@@ -37,18 +37,18 @@ export default function MobilePreviewHome() {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-1" data-testid="page-title">Discover</h1>
-      
+
       {/* Section Header */}
       <div className="mb-4">
         <h2 className="text-lg font-bold border-b-2 border-foreground inline-block pb-1">
           PROK's
         </h2>
       </div>
-      
+
       {/* Responsive Grid: 1 column on mobile (phone), 3 columns on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {publicTournaments?.map((tournament) => (
-          <Card 
+          <Card
             key={tournament.id}
             className="overflow-hidden hover-elevate"
             data-testid={`tournament-card-${tournament.id}`}
@@ -62,10 +62,10 @@ export default function MobilePreviewHome() {
                   Verified
                 </div>
               )}
-              <OptimizedImage 
-                src={tournament.imageUrl} 
+              <OptimizedImage
+                src={tournament.imageUrl}
                 alt={tournament.name}
-                className="w-full h-full"
+                className="w-full h-full object-cover"
                 thumbnailSize="lg"
                 fallback={
                   <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
@@ -75,15 +75,15 @@ export default function MobilePreviewHome() {
                 }
                 data-testid={`tournament-poster-${tournament.id}`}
               />
-              
+
               {/* Dark gradient overlay for better text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-              
+
               {/* Prize & Entry Fee Text Overlays */}
               <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center">
                 {/* Prize Reward - LARGE FONT */}
                 {tournament.prizeReward && (
-                  <div 
+                  <div
                     className="text-white font-black text-5xl md:text-4xl mb-1 drop-shadow-2xl tracking-tight"
                     style={{ textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8)' }}
                     data-testid={`tournament-prize-${tournament.id}`}
@@ -91,10 +91,10 @@ export default function MobilePreviewHome() {
                     {tournament.prizeReward}
                   </div>
                 )}
-                
+
                 {/* Entry Fee - SMALL FONT */}
                 {tournament.entryFee && (
-                  <div 
+                  <div
                     className="text-white/90 font-semibold text-sm md:text-xs drop-shadow-lg"
                     style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
                     data-testid={`tournament-entry-fee-${tournament.id}`}
@@ -115,12 +115,12 @@ export default function MobilePreviewHome() {
                 <div className="flex items-center justify-center gap-1.5 text-sm md:text-xs text-muted-foreground">
                   <Star className="h-4 w-4 md:h-3 md:w-3 fill-yellow-500 text-yellow-500" />
                   <span data-testid={`tournament-time-${tournament.id}`}>
-                    {tournament.startDate 
-                      ? new Date(tournament.startDate).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit',
-                          hour12: true 
-                        }).replace(' ', '').toLowerCase()
+                    {tournament.startDate
+                      ? new Date(tournament.startDate).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      }).replace(' ', '').toLowerCase()
                       : '0pm'}
                   </span>
                 </div>
@@ -128,13 +128,13 @@ export default function MobilePreviewHome() {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <Button 
+                <Button
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold h-11 md:h-9"
                   data-testid={`button-join-${tournament.id}`}
                 >
                   Join
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   size="icon"
                   className="h-11 w-11 md:h-9 md:w-9"
@@ -166,11 +166,11 @@ export default function MobilePreviewHome() {
               {selectedTournament?.game}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Tournament Poster in Modal - Load full image when modal opens */}
-            <OptimizedImage 
-              src={selectedTournament?.imageUrl} 
+            <OptimizedImage
+              src={selectedTournament?.imageUrl}
               alt={selectedTournament?.name || "Tournament"}
               className="w-full rounded-md aspect-video"
               thumbnailSize="lg"
@@ -257,13 +257,13 @@ export default function MobilePreviewHome() {
 
             {/* Action Buttons in Modal */}
             <div className="flex gap-3 pt-2">
-              <Button 
+              <Button
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
                 data-testid="modal-button-join"
               >
                 Join Tournament
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 className="flex-1"
                 onClick={() => setSelectedTournament(null)}
