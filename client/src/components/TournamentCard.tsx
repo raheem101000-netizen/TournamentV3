@@ -32,12 +32,12 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
   };
 
   const StatusIcon = statusIcons[tournament.status];
-  const completionPercentage = tournament.totalMatches 
-    ? Math.round((tournament.completedMatches || 0) / tournament.totalMatches * 100) 
+  const completionPercentage = tournament.totalMatches
+    ? Math.round((tournament.completedMatches || 0) / tournament.totalMatches * 100)
     : 0;
 
   return (
-    <Card className="hover-elevate">
+    <Card className="hover-elevate min-h-[280px] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-display font-semibold text-lg truncate" data-testid={`text-tournament-name-${tournament.id}`}>
@@ -51,7 +51,7 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 pb-4">
+      <CardContent className="space-y-4 pb-4 flex-1">
         <div className="flex items-center gap-2 text-sm">
           <Badge variant="outline" className="font-medium" data-testid={`badge-format-${tournament.id}`}>
             {formatLabels[tournament.format]}
@@ -69,7 +69,7 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
               <span className="font-medium">{completionPercentage}%</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
-              <div 
+              <div
                 className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${completionPercentage}%` }}
               />
@@ -89,8 +89,8 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
         )}
       </CardContent>
       <CardFooter className="pt-0">
-        <Button 
-          className="w-full" 
+        <Button
+          className="w-full"
           onClick={() => onView(tournament.id)}
           data-testid={`button-view-${tournament.id}`}
         >
