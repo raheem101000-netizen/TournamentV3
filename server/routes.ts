@@ -1446,6 +1446,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Remove participant from match
+  app.delete("/api/matches/:matchId/participants/:participantId", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        log('WARN', 'Remove participant - not authenticated');
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { matchId, participantId } = req.params;
+
+      const match = await storage.getMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+
+      // Get tournament to check permissions
+      const tournament = await storage.getTournament(match.tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      // Check if user is organizer or admin
+      const user = await storage.getUser(req.session.userId);
+      if (tournament.organizerId !== req.session.userId && !user?.isAdmin) {
+        log('WARN', 'Remove participant - not authorized', {
+          userId: req.session.userId,
+          matchId
+        });
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Only allow removal from pending matches
+      if (match.status !== 'pending') {
+        return res.status(400).json({ error: "Can only remove participants from pending matches" });
+      }
+
+      // Check which team to remove
+      if (match.team1Id !== participantId && match.team2Id !== participantId) {
+        return res.status(400).json({ error: "Participant not in this match" });
+      }
+
+      // Update match to remove the participant
+      const updateData: any = {};
+      if (match.team1Id === participantId) {
+        updateData.team1Id = null;
+      } else {
+        updateData.team2Id = null;
+      }
+
+      await storage.updateMatch(matchId, updateData);
+
+      log('INFO', 'Participant removed from match', {
+        matchId,
+        participantId,
+        tournamentId: tournament.id,
+        userId: req.session.userId
+      });
+
+      res.json({ success: true, message: "Participant removed from match" });
+
+    } catch (error: any) {
+      log('ERROR', 'Remove participant failed', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Select winner endpoint (marks match complete and removes loser)
   app.post("/api/matches/:matchId/winner", async (req, res) => {
     try {
