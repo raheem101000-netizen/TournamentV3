@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogoTenOnTen } from "@/components/LogoTenOnTen";
 import { queryClient } from "@/lib/queryClient";
+import ParticlesBackground from "@/components/ui/particles";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -88,6 +89,9 @@ export default function Login() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center py-8 px-4 bg-black relative overflow-hidden">
+      {/* Particles Background */}
+      <ParticlesBackground />
+
       {/* Enhanced Gradient Background Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-radial from-violet-500/20 via-fuchsia-500/10 to-transparent blur-[80px] animate-pulse" />
