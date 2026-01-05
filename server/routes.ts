@@ -834,7 +834,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
-      log('INFO', 'Auth check successful', { userId: user.id });
+      log('INFO', 'Auth check successful', {
+        userId: user.id,
+        userName: user.username,
+        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown'
+      });
       endTrace('OK');
       await flush();
       res.json({
@@ -2467,7 +2472,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingMember = await storage.getServerMember(req.params.serverId, userId);
       if (existingMember) {
         // Return success with alreadyMember flag - idempotent behavior
-        log('INFO', 'Server join - already member', { serverId: req.params.serverId, userId });
+        const user = await storage.getUser(userId);
+        const server = await storage.getServer(req.params.serverId);
+        log('INFO', 'Server join - already member', {
+          userId,
+          userName: user?.username || 'unknown',
+          serverId: req.params.serverId,
+          serverName: server?.name || 'unknown',
+          ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+          userAgent: req.get('user-agent') || 'unknown'
+        });
         endTrace('OK');
         await flush();
         return res.status(200).json({
@@ -2478,7 +2492,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const member = await storage.joinServer(req.params.serverId, userId);
-      log('INFO', 'Server join successful', { serverId: req.params.serverId, userId });
+      const user = await storage.getUser(userId);
+      const server = await storage.getServer(req.params.serverId);
+      log('INFO', 'Server join successful', {
+        userId,
+        userName: user?.username || 'unknown',
+        serverId: req.params.serverId,
+        serverName: server?.name || 'unknown',
+        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown'
+      });
       metric('server_joins_total', 1);
       endTrace('OK');
       await flush();
