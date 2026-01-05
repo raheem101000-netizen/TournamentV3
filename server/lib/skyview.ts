@@ -82,7 +82,11 @@ export async function flush() {
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeLogs: [{
           logRecords: pendingLogs.map(l => ({
             timeUnixNano: l.timestamp + '000000', severityText: l.level, severityNumber: l.level === 'ERROR' ? 17 : l.level === 'WARN' ? 13 : 9,
-            body: { stringValue: l.message }, attributes: []
+            body: { stringValue: l.message },
+            attributes: Object.entries(l.attributes || {}).map(([key, value]) => ({
+              key,
+              value: { stringValue: String(value) }
+            }))
           }))
         }]
       }]
