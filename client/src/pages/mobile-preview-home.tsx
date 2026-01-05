@@ -54,7 +54,7 @@ export default function MobilePreviewHome() {
             data-testid={`tournament-card-${tournament.id}`}
           >
             {/* Portrait Poster Image - Large on mobile */}
-            <div className="relative aspect-[3/4] md:aspect-[3/4] bg-gradient-to-br from-primary/30 to-primary/10">
+            <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
               {/* Verified Badge - Top Right of Poster */}
               {isServerVerified(tournament.serverId) && (
                 <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`tournament-verified-${tournament.id}`}>
