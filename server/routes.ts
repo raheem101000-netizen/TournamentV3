@@ -1630,6 +1630,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate fixtures for a tournament
+  app.post("/api/tournaments/:tournamentId/generate-fixtures", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        log('WARN', 'Generate fixtures - not authenticated');
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const tournament = await storage.getTournament(req.params.tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      // Check if user is organizer or admin
+      const user = await storage.getUser(req.session.userId);
+      if (tournament.organizerId !== req.session.userId && !user?.isAdmin) {
+        log('WARN', 'Generate fixtures - not authorized', {
+          userId: req.session.userId,
+          tournamentId: tournament.id
+        });
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+
+      // Get teams for this tournament
+      const teams = await storage.getTeamsByTournament(tournament.id);
+      const activeTeams = teams.filter(t => !t.isRemoved);
+
+      if (activeTeams.length < 2) {
+        return res.status(400).json({ error: "Need at least 2 active teams to generate matches" });
+      }
+
+      const teamIds = activeTeams.map(t => t.id);
+
+
+      log('INFO', 'Generating fixtures', {
+        tournamentId: tournament.id,
+        format: tournament.format,
+        teamCount: teamIds.length,
+        userId: req.session.userId
+      });
+
+      const matches: any[] = [];
+
+      // Generate matches based on format
+      if (tournament.format === 'single_elimination') {
+        // Single elimination bracket
+        const totalTeams = teamIds.length;
+        const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
+        const byeCount = nextPowerOf2 - totalTeams;
+
+        // First round
+        let round = 1;
+        for (let i = 0; i < totalTeams - byeCount; i += 2) {
+          if (i + 1 < teamIds.length) {
+            matches.push({
+              tournamentId: tournament.id,
+              team1Id: teamIds[i],
+              team2Id: teamIds[i + 1],
+              round,
+              status: 'pending'
+            });
+          }
+        }
+
+        // Teams with byes advance automatically
+        if (byeCount > 0) {
+          log('INFO', 'Single elimination with byes', { byeCount, totalTeams });
+        }
+
+      } else if (tournament.format === 'round_robin') {
+        // Round robin - every team plays every other team
+        let round = 1;
+        for (let i = 0; i < teamIds.length; i++) {
+          for (let j = i + 1; j < teamIds.length; j++) {
+            matches.push({
+              tournamentId: tournament.id,
+              team1Id: teamIds[i],
+              team2Id: teamIds[j],
+              round,
+              status: 'pending'
+            });
+          }
+        }
+
+      } else if (tournament.format === 'swiss') {
+        // Swiss system - pair teams for first round
+        const rounds = tournament.swissRounds || 3;
+
+        // Shuffle teams for first round pairing
+        const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
+
+        // Create first round matches
+        for (let i = 0; i < shuffled.length - 1; i += 2) {
+          matches.push({
+            tournamentId: tournament.id,
+            team1Id: shuffled[i],
+            team2Id: shuffled[i + 1],
+            round: 1,
+            status: 'pending'
+          });
+        }
+
+        // Note: Subsequent rounds in Swiss are generated after previous round completes
+        log('INFO', 'Swiss round 1 generated', {
+          totalRounds: rounds,
+          firstRoundMatches: matches.length
+        });
+      }
+
+      // Create all matches in database
+      const createdMatches = [];
+      for (const matchData of matches) {
+        const match = await storage.createMatch(matchData);
+        createdMatches.push(match);
+      }
+
+      log('INFO', 'Fixtures generated successfully', {
+        tournamentId: tournament.id,
+        matchCount: createdMatches.length,
+        format: tournament.format
+      });
+
+      res.status(201).json({
+        message: "Fixtures generated successfully",
+        matchCount: createdMatches.length,
+        matches: createdMatches
+      });
+
+    } catch (error: any) {
+      log('ERROR', 'Generate fixtures failed', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Match details endpoint (for 1v1 tournament match screen)
   app.get("/api/tournaments/:tournamentId/matches/:matchId/details", async (req, res) => {
     try {
