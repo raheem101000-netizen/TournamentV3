@@ -2330,6 +2330,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/channels/:channelId/messages/:id - Edit announcement
+  app.patch("/api/channels/:channelId/messages/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        log('WARN', 'Announcement edit - not authenticated');
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { message } = req.body;
+      const { id, channelId } = req.params;
+
+      // Get the existing message
+      const existingMessage = await storage.getChannelMessage(id);
+      if (!existingMessage) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      // Check if user is author or admin
+      const user = await storage.getUser(req.session.userId);
+      if (existingMessage.userId !== req.session.userId && !user?.isAdmin) {
+        log('WARN', 'Announcement edit - not authorized', {
+          userId: req.session.userId,
+          messageId: id
+        });
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Update the message
+      const updated = await storage.updateChannelMessage(id, { message: message.trim() });
+
+      log('INFO', 'Announcement edited', {
+        messageId: id,
+        channelId,
+        userId: req.session.userId,
+        userName: user?.username
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      log('ERROR', 'Announcement edit failed', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/channels/:channelId/messages/:id - Delete announcement
+  app.delete("/api/channels/:channelId/messages/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        log('WARN', 'Announcement delete - not authenticated');
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { id, channelId } = req.params;
+
+      // Get the existing message
+      const existingMessage = await storage.getChannelMessage(id);
+      if (!existingMessage) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      // Check if user is author or admin
+      const user = await storage.getUser(req.session.userId);
+      if (existingMessage.userId !== req.session.userId && !user?.isAdmin) {
+        log('WARN', 'Announcement delete - not authorized', {
+          userId: req.session.userId,
+          messageId: id
+        });
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Delete the message
+      await storage.deleteChannelMessage(id);
+
+      log('INFO', 'Announcement deleted', {
+        messageId: id,
+        channelId,
+        userId: req.session.userId,
+        userName: user?.username
+      });
+
+      res.status(204).send();
+    } catch (error: any) {
+      log('ERROR', 'Announcement delete failed', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Mobile preview API routes
   app.get("/api/mobile-preview/servers", async (_req, res) => {
     try {

@@ -3,10 +3,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Megaphone, Loader2, Send } from "lucide-react";
+import { Megaphone, Loader2, Send, Pencil, Trash2, X, Check } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { ChannelMessage } from "@shared/schema";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AnnouncementsChannelProps {
   channelId: string;
@@ -17,10 +27,18 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: messages = [], isLoading } = useQuery<ChannelMessage[]>({
     queryKey: [`/api/channels/${channelId}/messages`],
     enabled: !!channelId,
+  });
+
+  // Get current user info to check permissions
+  const { data: currentUser } = useQuery<{ id: string; isAdmin?: boolean }>({
+    queryKey: ['/api/auth/me'],
   });
 
   const postAnnouncementMutation = useMutation({
@@ -54,13 +72,92 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
     },
   });
 
+  const editAnnouncementMutation = useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) => {
+      const response = await fetch(`/api/channels/${channelId}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to edit announcement");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/channels/${channelId}/messages`] });
+      setEditingId(null);
+      setEditContent("");
+      toast({
+        title: "Announcement updated",
+        description: "Your changes have been saved.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to edit",
+        description: error instanceof Error ? error.message : "Try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/channels/${channelId}/messages/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to delete announcement");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/channels/${channelId}/messages`] });
+      setDeleteId(null);
+      toast({
+        title: "Announcement deleted",
+        description: "The announcement has been removed.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete",
+        description: error instanceof Error ? error.message : "Try again",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handlePost = () => {
     const trimmed = newAnnouncement.trim();
     if (!trimmed) return;
     postAnnouncementMutation.mutate(trimmed);
   };
 
-  const sortedMessages = [...messages].sort((a, b) => 
+  const handleEdit = (message: ChannelMessage) => {
+    setEditingId(message.id);
+    setEditContent(message.message);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingId || !editContent.trim()) return;
+    editAnnouncementMutation.mutate({ id: editingId, message: editContent.trim() });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditContent("");
+  };
+
+  const canEditOrDelete = (message: ChannelMessage) => {
+    return currentUser?.id === message.userId || currentUser?.isAdmin || canPost;
+  };
+
+  const sortedMessages = [...messages].sort((a, b) =>
     new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
   );
 
@@ -85,7 +182,7 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
               data-testid="input-announcement"
             />
             <div className="flex justify-end">
-              <Button 
+              <Button
                 onClick={handlePost}
                 disabled={!newAnnouncement.trim() || postAnnouncementMutation.isPending}
                 data-testid="button-post-announcement"
@@ -118,23 +215,84 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
         sortedMessages.map((message) => (
           <Card key={message.id} data-testid={`announcement-${message.id}`}>
             <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base whitespace-pre-wrap break-words">{message.message}</CardTitle>
-                  <CardDescription className="text-xs mt-1">
-                    Posted by {message.username} on {new Date(message.createdAt || Date.now()).toLocaleDateString()}
-                  </CardDescription>
+              {editingId === message.id ? (
+                // Edit mode
+                <div className="space-y-3">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={editAnnouncementMutation.isPending}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      disabled={!editContent.trim() || editAnnouncementMutation.isPending}
+                    >
+                      {editAnnouncementMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 mr-1" />
+                      )}
+                      Save
+                    </Button>
+                  </div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
-                  Announcement
-                </Badge>
-              </div>
+              ) : (
+                // View mode
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base whitespace-pre-wrap break-words">{message.message}</CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        Posted by {message.username} on {new Date(message.createdAt || Date.now()).toLocaleDateString()}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Announcement
+                      </Badge>
+                      {canEditOrDelete(message) && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(message)}
+                            className="h-8 w-8 p-0"
+                            title="Edit announcement"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDeleteId(message.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            title="Delete announcement"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </CardHeader>
-            {message.imageUrl && (
+            {message.imageUrl && editingId !== message.id && (
               <CardContent>
-                <img 
-                  src={message.imageUrl} 
-                  alt="Announcement" 
+                <img
+                  src={message.imageUrl}
+                  alt="Announcement"
                   className="rounded-md max-w-full h-auto"
                 />
               </CardContent>
@@ -142,6 +300,27 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
           </Card>
         ))
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The announcement will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteAnnouncementMutation.mutate(deleteId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

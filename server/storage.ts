@@ -164,7 +164,9 @@ export interface IStorage {
 
   // Channel message operations
   createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage>;
+  getChannelMessage(id: string): Promise<ChannelMessage | undefined>;
   getChannelMessages(channelId: string, limit?: number): Promise<ChannelMessage[]>;
+  updateChannelMessage(id: string, data: Partial<ChannelMessage>): Promise<ChannelMessage | undefined>;
   searchChannelMessages(channelId: string, query: string): Promise<ChannelMessage[]>;
   deleteChannelMessage(id: string): Promise<void>;
 
@@ -1222,6 +1224,11 @@ export class DatabaseStorage implements IStorage {
   async createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage> {
     const [message] = await db.insert(channelMessages).values(data).returning();
     return message;
+  }
+
+  async getChannelMessage(id: string): Promise<ChannelMessage | undefined> {
+    const [message] = await db.select().from(channelMessages).where(eq(channelMessages.id, id));
+    return message || undefined;
   }
 
   async getChannelMessages(channelId: string, limit: number = 100): Promise<ChannelMessage[]> {
