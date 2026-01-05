@@ -79,7 +79,7 @@ interface User {
 function renderMessageWithLinks(text: string): JSX.Element {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
-  
+
   return (
     <>
       {parts.map((part, index) => {
@@ -134,7 +134,7 @@ function formatTime(dateString: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  
+
   return date.toLocaleDateString();
 }
 
@@ -151,7 +151,7 @@ interface Tournament {
 
 function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
   const [, setLocation] = useLocation();
-  
+
   const { data: tournament, isLoading } = useQuery<Tournament>({
     queryKey: ['/api/tournaments', tournamentId],
     queryFn: async () => {
@@ -160,7 +160,7 @@ function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
       return response.json();
     },
   });
-  
+
   if (isLoading) {
     return (
       <Card className="w-full max-w-[280px] overflow-hidden">
@@ -172,7 +172,7 @@ function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
       </Card>
     );
   }
-  
+
   if (!tournament) {
     return (
       <Card className="w-full max-w-[280px] p-3">
@@ -180,9 +180,9 @@ function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
       </Card>
     );
   }
-  
+
   return (
-    <Card 
+    <Card
       className="w-full max-w-[280px] overflow-hidden hover-elevate cursor-pointer"
       onClick={(e) => {
         e.stopPropagation();
@@ -192,8 +192,8 @@ function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
     >
       {tournament.posterUrl ? (
         <div className="relative h-36 overflow-hidden">
-          <img 
-            src={tournament.posterUrl} 
+          <img
+            src={tournament.posterUrl}
             alt={tournament.name}
             className="w-full h-full object-cover"
           />
@@ -225,8 +225,8 @@ function TournamentEmbed({ tournamentId }: { tournamentId: string }) {
             <span className="text-muted-foreground">{tournament.entryFee === "0" || tournament.entryFee === "$0" ? "Free" : tournament.entryFee}</span>
           )}
         </div>
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           className="w-full"
           onClick={(e) => {
             e.stopPropagation();
@@ -340,7 +340,7 @@ export default function PreviewMessages() {
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1]);
     const matchIdParam = params.get("matchId");
-    
+
     if (matchIdParam && threads.length > 0 && !selectedChat) {
       const matchThread = threads.find(t => t.matchId === matchIdParam);
       if (matchThread) {
@@ -365,13 +365,13 @@ export default function PreviewMessages() {
         credentials: "include",
       }).then(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/message-threads/unread-count"] });
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [selectedChat?.id, queryClient]);
 
   const handleAddFriend = async () => {
     if (!previewProfileData || !currentUser) return;
-    
+
     try {
       const response = await fetch("/api/friend-request", {
         method: "POST",
@@ -383,7 +383,7 @@ export default function PreviewMessages() {
       });
 
       if (!response.ok) throw new Error("Failed to send friend request");
-      
+
       setIsFriendRequestSent(true);
       toast({
         title: "Friend request sent!",
@@ -400,7 +400,7 @@ export default function PreviewMessages() {
 
   const handleMessageProfile = async () => {
     if (!previewProfileData) return;
-    
+
     try {
       const response = await fetch("/api/message-threads", {
         method: "POST",
@@ -415,7 +415,7 @@ export default function PreviewMessages() {
 
       if (!response.ok) throw new Error("Failed to create message thread");
       const thread = await response.json();
-      
+
       setProfileModalOpen(false);
       setSelectedChat(threadToChat(thread));
       toast({
@@ -434,17 +434,17 @@ export default function PreviewMessages() {
   // Fetch messages for selected thread or match
   // If selectedChat has a matchId, fetch from match API, otherwise from thread API
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<any[]>({
-    queryKey: selectedChat?.matchId 
+    queryKey: selectedChat?.matchId
       ? ["/api/matches", selectedChat.matchId, "messages"]
       : ["/api/message-threads", selectedChat?.id, "messages"],
     enabled: !!selectedChat,
     queryFn: async () => {
       if (!selectedChat) return [];
-      
+
       const url = selectedChat.matchId
         ? `/api/matches/${selectedChat.matchId}/messages`
         : `/api/message-threads/${selectedChat.id}/messages`;
-      
+
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
@@ -459,16 +459,16 @@ export default function PreviewMessages() {
   }, [threadMessages, messagesLoading]);
 
   const acceptedChats = threads.map(threadToChat);
-  
+
   // Separate personal chats from match chats
   const personalChats = acceptedChats.filter(chat => !chat.matchId);
   const matchChats = acceptedChats.filter(chat => !!chat.matchId);
-  
+
   // Filter chats based on search term
   const filteredPersonalChats = personalChats.filter(chat =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const filteredMatchChats = matchChats.filter(chat =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -476,33 +476,33 @@ export default function PreviewMessages() {
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, imageUrl }: { message: string; imageUrl: string | null }) => {
       if (!selectedChat) throw new Error("No chat selected");
-      
+
       // Use correct API endpoint based on chat type
       const url = selectedChat.matchId
         ? `/api/matches/${selectedChat.matchId}/messages`
         : `/api/message-threads/${selectedChat.id}/messages`;
-      
+
       // For match chat, include userId and username
       const body = selectedChat.matchId
-        ? { 
-            userId: currentUser?.id,
-            username: currentUser?.username,
-            message,
-            imageUrl,
-            replyToId: null
-          }
+        ? {
+          userId: currentUser?.id,
+          username: currentUser?.username,
+          message,
+          imageUrl,
+          replyToId: null
+        }
         : { message, imageUrl, replyToId: null };
-      
+
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to send message");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -512,12 +512,12 @@ export default function PreviewMessages() {
       });
       // Refetch messages after sending - use correct queryKey based on chat type
       if (selectedChat?.matchId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/matches", selectedChat.matchId, "messages"] 
+        queryClient.invalidateQueries({
+          queryKey: ["/api/matches", selectedChat.matchId, "messages"]
         });
       } else {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/message-threads", selectedChat?.id, "messages"] 
+        queryClient.invalidateQueries({
+          queryKey: ["/api/message-threads", selectedChat?.id, "messages"]
         });
       }
     },
@@ -534,17 +534,17 @@ export default function PreviewMessages() {
   const editMessageMutation = useMutation({
     mutationFn: async ({ messageId, message }: { messageId: string; message: string }) => {
       if (!selectedChat) throw new Error("No chat selected");
-      
+
       const url = selectedChat.matchId
         ? `/api/matches/${selectedChat.matchId}/messages/${messageId}`
         : `/api/message-threads/${selectedChat.id}/messages/${messageId}`;
-      
+
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
-      
+
       if (!response.ok) throw new Error("Failed to update message");
       return response.json();
     },
@@ -571,13 +571,13 @@ export default function PreviewMessages() {
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: string) => {
       if (!selectedChat) throw new Error("No chat selected");
-      
+
       const url = selectedChat.matchId
         ? `/api/matches/${selectedChat.matchId}/messages/${messageId}`
         : `/api/message-threads/${selectedChat.id}/messages/${messageId}`;
-      
+
       const response = await fetch(url, { method: "DELETE" });
-      
+
       if (!response.ok) throw new Error("Failed to delete message");
       return response.json();
     },
@@ -644,7 +644,7 @@ export default function PreviewMessages() {
       try {
         const formData = new FormData();
         formData.append('file', stagedImage.file);
-        
+
         const uploadResponse = await fetch('/api/objects/upload', {
           method: 'POST',
           body: formData,
@@ -711,13 +711,13 @@ export default function PreviewMessages() {
       toast({ title: "Winner selected!" });
       queryClient.invalidateQueries({ queryKey: ["match-details", selectedChat?.matchId] });
       queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
-      
+
       // Invalidate Dashboard caches for this tournament to keep standings in sync
       if (matchDetails?.tournamentId) {
         queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${matchDetails.tournamentId}/teams`] });
         queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${matchDetails.tournamentId}/matches`] });
       }
-      
+
       setSelectedChat(null);
     },
     onError: (error: any) => {
@@ -786,13 +786,13 @@ export default function PreviewMessages() {
       });
 
       if (!response.ok) throw new Error("Failed to accept request");
-      
+
       // Refetch threads to show in personal messages
       queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
-      
+
       // Remove from message requests
       setMessageRequests(prev => prev.filter(r => r.id !== request.id));
-      
+
       toast({
         title: "Message request accepted",
         description: `You can now chat with ${request.name}`,
@@ -817,17 +817,17 @@ export default function PreviewMessages() {
   const updateAvatarMutation = useMutation({
     mutationFn: async (avatar: string) => {
       if (!editingAvatar) throw new Error("No group selected");
-      
+
       const response = await fetch(`/api/message-threads/${editingAvatar.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ participantAvatar: avatar }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update avatar");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -835,7 +835,7 @@ export default function PreviewMessages() {
         title: "Group avatar updated!",
         description: `Changed to ${newAvatarEmoji}`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
       setEditingAvatar(null);
       setNewAvatarEmoji("");
@@ -859,18 +859,18 @@ export default function PreviewMessages() {
       const response = await fetch("/api/message-threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           participantName: name,
           participantAvatar: "💬",
           lastMessage: "",
           unreadCount: 0,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create group");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -878,7 +878,7 @@ export default function PreviewMessages() {
         title: "Group chat created!",
         description: `${newGroupName} has been created`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
       setNewGroupName("");
       setShowCreateGroup(false);
@@ -912,7 +912,7 @@ export default function PreviewMessages() {
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              
+
               <div className="relative cursor-pointer" onClick={() => selectedChat.isGroup && setEditingAvatar(selectedChat)}>
                 <Avatar className="w-10 h-10">
                   {selectedChat.isGroup ? (
@@ -934,7 +934,7 @@ export default function PreviewMessages() {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex-1">
                 <h2 className="font-semibold">{selectedChat.name}</h2>
                 {selectedChat.isGroup && (
@@ -969,82 +969,72 @@ export default function PreviewMessages() {
                 </CardTitle>
               </CardHeader>
             )}
-            <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 pt-4 min-h-0">
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4 pt-2">
-                    {messagesLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : threadMessages.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No messages yet. Start the conversation!</p>
-                      </div>
-                    ) : (
-                      threadMessages.map((msg) => {
-                        const isOwn = msg.userId === currentUser?.id;
-                        const isSystem = false;
+            <CardContent className="flex-1 flex flex-col p-0 px-6 pb-6 pt-4 min-h-0 overflow-hidden">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-4 pt-2 pb-4">
+                  {messagesLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : threadMessages.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No messages yet. Start the conversation!</p>
+                    </div>
+                  ) : (
+                    threadMessages.map((msg) => {
+                      const isOwn = msg.userId === currentUser?.id;
+                      const isSystem = false;
 
-                        // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
-                        const getInitials = () => {
-                          // Use enriched displayName first, fallback to username, then message username
-                          const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
-                          if (!name) return 'U';
-                          const parts = name.split(' ').filter((p: string) => p);
-                          if (parts.length > 1) {
-                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                          }
-                          return name.substring(0, 2).toUpperCase();
-                        };
-
-                        // Get sender name to display
-                        const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                        const senderUsername = msg.username?.trim() || '';
-
-                        if (isSystem) {
-                          return (
-                            <div key={msg.id} className="flex justify-center">
-                              <Badge variant="outline" className="gap-2 py-1">
-                                <AlertCircle className="w-3 h-3" />
-                                {msg.message}
-                              </Badge>
-                            </div>
-                          );
+                      // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
+                      const getInitials = () => {
+                        // Use enriched displayName first, fallback to username, then message username
+                        const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
+                        if (!name) return 'U';
+                        const parts = name.split(' ').filter((p: string) => p);
+                        if (parts.length > 1) {
+                          return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
                         }
+                        return name.substring(0, 2).toUpperCase();
+                      };
 
-                        const isEditing = editingMessage?.id === msg.id;
+                      // Get sender name to display
+                      const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                      const senderUsername = msg.username?.trim() || '';
 
+                      if (isSystem) {
                         return (
-                          <div 
-                            key={msg.id} 
-                            className={`group relative flex gap-3 p-2 -m-2 rounded-md cursor-pointer ${longPressMessageId === msg.id ? 'bg-muted' : ''}`}
-                            data-testid={`message-${msg.id}`}
-                            onClick={() => {
-                              if (isEditing) return;
-                              setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
-                            }}
-                          >
-                            {msg.userId ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProfileId(msg.userId);
-                                  setProfileModalOpen(true);
-                                }}
-                                className="p-0 border-0 bg-transparent cursor-pointer"
-                                data-testid={`button-avatar-${msg.id}`}
-                              >
-                                <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
-                                  {msg.avatarUrl && (
-                                    <AvatarImage src={msg.avatarUrl} alt={senderName} />
-                                  )}
-                                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                    {getInitials()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </button>
-                            ) : (
-                              <Avatar className="h-8 w-8">
+                          <div key={msg.id} className="flex justify-center">
+                            <Badge variant="outline" className="gap-2 py-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {msg.message}
+                            </Badge>
+                          </div>
+                        );
+                      }
+
+                      const isEditing = editingMessage?.id === msg.id;
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`group relative flex gap-3 p-2 -m-2 rounded-md cursor-pointer ${longPressMessageId === msg.id ? 'bg-muted' : ''}`}
+                          data-testid={`message-${msg.id}`}
+                          onClick={() => {
+                            if (isEditing) return;
+                            setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
+                          }}
+                        >
+                          {msg.userId ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProfileId(msg.userId);
+                                setProfileModalOpen(true);
+                              }}
+                              className="p-0 border-0 bg-transparent cursor-pointer"
+                              data-testid={`button-avatar-${msg.id}`}
+                            >
+                              <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
                                 {msg.avatarUrl && (
                                   <AvatarImage src={msg.avatarUrl} alt={senderName} />
                                 )}
@@ -1052,157 +1042,167 @@ export default function PreviewMessages() {
                                   {getInitials()}
                                 </AvatarFallback>
                               </Avatar>
-                            )}
-                            {/* Message action menu - positioned at right of message row */}
-                            {!isEditing && isOwn && longPressMessageId === msg.id && (
-                              <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-7 justify-start gap-2 text-destructive"
-                                  onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
-                                  data-testid={`button-delete-message-${msg.id}`}
+                            </button>
+                          ) : (
+                            <Avatar className="h-8 w-8">
+                              {msg.avatarUrl && (
+                                <AvatarImage src={msg.avatarUrl} alt={senderName} />
+                              )}
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {getInitials()}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                          {/* Message action menu - positioned at right of message row */}
+                          {!isEditing && isOwn && longPressMessageId === msg.id && (
+                            <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 justify-start gap-2 text-destructive"
+                                onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
+                                data-testid={`button-delete-message-${msg.id}`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </Button>
+                            </div>
+                          )}
+                          <div className="flex flex-col gap-1 max-w-[70%]">
+                            <div className="flex items-center gap-2">
+                              {msg.userId ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedProfileId(msg.userId);
+                                    setProfileModalOpen(true);
+                                  }}
+                                  className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
+                                  data-testid={`user-link-${msg.id}`}
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  {senderName}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  {senderName}
+                                </span>
+                              )}
+                            </div>
+                            {msg.imageUrl && (
+                              <button
+                                onClick={() => setEnlargedImageUrl(msg.imageUrl)}
+                                className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
+                                data-testid={`button-img-message-${msg.id}`}
+                              >
+                                <img
+                                  src={msg.imageUrl}
+                                  alt="Shared image"
+                                  className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                                />
+                              </button>
+                            )}
+                            {isEditing ? (
+                              <div className="flex gap-2 w-full">
+                                <Input
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  className="flex-1"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveEdit();
+                                    if (e.key === 'Escape') handleCancelEdit();
+                                  }}
+                                  autoFocus
+                                  data-testid="input-edit-message"
+                                />
+                                <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
+                                  <X className="h-4 w-4" />
                                 </Button>
                               </div>
-                            )}
-                            <div className="flex flex-col gap-1 max-w-[70%]">
-                              <div className="flex items-center gap-2">
-                                {msg.userId ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedProfileId(msg.userId);
-                                      setProfileModalOpen(true);
-                                    }}
-                                    className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
-                                    data-testid={`user-link-${msg.id}`}
-                                  >
-                                    {senderName}
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    {senderName}
-                                  </span>
-                                )}
-                              </div>
-                              {msg.imageUrl && (
-                                <button
-                                  onClick={() => setEnlargedImageUrl(msg.imageUrl)}
-                                  className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
-                                  data-testid={`button-img-message-${msg.id}`}
-                                >
-                                  <img 
-                                    src={msg.imageUrl} 
-                                    alt="Shared image" 
-                                    className="max-w-full h-auto max-h-60 object-contain rounded-md"
-                                  />
-                                </button>
-                              )}
-                              {isEditing ? (
-                                <div className="flex gap-2 w-full">
-                                  <Input
-                                    value={editText}
-                                    onChange={(e) => setEditText(e.target.value)}
-                                    className="flex-1"
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') handleSaveEdit();
-                                      if (e.key === 'Escape') handleCancelEdit();
-                                    }}
-                                    autoFocus
-                                    data-testid="input-edit-message"
-                                  />
-                                  <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : msg.tournamentId ? (
-                                <TournamentEmbed tournamentId={msg.tournamentId} />
-                              ) : msg.message ? (
-                                <p className="text-sm text-foreground whitespace-pre-wrap">{renderMessageWithLinks(msg.message)}</p>
-                              ) : null}
-                            </div>
+                            ) : msg.tournamentId ? (
+                              <TournamentEmbed tournamentId={msg.tournamentId} />
+                            ) : msg.message ? (
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{renderMessageWithLinks(msg.message)}</p>
+                            ) : null}
                           </div>
-                        );
-                      })
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-
-
-                <div className="space-y-2">
-                  {/* Staged image preview */}
-                  {stagedImage && (
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                      <img 
-                        src={stagedImage.preview} 
-                        alt="Staged" 
-                        className="h-16 w-16 object-cover rounded-md"
-                      />
-                      <div className="flex-1 text-sm text-muted-foreground">
-                        Image ready to send
-                      </div>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-6 w-6 flex-shrink-0"
-                        onClick={clearStagedImage}
-                        data-testid="button-clear-staged-image"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
+                        </div>
+                      );
+                    })
                   )}
-                  <div className="flex gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      ref={imageInputRef}
-                      onChange={handleImageSelected}
-                      data-testid="input-file-upload"
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+
+              <div className="space-y-2 pt-4 border-t">
+                {/* Staged image preview */}
+                {stagedImage && (
+                  <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                    <img
+                      src={stagedImage.preview}
+                      alt="Staged"
+                      className="h-16 w-16 object-cover rounded-md"
                     />
+                    <div className="flex-1 text-sm text-muted-foreground">
+                      Image ready to send
+                    </div>
                     <Button
                       size="icon"
-                      variant="outline"
-                      onClick={() => imageInputRef.current?.click()}
-                      disabled={isUploadingImage}
-                      data-testid="button-upload-image"
+                      variant="ghost"
+                      className="h-6 w-6 flex-shrink-0"
+                      onClick={clearStagedImage}
+                      data-testid="button-clear-staged-image"
                     >
-                      {isUploadingImage ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ImageIcon className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Input
-                      placeholder="Type a message or attach an image..."
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                      className="flex-1"
-                      data-testid="input-message"
-                    />
-                    <Button 
-                      size="icon" 
-                      onClick={handleSendMessage}
-                      disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
-                      data-testid="button-send-message"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={imageInputRef}
+                    onChange={handleImageSelected}
+                    data-testid="input-file-upload"
+                  />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    data-testid="button-upload-image"
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Input
+                    placeholder="Type a message or attach an image..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    className="flex-1"
+                    data-testid="input-message"
+                  />
+                  <Button
+                    size="icon"
+                    onClick={handleSendMessage}
+                    disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
+                    data-testid="button-send-message"
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
+              </div>
             </CardContent>
           </Card>
         </main>
@@ -1246,8 +1246,8 @@ export default function PreviewMessages() {
                 {/* Action Buttons */}
                 {currentUser?.id !== selectedProfileId && (
                   <div className="flex gap-2">
-                    <Button 
-                      onClick={handleMessageProfile} 
+                    <Button
+                      onClick={handleMessageProfile}
                       className="flex-1"
                       data-testid="button-message-profile-user"
                     >
@@ -1270,8 +1270,8 @@ export default function PreviewMessages() {
                         Accept Request
                       </Button>
                     ) : (
-                      <Button 
-                        onClick={handleAddFriend} 
+                      <Button
+                        onClick={handleAddFriend}
                         disabled={isFriendRequestSent}
                         variant={isFriendRequestSent ? "secondary" : "outline"}
                         className="flex-1"
@@ -1310,16 +1310,16 @@ export default function PreviewMessages() {
                         const IconComponent = getAchievementIcon(achievement.iconUrl);
                         const colorClass = getAchievementColor(achievement.iconUrl);
                         return (
-                        <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
-                            <IconComponent className={`w-5 h-5 ${colorClass}`} />
+                          <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
+                              <IconComponent className={`w-5 h-5 ${colorClass}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                              {achievement.game && <p className="text-xs text-muted-foreground">{achievement.game}</p>}
+                              {achievement.serverName && <p className="text-xs text-muted-foreground">{achievement.serverName}</p>}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm">{achievement.title}</h4>
-                            {achievement.game && <p className="text-xs text-muted-foreground">{achievement.game}</p>}
-                            {achievement.serverName && <p className="text-xs text-muted-foreground">{achievement.serverName}</p>}
-                          </div>
-                        </div>
                         );
                       })}
                     </div>
@@ -1351,9 +1351,9 @@ export default function PreviewMessages() {
               <X className="w-5 h-5" />
             </button>
             {enlargedImageUrl && (
-              <img 
-                src={enlargedImageUrl} 
-                alt="Enlarged image" 
+              <img
+                src={enlargedImageUrl}
+                alt="Enlarged image"
                 className="max-w-full max-h-[85vh] object-contain rounded-md"
                 data-testid="img-enlarged"
               />
@@ -1372,8 +1372,8 @@ export default function PreviewMessages() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel data-testid="button-cancel-delete-conv">Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmDelete} 
+              <AlertDialogAction
+                onClick={confirmDelete}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="button-confirm-delete-conv"
               >
@@ -1393,16 +1393,16 @@ export default function PreviewMessages() {
         <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Messages</h1>
-            <Button 
-              size="icon" 
-              variant="ghost" 
+            <Button
+              size="icon"
+              variant="ghost"
               onClick={() => setShowCreateGroup(true)}
               data-testid="button-create-group-header"
             >
               <Plus className="w-5 h-5" />
             </Button>
           </div>
-          
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -1659,7 +1659,7 @@ export default function PreviewMessages() {
               </Avatar>
               <p className="text-sm text-muted-foreground">{editingAvatar?.name}</p>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Enter emoji</label>
               <Input
@@ -1738,8 +1738,8 @@ export default function PreviewMessages() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
+            <AlertDialogAction
+              onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
