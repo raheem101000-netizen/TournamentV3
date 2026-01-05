@@ -517,7 +517,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
-    startTrace('POST /api/auth/register');
     try {
       const registerSchema = z.object({
         fullName: z.string().min(2),
@@ -618,7 +617,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/login", async (req, res) => {
-    startTrace('POST /api/auth/login');
     const startTime = Date.now();
     try {
       const loginSchema = z.object({
@@ -819,7 +817,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", async (req, res) => {
-    startTrace('GET /api/auth/me');
     try {
       if (!req.session.userId) {
         log('WARN', 'Auth check - not authenticated');
@@ -860,7 +857,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tournament routes
   app.get("/api/tournaments", async (req, res) => {
-    startTrace('GET /api/tournaments');
     try {
       const cached = cache.get<any[]>(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       if (cached) {
@@ -884,7 +880,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id", async (req, res) => {
-    startTrace('GET /api/tournaments/:id');
     try {
       const tournament = await storage.getTournament(req.params.id);
       if (!tournament) {
@@ -965,7 +960,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/tournaments", async (req, res) => {
-    startTrace('POST /api/tournaments');
     try {
       log('INFO', 'Tournament creation attempt', { userId: req.session?.userId });
       // Check if user is authenticated
@@ -1102,7 +1096,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id/registration/config", async (req, res) => {
-    startTrace('GET /api/tournaments/:id/registration/config');
     try {
       const tournamentId = req.params.id;
       log('INFO', 'Fetching registration config', { tournamentId });
@@ -1315,7 +1308,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/matches/:id", async (req, res) => {
-    startTrace(`PATCH /api/matches/${req.params.id}`);
     try {
       log('INFO', 'Match update attempt', { matchId: req.params.id });
       const currentMatch = await storage.getMatch(req.params.id);
@@ -1439,7 +1431,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Select winner endpoint (marks match complete and removes loser)
   app.post("/api/matches/:matchId/winner", async (req, res) => {
-    startTrace(`POST /api/matches/${req.params.matchId}/winner`);
     try {
       const { winnerId } = req.body;
       log('INFO', 'Match winner selection', { matchId: req.params.matchId, winnerId });
@@ -1953,7 +1944,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registration submission routes
   app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
-    startTrace('POST /api/tournaments/:tournamentId/registrations');
     try {
       if (!req.session.userId) {
         log('WARN', 'Registration attempt - not authenticated');
@@ -2389,7 +2379,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Server routes
   app.post("/api/servers", async (req, res) => {
-    startTrace('POST /api/servers');
     try {
       if (!req.session.userId) {
         log('WARN', 'Server creation - not authenticated');
@@ -2465,7 +2454,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/servers/:serverId/join", async (req, res) => {
-    startTrace('POST /api/servers/:serverId/join');
     try {
       const { userId } = req.body;
       if (!userId) {
