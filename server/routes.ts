@@ -164,7 +164,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { startTrace, endTrace, log, metric, flush } = await import("./lib/skyview.js");
 
   app.use(async (req, res, next) => {
-    const traceId = startTrace(`${req.method} ${req.url}`);
+    // Parse W3C Trace Context header for distributed tracing
+    const traceparent = req.get('traceparent');
+    let parentContext;
+
+    if (traceparent) {
+      const parts = traceparent.split('-');
+      // Format: version-traceId-parentSpanId-traceFlags
+      if (parts.length === 4 && parts[0] === '00') {
+        parentContext = { traceId: parts[1], parentSpanId: parts[2] };
+      }
+    }
+
+    const traceId = startTrace(`${req.method} ${req.url}`, parentContext);
     const startTime = Date.now();
 
     // Add traceId to response headers for debugging

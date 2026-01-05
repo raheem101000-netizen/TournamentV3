@@ -17,14 +17,16 @@ const randomId = (len: number) => [...Array(len)].map(() => Math.floor(Math.rand
 
 // --- PUBLIC API ---
 
-// 1. Start a Trace
-export function startTrace(name: string): string {
-  const traceId = randomId(32);
+// 1. Start a Trace (with optional parent context for distributed tracing)
+export function startTrace(name: string, parentContext?: { traceId: string; parentSpanId: string }): string {
+  const traceId = parentContext?.traceId || randomId(32);
   const spanId = randomId(16);
+  const parentSpanId = parentContext?.parentSpanId;
+
   traceContext.enterWith({ traceId, spanId });
 
   pendingSpans.push({
-    name, traceId, spanId, startTime: Date.now(),
+    name, traceId, spanId, parentSpanId, startTime: Date.now(),
     attributes: { 'service.name': SERVICE_NAME, 'tenant_id': TENANT_ID }
   });
   return traceId;
@@ -67,6 +69,7 @@ export async function flush() {
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeSpans: [{
           spans: pendingSpans.map(s => ({
             name: s.name, traceId: s.traceId, spanId: s.spanId,
+            parentSpanId: s.parentSpanId, // Add parent span ID for distributed tracing
             startTimeUnixNano: s.startTime + '000000', endTimeUnixNano: (s.endTime || Date.now()) + '000000',
             status: { code: s.status === 'ERROR' ? 2 : 1 }, attributes: []
           }))
