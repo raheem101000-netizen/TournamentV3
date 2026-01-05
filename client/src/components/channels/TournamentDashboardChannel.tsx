@@ -83,7 +83,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [expandedRegistrationId, setExpandedRegistrationId] = useState<string | null>(null);
   const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
-  const { toast} = useToast();
+  const { toast } = useToast();
   const { user } = useAuth();
 
   const achievementForm = useForm({
@@ -106,7 +106,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const createTournamentMutation = useMutation({
     mutationFn: async (data: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig; serverId?: string }) => {
       const tournament = await apiRequest('POST', '/api/tournaments', data);
-      
+
       // Auto-generate fixtures based on format
       if (tournament && data.teamNames.length > 0) {
         try {
@@ -119,7 +119,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           console.warn('[MUTATION-CREATE] Failed to auto-generate fixtures:', fixtureError);
         }
       }
-      
+
       return tournament;
     },
     onSuccess: () => {
@@ -330,10 +330,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       if (!achievement) {
         throw new Error("Invalid achievement selected");
       }
-      
+
       // Use custom title if editable and provided, otherwise use default
       const finalTitle = achievement.isEditable && data.customTitle ? data.customTitle : achievement.title;
-      
+
       return apiRequest("POST", "/api/achievements", {
         userId: data.playerId,
         serverId: serverId,
@@ -402,7 +402,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
     }
     // Fallback to registration lookup by user ID in team members
     const reg = registrations.find(r => {
-      const memberTeam = selectedTournamentTeams.find((t: any) => 
+      const memberTeam = selectedTournamentTeams.find((t: any) =>
         t.members && t.members.some((m: any) => m.userId === r.userId)
       );
       return memberTeam?.id === teamId && r.status === 'approved';
@@ -422,7 +422,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
     }
     // Fallback to registration lookup by user ID in team members
     const reg = registrations.find(r => {
-      const memberTeam = selectedTournamentTeams.find((t: any) => 
+      const memberTeam = selectedTournamentTeams.find((t: any) =>
         t.members && t.members.some((m: any) => m.userId === r.userId)
       );
       return memberTeam?.id === teamId && r.status === 'approved';
@@ -568,12 +568,45 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               />
             ) : (
               <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No matches scheduled yet
-                </p>
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    No matches scheduled yet
+                  </p>
+                  {selectedTournamentTeams.length >= 2 && (
+                    <Button
+                      onClick={() => {
+                        apiRequest('POST', `/api/tournaments/${selectedTournamentId}/generate-fixtures`)
+                          .then(() => {
+                            queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+                            toast({
+                              title: "Matches Generated",
+                              description: "Tournament matches have been created successfully!",
+                            });
+                          })
+                          .catch((error) => {
+                            toast({
+                              title: "Error",
+                              description: error.message || "Failed to generate matches",
+                              variant: "destructive",
+                            });
+                          });
+                      }}
+                      data-testid="button-generate-matches"
+                    >
+                      <Trophy className="h-4 w-4 mr-2" />
+                      Generate Matches
+                    </Button>
+                  )}
+                  {selectedTournamentTeams.length < 2 && (
+                    <p className="text-sm text-muted-foreground">
+                      Need at least 2 teams to generate matches
+                    </p>
+                  )}
+                </div>
               </Card>
             )}
           </TabsContent>
+
 
           <TabsContent value="match-chat" className="space-y-4">
             {selectedTournamentMatches.length > 0 ? (
@@ -581,9 +614,9 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                 // Full match chat view with back button
                 <div className="space-y-3 min-h-[600px] flex flex-col">
                   <div className="flex items-center gap-3 border-b pb-3">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowMatchChat(false)}
                       data-testid="button-back-to-fixtures"
                     >
@@ -614,7 +647,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             Round {selectedMatch.round} • Status: {selectedMatch.status}
                             {selectedMatch.winnerId && (
                               <span className="inline-flex items-center gap-1 ml-1">
-                                • Winner: 
+                                • Winner:
                                 {winner.avatar && (
                                   <img src={winner.avatar} alt={winner.username || ''} className="w-4 h-4 rounded-full object-cover inline" />
                                 )}
@@ -656,7 +689,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   </div>
                   <div className="flex-1 overflow-hidden min-h-0">
                     {selectedMatch && (
-                      <RichMatchChat 
+                      <RichMatchChat
                         matchId={selectedMatch.id}
                         winnerId={selectedMatch.winnerId}
                         tournamentId={selectedTournamentId}
@@ -684,11 +717,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             handleMatchClick(match.id);
                             setShowMatchChat(true);
                           }}
-                          className={`p-3 rounded-lg border transition-all text-left ${
-                            selectedMatchId === match.id
+                          className={`p-3 rounded-lg border transition-all text-left ${selectedMatchId === match.id
                               ? 'bg-accent text-accent-foreground border-accent'
                               : 'bg-card border-border hover:border-primary/50 hover-elevate'
-                          }`}
+                            }`}
                           data-testid={`button-match-${match.id}`}
                         >
                           <div className="flex items-center justify-center gap-2 mb-2">
@@ -710,7 +742,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                           <div className="text-xs text-center">
                             {match.winnerId ? (
                               <div className="font-semibold text-green-600 dark:text-green-400 flex items-center justify-center gap-1">
-                                Winner: 
+                                Winner:
                                 {winnerInfo.avatar && (
                                   <img src={winnerInfo.avatar} alt={winnerInfo.username || ''} className="w-4 h-4 rounded-full object-cover" />
                                 )}
@@ -759,10 +791,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     // Use the stored teamName directly - it's extracted correctly on the backend
                     const headerValue = reg.teamName || "Unknown Team";
                     const isExpanded = expandedRegistrationId === reg.id;
-                    
+
                     return (
                       <Card key={reg.id} className="overflow-hidden">
-                        <CardHeader 
+                        <CardHeader
                           className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate"
                           onClick={() => setExpandedRegistrationId(isExpanded ? null : reg.id)}
                           data-testid={`button-expand-registration-${reg.id}`}
@@ -774,16 +806,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                               <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             )}
                             {reg.userAvatar && (
-                              <img 
-                                src={reg.userAvatar} 
+                              <img
+                                src={reg.userAvatar}
                                 alt={reg.userUsername}
                                 className="w-10 h-10 rounded-full object-cover"
                                 data-testid={`img-avatar-${reg.userId}`}
                               />
                             )}
                             <div className="flex-1">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 className="p-0 h-auto text-base font-semibold"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -800,14 +832,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             </div>
                           </div>
                           <Badge variant={
-                            reg.status === 'approved' ? 'default' : 
-                            reg.status === 'submitted' ? 'secondary' : 
-                            'outline'
+                            reg.status === 'approved' ? 'default' :
+                              reg.status === 'submitted' ? 'secondary' :
+                                'outline'
                           }>
                             {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
                           </Badge>
                         </CardHeader>
-                        
+
                         {/* Expandable Q&A section */}
                         {isExpanded && (
                           <CardContent className="pt-0 border-t">
@@ -852,8 +884,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           <TabsContent value="participants">
             {registrations.filter(r => r.status === 'approved').length > 0 ? (
               <div className="space-y-4">
-                <Button 
-                  onClick={() => setIsCreateMatchDialogOpen(true)} 
+                <Button
+                  onClick={() => setIsCreateMatchDialogOpen(true)}
                   data-testid="button-create-custom-match"
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -867,13 +899,13 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     const headerValue = reg.teamName || "Unknown Team";
                     const isExpanded = expandedParticipantId === reg.id;
                     // Find the matching team by user membership (not by name, since names can be duplicated)
-                    const matchingTeam = selectedTournamentTeams.find((t: any) => 
+                    const matchingTeam = selectedTournamentTeams.find((t: any) =>
                       t.members && t.members.some((m: any) => m.userId === reg.userId)
                     );
-                    
+
                     return (
                       <Card key={reg.id} className={`overflow-hidden ${matchingTeam?.isRemoved ? "opacity-50" : ""}`}>
-                        <CardHeader 
+                        <CardHeader
                           className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate gap-2"
                           onClick={() => setExpandedParticipantId(isExpanded ? null : reg.id)}
                           data-testid={`button-expand-participant-${reg.id}`}
@@ -885,16 +917,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                               <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             )}
                             {reg.userAvatar && (
-                              <img 
-                                src={reg.userAvatar} 
+                              <img
+                                src={reg.userAvatar}
                                 alt={reg.userUsername}
                                 className="w-10 h-10 rounded-full object-cover"
                                 data-testid={`img-avatar-participant-${reg.userId}`}
                               />
                             )}
                             <div className="flex-1">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 className="p-0 h-auto text-base font-semibold"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -921,7 +953,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             )}
                           </div>
                         </CardHeader>
-                        
+
                         {/* Expandable Q&A section */}
                         {isExpanded && (
                           <CardContent className="pt-0 border-t">
@@ -946,13 +978,13 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                                   No registration questions configured
                                 </p>
                               )}
-                              
+
                               {/* Team actions */}
                               {matchingTeam && (
                                 <div className="flex gap-2 flex-wrap pt-2 border-t mt-4">
                                   {!matchingTeam.isRemoved && (
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="destructive"
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -979,8 +1011,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                                     </Button>
                                   )}
                                   {matchingTeam.isRemoved && (
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="outline"
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1083,14 +1115,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   .filter(r => r.status === 'approved')
                   .map(reg => {
                     // Find the team where this user is a member (including removed teams)
-                    const team = selectedTournamentTeams.find((t: any) => 
+                    const team = selectedTournamentTeams.find((t: any) =>
                       t.members && t.members.some((m: any) => m.userId === reg.userId)
                     );
                     return { ...reg, teamId: team?.id || null, teamRemoved: team?.isRemoved || false };
                   })
                   .filter(p => p.teamId); // Only filter out those without a team, not removed teams
 
-                const getParticipantById = (regId: string | null) => 
+                const getParticipantById = (regId: string | null) =>
                   regId ? approvedParticipants.find(p => p.id === regId) : null;
 
                 const selectedParticipant1 = getParticipantById(selectedTeam1Id);
@@ -1147,27 +1179,27 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             </div>
 
             <DialogFooter>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setIsCreateMatchDialogOpen(false)}
                 data-testid="button-cancel-create-match"
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   if (selectedTeam1Id && selectedTeam2Id) {
                     // Look up team IDs from registration IDs using team_members
                     const reg1 = registrations.find(r => r.id === selectedTeam1Id);
                     const reg2 = registrations.find(r => r.id === selectedTeam2Id);
                     // Find team where the user is a member
-                    const team1 = reg1 ? selectedTournamentTeams.find((t: any) => 
+                    const team1 = reg1 ? selectedTournamentTeams.find((t: any) =>
                       t.members && t.members.some((m: any) => m.userId === reg1.userId)
                     ) : null;
-                    const team2 = reg2 ? selectedTournamentTeams.find((t: any) => 
+                    const team2 = reg2 ? selectedTournamentTeams.find((t: any) =>
                       t.members && t.members.some((m: any) => m.userId === reg2.userId)
                     ) : null;
-                    
+
                     if (team1?.id && team2?.id) {
                       createCustomMatchMutation.mutate({ team1Id: team1.id, team2Id: team2.id });
                     }
@@ -1195,8 +1227,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={() => {
                   console.log('[DELETE] Confirm button clicked, calling mutation');
                   deleteTournamentMutation.mutate();
@@ -1324,8 +1356,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => {
                 console.log('[DELETE] Confirm button clicked, calling mutation');
                 deleteTournamentMutation.mutate();
@@ -1339,10 +1371,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </DialogContent>
       </Dialog>
 
-      <UserProfileModal 
-        userId={selectedProfileId} 
-        open={profileModalOpen} 
-        onOpenChange={setProfileModalOpen} 
+      <UserProfileModal
+        userId={selectedProfileId}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
       />
     </div>
   );
@@ -1405,7 +1437,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       });
       return;
     }
-    
+
     onSubmit({
       name: trimmedName,
       game: game.trim() || null,
@@ -1535,7 +1567,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
 
           <div className="border-t pt-4 mt-4">
             <h3 className="text-sm font-semibold mb-3">Payment & Capacity Settings</h3>
-            
+
             <div className="space-y-2 mb-4">
               <Label htmlFor="edit-paymentMethod">Payment Method</Label>
               <select
@@ -1626,12 +1658,12 @@ interface AwardAchievementDialogProps {
   isPending: boolean;
 }
 
-function AwardAchievementDialog({ 
-  open, 
-  onOpenChange, 
-  form, 
-  onSubmit, 
-  isPending 
+function AwardAchievementDialog({
+  open,
+  onOpenChange,
+  form,
+  onSubmit,
+  isPending
 }: AwardAchievementDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
