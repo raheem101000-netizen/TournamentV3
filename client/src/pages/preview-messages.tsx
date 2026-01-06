@@ -1643,13 +1643,13 @@ export default function PreviewMessages() {
       <BottomNavigation />
 
       <Particles
-        particleCount={100}
-        particleSpread={8}
-        speed={0.03}
+        particleCount={80}
+        particleSpread={10}
+        speed={0.1}
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
-        particleBaseSize={500}
-        sizeRandomness={0}
+        particleBaseSize={2000}
+        sizeRandomness={0.5}
         disableRotation={false}
         className="fixed inset-0 z-0 pointer-events-none"
       />

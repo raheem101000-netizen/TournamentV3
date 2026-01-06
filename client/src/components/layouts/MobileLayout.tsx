@@ -22,11 +22,11 @@ export function MobileLayout({
             {showParticles && (
                 <Particles
                     particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
-                    particleCount={100}
-                    particleSpread={8}
-                    speed={0.03}
-                    particleBaseSize={500}
-                    sizeRandomness={0}
+                    particleCount={80}
+                    particleSpread={10}
+                    speed={0.1}
+                    particleBaseSize={2000}
+                    sizeRandomness={0.5}
                     moveParticlesOnHover={false}
                     alphaParticles={false}
                     disableRotation={false}
