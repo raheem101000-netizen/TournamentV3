@@ -21,14 +21,14 @@ export function MobileLayout({
 
             {showParticles && (
                 <Particles
-                    particleCount={100}
-                    particleSpread={15}
-                    speed={0.03}
-                    particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
-                    alphaParticles={true}
-                    particleBaseSize={60}
-                    sizeRandomness={0.5}
-                    cameraDistance={25}
+                    particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
+                    particleCount={150}
+                    particleSpread={10}
+                    speed={0.05}
+                    particleBaseSize={250}
+                    sizeRandomness={0}
+                    moveParticlesOnHover={false}
+                    alphaParticles={false}
                     disableRotation={false}
                     className="fixed inset-0 z-0 pointer-events-none"
                 />
