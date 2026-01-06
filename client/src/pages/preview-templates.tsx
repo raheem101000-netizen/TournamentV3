@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import Particles from "@/components/ui/particles";import { Input } from "@/components/ui/input";
+import Particles from "@/components/ui/particles"; import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -91,8 +91,8 @@ export default function PreviewTemplates() {
   const allTemplates = templateCards.length > 0 ? templateCards : mockTemplates;
   const categories = ["All", ...Array.from(new Set(allTemplates.map(t => t.category)))];
 
-  const filteredTemplates = selectedCategory === "All" 
-    ? allTemplates 
+  const filteredTemplates = selectedCategory === "All"
+    ? allTemplates
     : allTemplates.filter(t => t.category === selectedCategory);
 
   const handleSelectTemplate = (template: typeof mockTemplates[0]) => {
@@ -106,8 +106,8 @@ export default function PreviewTemplates() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
           <div className="flex items-center gap-3">
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               variant="ghost"
               onClick={() => setLocation("/")}
               data-testid="button-back"
@@ -116,7 +116,7 @@ export default function PreviewTemplates() {
             </Button>
             <h1 className="text-xl font-bold">Poster Templates</h1>
           </div>
-          
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -195,13 +195,26 @@ export default function PreviewTemplates() {
 
       <BottomNavigation />
 
+      <Particles
+        particleCount={100}
+        particleSpread={15}
+        speed={0.03}
+        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        alphaParticles={true}
+        particleBaseSize={60}
+        sizeRandomness={0.5}
+        cameraDistance={25}
+        disableRotation={false}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
+
       <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">{selectedTemplate?.name}</DialogTitle>
             <DialogDescription>{selectedTemplate?.description}</DialogDescription>
           </DialogHeader>
-          
+
           {selectedTemplate && (
             <div className="space-y-4">
               <div className="relative aspect-[3/4] rounded-lg overflow-hidden">
@@ -220,7 +233,7 @@ export default function PreviewTemplates() {
                       Your Server
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <h2 className="text-2xl font-black mb-2 drop-shadow-2xl leading-tight">
@@ -234,7 +247,7 @@ export default function PreviewTemplates() {
                       Preview Mode
                     </Badge>
                   </div>
-                  
+
                   <div className="h-10" />
                 </div>
               </div>
