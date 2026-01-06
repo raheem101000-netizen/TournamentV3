@@ -71,7 +71,7 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
 
   const handleSave = async () => {
     if (!imageUrl) return;
-    
+
     setIsSaving(true);
     try {
       // Create canvas to render the edited image
@@ -79,16 +79,16 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not get canvas context');
 
-      // Set canvas dimensions (16:9 aspect ratio for posters)
+      // Set canvas dimensions (1:1 aspect ratio for square tournament posters)
       const canvasWidth = 800;
-      const canvasHeight = 450;
+      const canvasHeight = 800;
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
 
       // Load the image
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      
+
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
@@ -130,7 +130,7 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
         // Center the image (or offset based on position if zoomed)
         const excessWidth = scaledWidth - canvasWidth;
         const excessHeight = scaledHeight - canvasHeight;
-        
+
         let offsetX = (canvasWidth - scaledWidth) / 2;
         let offsetY = (canvasHeight - scaledHeight) / 2;
 
@@ -151,15 +151,15 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
           // With zoom: crop from source image based on position settings
           const sourceWidth = img.width / zoomFactor;
           const sourceHeight = img.height / zoomFactor;
-          
+
           // Calculate the excess that can be cropped (how much we can move)
           const excessWidth = img.width - sourceWidth;
           const excessHeight = img.height - sourceHeight;
-          
+
           // Position the crop based on position settings (0-100 maps to the excess)
           const sourceX = excessWidth * (position.x / 100);
           const sourceY = excessHeight * (position.y / 100);
-          
+
           ctx.drawImage(
             img,
             sourceX, sourceY, sourceWidth, sourceHeight,
@@ -179,7 +179,7 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
       // Get upload URL and object path
       const uploadResponse = await apiRequest("POST", "/api/objects/upload");
       const uploadData = await uploadResponse.json();
-      
+
       // Store the object path
       const objectPath = uploadData.objectPath;
       pendingObjectPathRef.current = objectPath;
@@ -202,14 +202,14 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
       // Save the new image path
       onSave(normalizeData.objectPath);
       onOpenChange(false);
-      
+
       toast({
         title: "Image saved",
         description: "Your edited image has been saved successfully.",
       });
     } catch (error) {
       console.error('Error saving edited image:', error);
-      
+
       toast({
         title: "Save failed",
         description: error instanceof Error ? error.message : "Failed to save edited image. Please try again.",
@@ -232,7 +232,7 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
     <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
       <DialogContent className="max-w-2xl z-[100]">
         <DialogHeader>
-          <DialogTitle>Edit Tournament Poster Image</DialogTitle>
+          <DialogTitle>Edit Tournament Image (Square Format)</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
