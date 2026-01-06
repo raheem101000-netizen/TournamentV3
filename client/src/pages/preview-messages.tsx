@@ -2,6 +2,7 @@ import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import Particles from "@/components/ui/particles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
