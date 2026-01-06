@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { Button } from "@/components/ui/button";
+import Particles from "@/components/ui/particles"; import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -126,8 +126,8 @@ export default function PreviewOrganizerAward() {
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Button 
-            size="icon" 
+          <Button
+            size="icon"
             variant="ghost"
             onClick={() => setLocation("/account")}
             data-testid="button-back"
@@ -255,13 +255,12 @@ export default function PreviewOrganizerAward() {
               {achievementTypes.map((achievement) => {
                 const Icon = achievement.icon;
                 const isSelected = selectedAchievement === achievement.id;
-                
+
                 return (
                   <Card
                     key={achievement.id}
-                    className={`hover-elevate cursor-pointer transition-all ${
-                      isSelected ? 'ring-2 ring-primary' : ''
-                    }`}
+                    className={`hover-elevate cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''
+                      }`}
                     onClick={() => setSelectedAchievement(achievement.id)}
                     data-testid={`achievement-option-${achievement.id}`}
                   >
@@ -343,6 +342,19 @@ export default function PreviewOrganizerAward() {
 
       <BottomNavigation />
 
+      <Particles
+        particleCount={100}
+        particleSpread={15}
+        speed={0.03}
+        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        alphaParticles={true}
+        particleBaseSize={60}
+        sizeRandomness={0.5}
+        cameraDistance={25}
+        disableRotation={false}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
+
       {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent className="max-w-md">
@@ -373,8 +385,8 @@ export default function PreviewOrganizerAward() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Recipient:</span>
                       <span className="font-medium">
-                        {recipientType === "player" 
-                          ? `@${selectedRecipient}` 
+                        {recipientType === "player"
+                          ? `@${selectedRecipient}`
                           : "Team"}
                       </span>
                     </div>

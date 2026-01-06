@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { Button } from "@/components/ui/button";
+import Particles from "@/components/ui/particles"; import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,9 +79,9 @@ export default function PreviewPosterBuilder() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button 
-              size="icon" 
-              variant="ghost" 
+            <Button
+              size="icon"
+              variant="ghost"
               data-testid="button-back"
               onClick={() => setLocation("/")}
             >
@@ -89,9 +89,9 @@ export default function PreviewPosterBuilder() {
             </Button>
             <h1 className="text-xl font-bold">Create Tournament Poster</h1>
           </div>
-          <Button 
-            size="sm" 
-            className="bg-green-600 hover:bg-green-700" 
+          <Button
+            size="sm"
+            className="bg-green-600 hover:bg-green-700"
             data-testid="button-post"
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending}
@@ -113,7 +113,7 @@ export default function PreviewPosterBuilder() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                
+
                 <div className="absolute top-3 left-3 flex items-center gap-2">
                   <Avatar className="w-8 h-8 border-2 border-white/20">
                     <AvatarFallback className="text-lg">{mockServer.logo}</AvatarFallback>
@@ -130,7 +130,7 @@ export default function PreviewPosterBuilder() {
                   <p className="text-sm text-white/90 drop-shadow-lg mb-3">
                     {posterData.game}
                   </p>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex gap-3">
                       <div className="flex items-center gap-1">
@@ -304,6 +304,19 @@ export default function PreviewPosterBuilder() {
       />
 
       <BottomNavigation />
+
+      <Particles
+        particleCount={100}
+        particleSpread={15}
+        speed={0.03}
+        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        alphaParticles={true}
+        particleBaseSize={60}
+        sizeRandomness={0.5}
+        cameraDistance={25}
+        disableRotation={false}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
     </div>
   );
 }

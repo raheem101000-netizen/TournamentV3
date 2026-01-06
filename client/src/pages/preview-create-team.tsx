@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { Button } from "@/components/ui/button";
+import Particles from "@/components/ui/particles"; import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,7 +67,7 @@ export default function PreviewCreateTeam() {
           userId: user?.id,
           role: "Owner",
         });
-        
+
         // Add all players as team members
         for (const player of players) {
           // Find the friend's user ID by username
@@ -83,11 +83,11 @@ export default function PreviewCreateTeam() {
       } catch (err) {
         console.error("Failed to add team members:", err);
       }
-      
+
       // Invalidate all team-profiles queries to ensure refresh
-      queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          typeof query.queryKey[0] === 'string' && 
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === 'string' &&
           query.queryKey[0].includes('team-profiles')
       });
       toast({
@@ -117,7 +117,7 @@ export default function PreviewCreateTeam() {
     }
 
     setIsSubmitting(true);
-    
+
     createTeamMutation.mutate({
       name: teamName,
       tag: teamTag || null,
@@ -167,7 +167,7 @@ export default function PreviewCreateTeam() {
   };
 
   const updatePosition = (username: string, position: string) => {
-    setPlayers(players.map(p => 
+    setPlayers(players.map(p =>
       p.username === username ? { ...p, position } : p
     ));
   };
@@ -178,8 +178,8 @@ export default function PreviewCreateTeam() {
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Button 
-            size="icon" 
+          <Button
+            size="icon"
             variant="ghost"
             onClick={() => setLocation("/account")}
             data-testid="button-back"
@@ -214,7 +214,7 @@ export default function PreviewCreateTeam() {
                 ) : (
                   <div className="text-8xl">{teamLogo}</div>
                 )}
-                
+
                 <div className="w-full space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-px bg-border" />
@@ -237,13 +237,13 @@ export default function PreviewCreateTeam() {
                       </Button>
                     ))}
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-px bg-border" />
                     <span className="text-xs text-muted-foreground">Or upload an image</span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
-                  
+
                   <Button
                     type="button"
                     variant="outline"
@@ -317,7 +317,7 @@ export default function PreviewCreateTeam() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Team Players</Label>
-            <Button 
+            <Button
               size="sm"
               onClick={() => setShowAddPlayer(true)}
               data-testid="button-add-player"
@@ -345,7 +345,7 @@ export default function PreviewCreateTeam() {
                         <AvatarImage src={player.avatar} />
                         <AvatarFallback>{player.username[0]}</AvatarFallback>
                       </Avatar>
-                      
+
                       <div className="flex-1 space-y-2">
                         <p className="font-semibold text-sm">@{player.username}</p>
                         <Input
@@ -373,8 +373,8 @@ export default function PreviewCreateTeam() {
           )}
         </div>
 
-        <Button 
-          className="w-full" 
+        <Button
+          className="w-full"
           size="lg"
           disabled={!teamName || isSubmitting}
           onClick={handleCreateTeam}
@@ -388,10 +388,24 @@ export default function PreviewCreateTeam() {
           ) : (
             "Create Team"
           )}
+          ```
         </Button>
       </main>
 
       <BottomNavigation />
+
+      <Particles
+        particleCount={100}
+        particleSpread={15}
+        speed={0.03}
+        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        alphaParticles={true}
+        particleBaseSize={60}
+        sizeRandomness={0.5}
+        cameraDistance={25}
+        disableRotation={false}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
 
       {/* Add Player Modal */}
       <Dialog open={showAddPlayer} onOpenChange={setShowAddPlayer}>
@@ -420,8 +434,8 @@ export default function PreviewCreateTeam() {
                 <div className="py-8 text-center">
                   <Users className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {friends.length === 0 
-                      ? "No friends yet. Add friends to invite them to your team!" 
+                    {friends.length === 0
+                      ? "No friends yet. Add friends to invite them to your team!"
                       : "No friends match your search."}
                   </p>
                 </div>
