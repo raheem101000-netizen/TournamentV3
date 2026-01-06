@@ -315,7 +315,7 @@ export default function PreviewPosterBuilder() {
                     cameraDistance={10}
         sizeRandomness={0.5}
         disableRotation={false}
-        className="fixed inset-0 z-0 pointer-events-none"
+        className="fixed inset-0 z-50 pointer-events-none"
       />
     </div>
   );

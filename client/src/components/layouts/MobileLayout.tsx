@@ -16,7 +16,7 @@ export function MobileLayout({
     return (
         <>
             {showParticles && (
-                <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="fixed inset-0 z-50 pointer-events-none">
                     <Particles
                         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
                         particleCount={150}
