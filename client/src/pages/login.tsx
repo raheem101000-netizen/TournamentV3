@@ -94,9 +94,9 @@ export default function Login() {
         particleCount={150}
         particleSpread={15}
         speed={0.05}
-        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        particleColors={['#f3f1f8ff', '#f4f6f9ff', '#eff2f3ff']}
         alphaParticles={true}
-        particleBaseSize={80}
+        particleBaseSize={100}
         sizeRandomness={0.5}
         cameraDistance={25}
         disableRotation={false}
@@ -115,7 +115,7 @@ export default function Login() {
         </div>
 
         {/* Glass Form Container */}
-        <div className="w-full mt-8 p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 ring-1 ring-white/5">
+        <div className="w-full mt-8 p-8 rounded-3xl bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/50">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5">
               <div className="space-y-4">
