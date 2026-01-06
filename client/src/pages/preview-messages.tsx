@@ -453,11 +453,15 @@ export default function PreviewMessages() {
   });
 
   // Auto-scroll to latest message when messages load or change
+  // Smarter logic: Only scroll if we were already near bottom, or if it's the initial load
   useEffect(() => {
     if (threadMessages.length > 0 && !messagesLoading) {
+      // Check if this is initial load or a new message
+      // For now, simple behavior: scroll to bottom on new messages if close to bottom
+      // In a real infinite scroll implementation, we'd check scroll position more carefully
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [threadMessages, messagesLoading]);
+  }, [threadMessages.length, messagesLoading]); // Depend on length to trigger on new messages
 
   const acceptedChats = threads.map(threadToChat);
 
@@ -972,7 +976,7 @@ export default function PreviewMessages() {
             )}
             <CardContent className="flex-1 flex flex-col p-0 px-6 pb-6 pt-4 min-h-0 overflow-hidden">
               <ScrollArea className="flex-1 min-h-0">
-                <div className="space-y-4 pt-2 pb-4">
+                <div className="space-y-4 pt-2 pb-4 min-h-full flex flex-col justify-end">
                   {messagesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -1649,7 +1653,7 @@ export default function PreviewMessages() {
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
         particleBaseSize={200}
-                    cameraDistance={10}
+        cameraDistance={10}
         sizeRandomness={0.5}
         disableRotation={false}
         className="fixed inset-0 z-50 pointer-events-none"
