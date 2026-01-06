@@ -98,7 +98,7 @@ export default function Login() {
         alphaParticles={true}
         particleBaseSize={100}
         sizeRandomness={0.5}
-        cameraDistance={25}
+        cameraDistance={10}
         disableRotation={false}
       />
 
