@@ -482,12 +482,12 @@ export default function PreviewAccount() {
       <BottomNavigation />
 
       <Particles
-        particleCount={150}
-        particleSpread={10}
-        speed={0.05}
+        particleCount={100}
+        particleSpread={8}
+        speed={0.03}
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
-        particleBaseSize={250}
+        particleBaseSize={500}
         sizeRandomness={0}
         disableRotation={false}
         className="fixed inset-0 z-0 pointer-events-none"
