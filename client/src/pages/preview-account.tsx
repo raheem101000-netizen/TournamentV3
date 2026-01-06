@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import Particles from "@/components/ui/particles";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +42,7 @@ export default function PreviewAccount() {
   const [serverNotFound, setServerNotFound] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [showAllFriends, setShowAllFriends] = useState(false);
-  
+
   // Team edit state
   const [isEditingTeam, setIsEditingTeam] = useState(false);
   const [editTeamName, setEditTeamName] = useState("");
@@ -214,9 +215,9 @@ export default function PreviewAccount() {
           <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
           <div className="flex items-center gap-2">
             {isOwnProfile && (
-              <Button 
-                size="icon" 
-                variant="ghost" 
+              <Button
+                size="icon"
+                variant="ghost"
                 onClick={() => setLocation("/account/settings")}
                 data-testid="button-settings"
               >
@@ -224,10 +225,10 @@ export default function PreviewAccount() {
               </Button>
             )}
             {!isOwnProfile && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
-                onClick={() => setViewingUser(null)} 
+                onClick={() => setViewingUser(null)}
                 data-testid="button-back-to-profile"
               >
                 Back to My Profile
@@ -255,7 +256,7 @@ export default function PreviewAccount() {
                   <div className="space-y-2 w-full">
                     <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
                     <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
-                    
+
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4" />
                       <span className="text-sm">{isOwnProfile ? friends.length : (currentUser.friendCount ?? 0)} friends</span>
@@ -269,9 +270,9 @@ export default function PreviewAccount() {
               )}
 
               {isOwnProfile ? (
-                <Button 
-                  variant="outline" 
-                  className="w-full" 
+                <Button
+                  variant="outline"
+                  className="w-full"
                   onClick={() => setLocation("/account/settings")}
                   data-testid="button-edit-profile"
                 >
@@ -363,8 +364,8 @@ export default function PreviewAccount() {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Teams</h3>
             {isOwnProfile && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={() => setLocation("/create-team")}
                 data-testid="button-create-team"
               >
@@ -429,10 +430,10 @@ export default function PreviewAccount() {
                   return null;
                 };
                 const medalNumber = getMedalNumber();
-                
+
                 return (
-                  <Card 
-                    key={achievement.id} 
+                  <Card
+                    key={achievement.id}
                     className="hover-elevate cursor-pointer overflow-hidden"
                     onClick={() => setSelectedAchievement(achievement)}
                     data-testid={`achievement-card-${achievement.id}`}
@@ -480,6 +481,19 @@ export default function PreviewAccount() {
 
       <BottomNavigation />
 
+      <Particles
+        particleCount={100}
+        particleSpread={15}
+        speed={0.03}
+        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+        alphaParticles={true}
+        particleBaseSize={60}
+        sizeRandomness={0.5}
+        cameraDistance={25}
+        disableRotation={false}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
+
       {/* Achievement Details Modal */}
       <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -496,7 +510,7 @@ export default function PreviewAccount() {
                       return null;
                     };
                     const medalNumber = getMedalNumber();
-                    
+
                     return (
                       <div className="relative inline-flex items-center justify-center">
                         <IconComponent className={`w-12 h-12 ${colorClass}`} />
@@ -534,14 +548,14 @@ export default function PreviewAccount() {
                       <p className="text-sm">{selectedAchievement.game}</p>
                     </div>
                   )}
-                  
+
                   {selectedAchievement.region && (
                     <div className="space-y-1">
                       <h4 className="text-xs font-semibold text-muted-foreground">Region</h4>
                       <p className="text-sm">{selectedAchievement.region}</p>
                     </div>
                   )}
-                  
+
                   <div className="space-y-1">
                     <h4 className="text-xs font-semibold text-muted-foreground">Category</h4>
                     <p className="text-sm capitalize">{selectedAchievement.category || "N/A"}</p>
@@ -702,8 +716,8 @@ export default function PreviewAccount() {
                       <div className="space-y-3">
                         <p className="text-sm text-destructive font-medium">Are you sure you want to delete this team? This cannot be undone.</p>
                         <div className="flex gap-2">
-                          <Button 
-                            variant="destructive" 
+                          <Button
+                            variant="destructive"
                             size="sm"
                             onClick={() => deleteTeamMutation.mutate(selectedTeam.id)}
                             disabled={deleteTeamMutation.isPending}
@@ -712,8 +726,8 @@ export default function PreviewAccount() {
                             <Trash2 className="w-4 h-4 mr-2" />
                             {deleteTeamMutation.isPending ? "Deleting..." : "Yes, Delete Team"}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => setDeleteTeamConfirm(false)}
                             data-testid="button-cancel-delete-team"
@@ -723,8 +737,8 @@ export default function PreviewAccount() {
                         </div>
                       </div>
                     ) : (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteTeamConfirm(true)}
@@ -750,8 +764,8 @@ export default function PreviewAccount() {
                   ) : (
                     <div className="space-y-2">
                       {teamMembers.map((member) => (
-                        <div 
-                          key={member.id} 
+                        <div
+                          key={member.id}
                           className="p-2 rounded-md bg-muted/50"
                           data-testid={`team-member-${member.id}`}
                         >
