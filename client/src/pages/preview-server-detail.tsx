@@ -1,4 +1,5 @@
 import { BottomNavigation } from "@/components/BottomNavigation";
+import Particles from "@/components/ui/particles";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +132,7 @@ export default function PreviewServerDetail() {
     onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
-    
+
     return () => {
       emblaApi.off("select", onSelect);
       emblaApi.off("reInit", onSelect);
@@ -168,8 +169,8 @@ export default function PreviewServerDetail() {
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-3">
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 variant="ghost"
                 onClick={() => {
                   setShowMembersView(false);
@@ -204,8 +205,8 @@ export default function PreviewServerDetail() {
           <div className="space-y-2">
             {members
               .filter((member) => member.username !== "Unknown")
-              .filter((member) => 
-                memberSearchQuery === "" || 
+              .filter((member) =>
+                memberSearchQuery === "" ||
                 member.username.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
                 member.roleName.toLowerCase().includes(memberSearchQuery.toLowerCase())
               )
@@ -240,8 +241,8 @@ export default function PreviewServerDetail() {
                           <Crown className="h-4 w-4 text-yellow-500" />
                         )}
                       </div>
-                      <span 
-                        className="text-sm" 
+                      <span
+                        className="text-sm"
                         style={{ color: member.roleColor }}
                       >
                         {member.isOwner ? "Owner" : member.roleName}
@@ -250,15 +251,15 @@ export default function PreviewServerDetail() {
                   </div>
                 </Card>
               ))}
-            {members.filter(m => m.username !== "Unknown").filter(m => 
-              memberSearchQuery === "" || 
+            {members.filter(m => m.username !== "Unknown").filter(m =>
+              memberSearchQuery === "" ||
               m.username.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
               m.roleName.toLowerCase().includes(memberSearchQuery.toLowerCase())
             ).length === 0 && memberSearchQuery !== "" && (
-              <p className="text-center text-muted-foreground py-4">
-                No members found matching "{memberSearchQuery}"
-              </p>
-            )}
+                <p className="text-center text-muted-foreground py-4">
+                  No members found matching "{memberSearchQuery}"
+                </p>
+              )}
           </div>
         </main>
 
@@ -269,6 +270,19 @@ export default function PreviewServerDetail() {
         />
 
         <BottomNavigation />
+
+        <Particles
+          particleCount={100}
+          particleSpread={15}
+          speed={0.03}
+          particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+          alphaParticles={true}
+          particleBaseSize={60}
+          sizeRandomness={0.5}
+          cameraDistance={25}
+          disableRotation={false}
+          className="fixed inset-0 z-0 pointer-events-none"
+        />
       </div>
     );
   }
@@ -280,8 +294,8 @@ export default function PreviewServerDetail() {
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-3">
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 variant="ghost"
                 onClick={() => setShowWelcomePage(false)}
                 data-testid="button-back-to-channels"
@@ -302,7 +316,7 @@ export default function PreviewServerDetail() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {isOwner && (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
                       data-testid="menu-item-settings-welcome"
                     >
@@ -311,7 +325,7 @@ export default function PreviewServerDetail() {
                     </DropdownMenuItem>
                   )}
                   {!isOwner && (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => setLeaveServerDialogOpen(true)}
                       className="text-destructive focus:text-destructive"
                       data-testid="menu-item-leave-server-welcome"
@@ -336,7 +350,7 @@ export default function PreviewServerDetail() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => leaveServerMutation.mutate()}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
@@ -351,8 +365,8 @@ export default function PreviewServerDetail() {
             <CardHeader className="gap-2">
               <CardTitle className="flex items-center gap-2">
                 {server.iconUrl && (
-                  <img 
-                    src={server.iconUrl} 
+                  <img
+                    src={server.iconUrl}
                     alt={server.name}
                     className="w-8 h-8 rounded"
                   />
@@ -375,7 +389,7 @@ export default function PreviewServerDetail() {
                   No welcome message has been set for this server.
                 </p>
               )}
-              
+
               {server.gameTags && server.gameTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                   {server.gameTags.map((tag) => (
@@ -383,7 +397,7 @@ export default function PreviewServerDetail() {
                   ))}
                 </div>
               )}
-              
+
               <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2 border-t">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
@@ -396,6 +410,19 @@ export default function PreviewServerDetail() {
         </main>
 
         <BottomNavigation />
+
+        <Particles
+          particleCount={100}
+          particleSpread={15}
+          speed={0.03}
+          particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+          alphaParticles={true}
+          particleBaseSize={60}
+          sizeRandomness={0.5}
+          cameraDistance={25}
+          disableRotation={false}
+          className="fixed inset-0 z-0 pointer-events-none"
+        />
       </div>
     );
   }
@@ -407,8 +434,8 @@ export default function PreviewServerDetail() {
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-3">
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 variant="ghost"
                 onClick={() => setSelectedChannelId(null)}
                 data-testid="button-back-to-channels"
@@ -440,8 +467,8 @@ export default function PreviewServerDetail() {
                     <p className="text-muted-foreground text-center">Loading permissions...</p>
                   </CardContent>
                 </Card>
-              ) : (server?.ownerId === currentUserId || 
-                     (!permissionsError && userPermissions?.permissions?.includes("tournament_dashboard_access"))) ? (
+              ) : (server?.ownerId === currentUserId ||
+                (!permissionsError && userPermissions?.permissions?.includes("tournament_dashboard_access"))) ? (
                 <TournamentDashboardChannel serverId={serverId!} />
               ) : (
                 <Card className="mt-8">
@@ -462,8 +489,8 @@ export default function PreviewServerDetail() {
             </>
           )}
           {selectedChannel.type === "announcements" && (
-            <AnnouncementsChannel 
-              channelId={selectedChannel.id} 
+            <AnnouncementsChannel
+              channelId={selectedChannel.id}
               canPost={server?.ownerId === currentUserId}
             />
           )}
@@ -473,6 +500,19 @@ export default function PreviewServerDetail() {
         </main>
 
         <BottomNavigation />
+
+        <Particles
+          particleCount={100}
+          particleSpread={15}
+          speed={0.03}
+          particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
+          alphaParticles={true}
+          particleBaseSize={60}
+          sizeRandomness={0.5}
+          cameraDistance={25}
+          disableRotation={false}
+          className="fixed inset-0 z-0 pointer-events-none"
+        />
       </div>
     );
   }
@@ -482,8 +522,8 @@ export default function PreviewServerDetail() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               variant="ghost"
               onClick={() => window.history.back()}
               data-testid="button-back-to-servers"
@@ -502,7 +542,7 @@ export default function PreviewServerDetail() {
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <button 
+                <button
                   className="flex items-center gap-1 hover:text-foreground transition-colors"
                   onClick={() => setShowMembersView(true)}
                   data-testid="button-show-members"
@@ -520,7 +560,7 @@ export default function PreviewServerDetail() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {isOwner && (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
                     data-testid="menu-item-settings"
                   >
@@ -531,7 +571,7 @@ export default function PreviewServerDetail() {
                 {!isOwner && (
                   <>
                     {isOwner && <DropdownMenuSeparator />}
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => setLeaveServerDialogOpen(true)}
                       className="text-destructive focus:text-destructive"
                       data-testid="menu-item-leave-server"
@@ -557,7 +597,7 @@ export default function PreviewServerDetail() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-leave">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => leaveServerMutation.mutate()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-leave"
@@ -633,8 +673,8 @@ export default function PreviewServerDetail() {
                               )}
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLocation(`/tournament/${tournament.id}/register`);
@@ -668,7 +708,7 @@ export default function PreviewServerDetail() {
             </div>
           </div>
         )}
-        
+
         <div className="space-y-4">
           {/* Tournament Dashboard - Private section */}
           {tournamentDashboard && (
@@ -705,9 +745,9 @@ export default function PreviewServerDetail() {
               </h3>
               {server.ownerId === currentUserId && (
                 <div className="flex gap-1">
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="h-6 w-6"
                     onClick={() => setManageCategoriesOpen(true)}
                     data-testid="button-manage-categories"
@@ -715,9 +755,9 @@ export default function PreviewServerDetail() {
                   >
                     <FolderOpen className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="h-6 w-6"
                     onClick={() => setCreateChannelOpen(true)}
                     data-testid="button-create-channel"
@@ -744,47 +784,20 @@ export default function PreviewServerDetail() {
               </Card>
             </div>
 
-              {/* Categorized channels */}
-              {categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((category) => {
-                const categoryChannels = publicChannels.filter(c => c.categoryId === category.id);
-                if (categoryChannels.length === 0) return null;
+            {/* Categorized channels */}
+            {categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((category) => {
+              const categoryChannels = publicChannels.filter(c => c.categoryId === category.id);
+              if (categoryChannels.length === 0) return null;
 
-                return (
-                  <div key={category.id} className="space-y-2">
-                    <div className="flex items-center gap-2 px-2">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {category.name}
-                      </h4>
-                    </div>
-                    <div className="space-y-1">
-                      {categoryChannels.map((channel) => (
-                        <Card
-                          key={channel.id}
-                          className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                          onClick={() => setSelectedChannelId(channel.id)}
-                          data-testid={`channel-${channel.slug}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{channel.icon}</span>
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
-                              <span className="font-medium truncate">{channel.name}</span>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+              return (
+                <div key={category.id} className="space-y-2">
+                  <div className="flex items-center gap-2 px-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {category.name}
+                    </h4>
                   </div>
-                );
-              })}
-
-              {/* Uncategorized channels */}
-              {(() => {
-                const uncategorizedChannels = publicChannels.filter(c => !c.categoryId);
-                if (uncategorizedChannels.length === 0) return null;
-
-                return (
                   <div className="space-y-1">
-                    {uncategorizedChannels.map((channel) => (
+                    {categoryChannels.map((channel) => (
                       <Card
                         key={channel.id}
                         className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
@@ -800,8 +813,35 @@ export default function PreviewServerDetail() {
                       </Card>
                     ))}
                   </div>
-                );
-              })()}
+                </div>
+              );
+            })}
+
+            {/* Uncategorized channels */}
+            {(() => {
+              const uncategorizedChannels = publicChannels.filter(c => !c.categoryId);
+              if (uncategorizedChannels.length === 0) return null;
+
+              return (
+                <div className="space-y-1">
+                  {uncategorizedChannels.map((channel) => (
+                    <Card
+                      key={channel.id}
+                      className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
+                      onClick={() => setSelectedChannelId(channel.id)}
+                      data-testid={`channel-${channel.slug}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{channel.icon}</span>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <span className="font-medium truncate">{channel.name}</span>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Private Channels (owner only) */}
@@ -882,8 +922,8 @@ export default function PreviewServerDetail() {
                                 <Crown className="h-4 w-4 text-yellow-500" />
                               )}
                             </div>
-                            <span 
-                              className="text-xs" 
+                            <span
+                              className="text-xs"
                               style={{ color: member.roleColor }}
                             >
                               {member.isOwner ? "Owner" : member.roleName}
@@ -905,7 +945,7 @@ export default function PreviewServerDetail() {
         onOpenChange={setProfileModalOpen}
       />
 
-      <CreateChannelDialog 
+      <CreateChannelDialog
         serverId={serverId!}
         open={createChannelOpen}
         onOpenChange={setCreateChannelOpen}
