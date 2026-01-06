@@ -18,7 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import ImageUploadField from "@/components/ImageUploadField";
 import type { Server } from "@shared/schema";
-import Particles from "@/components/ui/particles";
+import { MobileLayout } from "@/components/layouts/MobileLayout";
 
 const mockServers = [
   {
@@ -200,7 +200,7 @@ export default function PreviewDiscovery() {
   });
 
   return (
-    <>
+    <MobileLayout>
       <div className="flex flex-col min-h-screen bg-background pb-20 relative z-10">
         <header className="sticky top-0 z-40">
           <div className={`container max-w-lg mx-auto px-4 ${showSearch ? "py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" : "py-2"}`}>
@@ -494,20 +494,6 @@ export default function PreviewDiscovery() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Particle Background - Fixed underlayer */}
-      <Particles
-        particleCount={100}
-        particleSpread={15}
-        speed={0.03}
-        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
-        alphaParticles={true}
-        particleBaseSize={60}
-        sizeRandomness={0.5}
-        cameraDistance={25}
-        disableRotation={false}
-        className="fixed inset-0 z-0 pointer-events-none"
-      />
-    </>
+    </MobileLayout>
   );
 }

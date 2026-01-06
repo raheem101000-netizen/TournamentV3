@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Loader2, Calendar, Users, Trophy, DollarSign, Star, Info } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { Tournament, Server } from "@shared/schema";
-import Particles from "@/components/ui/particles";
+import { MobileLayout } from "@/components/layouts/MobileLayout";
 
 export default function MobilePreviewHome() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -36,8 +36,8 @@ export default function MobilePreviewHome() {
   }
 
   return (
-    <>
-      <div className="p-4 relative z-10">
+    <MobileLayout>
+      <div className="p-4">
         <h1 className="text-xl font-bold mb-1" data-testid="page-title">Discover</h1>
 
         {/* Section Header */}
@@ -278,20 +278,6 @@ export default function MobilePreviewHome() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Particle Background - Fixed underlayer */}
-      <Particles
-        particleCount={100}
-        particleSpread={15}
-        speed={0.03}
-        particleColors={['#8b5cf6', '#3b82f6', '#06b6d4']}
-        alphaParticles={true}
-        particleBaseSize={60}
-        sizeRandomness={0.5}
-        cameraDistance={25}
-        disableRotation={false}
-        className="fixed inset-0 z-0 pointer-events-none"
-      />
-    </>
+    </MobileLayout>
   );
 }
