@@ -115,7 +115,7 @@ export default function Login() {
         </div>
 
         {/* Glass Form Container */}
-        <div className="w-full mt-8 p-8 rounded-3xl bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/50">
+        <div className="w-full mt-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5">
               <div className="space-y-4">
@@ -124,7 +124,7 @@ export default function Login() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="animate-slide-up [animation-delay:100ms]">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center gap-3">
                         <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[80px] text-right shrink-0">
                           EMAIL:
                         </span>
@@ -137,7 +137,7 @@ export default function Login() {
                           />
                         </FormControl>
                       </div>
-                      <FormMessage className="text-red-400 mt-1 text-xs pl-[92px]" />
+                      <FormMessage className="text-red-400 mt-1 text-xs text-center" />
                     </FormItem>
                   )}
                 />
@@ -147,7 +147,7 @@ export default function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem className="animate-slide-up [animation-delay:200ms]">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center gap-3">
                         <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[80px] text-right shrink-0">
                           PASSWORD:
                         </span>
@@ -160,12 +160,12 @@ export default function Login() {
                           />
                         </FormControl>
                       </div>
-                      <FormMessage className="text-red-400 mt-1 text-xs pl-[92px]" />
+                      <FormMessage className="text-red-400 mt-1 text-xs text-center" />
                     </FormItem>
                   )}
                 />
 
-                <div className="pt-4 pl-[92px] animate-slide-up [animation-delay:300ms]">
+                <div className="flex justify-center pt-4 animate-slide-up [animation-delay:300ms]">
                   <Button
                     type="submit"
                     className="w-[200px] bg-gradient-to-b from-gray-400 to-gray-600 text-white font-medium uppercase tracking-widest rounded-full h-9 text-xs border-2 border-white/30 hover:from-gray-300 hover:to-gray-500 hover:border-white/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-white/10 active:scale-95"
