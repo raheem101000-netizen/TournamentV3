@@ -15,25 +15,27 @@ export function MobileLayout({
 }: MobileLayoutProps) {
     return (
         <>
+            {showParticles && (
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <Particles
+                        particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
+                        particleCount={150}
+                        particleSpread={15}
+                        speed={0.05}
+                        particleBaseSize={200}
+                        cameraDistance={10}
+                        sizeRandomness={0.5}
+                        moveParticlesOnHover={false}
+                        alphaParticles={false}
+                        disableRotation={false}
+                        className="w-full h-full"
+                    />
+                </div>
+            )}
+
             <div className="min-h-screen pb-20 relative z-10">
                 {children}
             </div>
-
-            {showParticles && (
-                <Particles
-                    particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
-                    particleCount={150}
-                    particleSpread={15}
-                    speed={0.05}
-                    particleBaseSize={200}
-                    cameraDistance={10}
-                    sizeRandomness={0.5}
-                    moveParticlesOnHover={false}
-                    alphaParticles={false}
-                    disableRotation={false}
-                    className="fixed inset-0 z-0 pointer-events-none"
-                />
-            )}
 
             {showBottomNav && <BottomNavigation />}
         </>
