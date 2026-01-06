@@ -1,4 +1,4 @@
-import { eq, and, or, sql, ilike, isNull, desc } from "drizzle-orm";
+import { eq, and, or, sql, ilike, isNull, desc, lt } from "drizzle-orm";
 import { db } from "./db.js";
 import bcrypt from "bcrypt";
 import {
@@ -200,7 +200,7 @@ export interface IStorage {
   getMessageThread(id: string): Promise<MessageThread | undefined>;
   updateMessageThread(id: string, data: Partial<MessageThread>): Promise<MessageThread | undefined>;
   createThreadMessage(data: InsertThreadMessage): Promise<ThreadMessage>;
-  getThreadMessages(threadId: string): Promise<ThreadMessage[]>;
+  getThreadMessages(threadId: string, limit?: number, before?: Date): Promise<ThreadMessage[]>;
   updateThreadMessage(id: string, data: { message?: string }): Promise<ThreadMessage | undefined>;
   deleteThreadMessage(id: string): Promise<void>;
   getAllNotifications(): Promise<Notification[]>;
@@ -759,8 +759,19 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async getThreadMessages(threadId: string): Promise<ThreadMessage[]> {
-    return await db.select().from(threadMessages).where(eq(threadMessages.threadId, threadId)).orderBy(threadMessages.createdAt);
+  async getThreadMessages(threadId: string, limit: number = 50, before?: Date): Promise<ThreadMessage[]> {
+    const whereClause = before
+      ? and(eq(threadMessages.threadId, threadId), lt(threadMessages.createdAt, before))
+      : eq(threadMessages.threadId, threadId);
+
+    const messages = await db
+      .select()
+      .from(threadMessages)
+      .where(whereClause)
+      .orderBy(desc(threadMessages.createdAt)) // Get newest first
+      .limit(limit);
+
+    return messages.reverse(); // Return in chronological order
   }
 
   async updateThreadMessage(id: string, data: { message?: string }): Promise<ThreadMessage | undefined> {

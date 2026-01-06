@@ -3978,7 +3978,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/message-threads/:id/messages", async (req, res) => {
     try {
-      const messages = await storage.getThreadMessages(req.params.id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const before = req.query.before ? new Date(req.query.before as string) : undefined;
+
+      const messages = await storage.getThreadMessages(req.params.id, limit, before);
       // Enrich messages with sender avatarUrl and displayName from users table
       const enrichedMessages: any[] = await Promise.all(
         messages.map(async (msg) => {
