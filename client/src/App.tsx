@@ -6,18 +6,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
-import PreviewHome from "@/pages/preview-home";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 
 // Lazy Load Components
 const MobilePreviewHome = lazy(() => import("@/pages/mobile-preview-home"));
-const MobilePreviewServers = lazy(() => import("@/pages/mobile-preview-servers"));
-const MobilePreviewMessages = lazy(() => import("@/pages/mobile-preview-messages"));
 const MobilePreviewNotifications = lazy(() => import("@/pages/mobile-preview-notifications"));
-const MobilePreviewMyServers = lazy(() => import("@/pages/mobile-preview-myservers"));
-const MobilePreviewServerDetail = lazy(() => import("@/pages/mobile-preview-server-detail"));
-const MobilePreviewAccount = lazy(() => import("@/pages/mobile-preview-account"));
 const PreviewDiscovery = lazy(() => import("@/pages/preview-discovery"));
 const PreviewMessages = lazy(() => import("@/pages/preview-messages"));
 const PreviewMyServers = lazy(() => import("@/pages/preview-my-servers"));
@@ -132,7 +126,7 @@ function Router() {
           {() => <ProtectedRoute component={AdminPanel} />}
         </Route>
         <Route path="/">
-          {() => <ProtectedRoute component={PreviewHome} />}
+          {() => <ProtectedRoute component={MobilePreviewHome} />}
         </Route>
         <Route path="/discovery">
           {() => <ProtectedRoute component={PreviewDiscovery} />}
@@ -177,14 +171,6 @@ function Router() {
         <Route path="/notifications">
           {() => <ProtectedRoute component={MobilePreviewNotifications} />}
         </Route>
-
-        <Route path="/old" component={MobilePreviewHome} />
-        <Route path="/old/discovery" component={MobilePreviewServers} />
-        <Route path="/old/messages" component={MobilePreviewMessages} />
-        <Route path="/old/notifications" component={MobilePreviewNotifications} />
-        <Route path="/old/myservers" component={MobilePreviewMyServers} />
-        <Route path="/old/server/:serverId" component={MobilePreviewServerDetail} />
-        <Route path="/old/account" component={MobilePreviewAccount} />
 
         <Route component={NotFound} />
       </Switch>
