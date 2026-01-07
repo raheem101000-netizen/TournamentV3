@@ -4949,14 +4949,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = req.query.q as string;
       if (!query) return res.json([]);
-      const users = await storage.searchUsers(query);
-      // Return minimal info
-      res.json(users.map(u => ({
-        id: u.id,
-        username: u.username,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl
-      })));
+      const foundUsers = await storage.searchUsers(query);
+      const currentUserId = req.session.userId!;
+
+      const enrichedUsers = await Promise.all(foundUsers.map(async (u) => {
+        let status = 'none';
+        if (u.id !== currentUserId) {
+          const request = await storage.getFriendRequestBetweenUsers(currentUserId, u.id);
+          if (request) {
+            if (request.status === 'accepted') {
+              status = 'friend';
+            } else if (request.status === 'pending') {
+              status = request.senderId === currentUserId ? 'pending_sent' : 'pending_received';
+            }
+          }
+        }
+
+        return {
+          id: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          avatarUrl: u.avatarUrl,
+          friendshipStatus: status
+        };
+      }));
+
+      res.json(enrichedUsers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

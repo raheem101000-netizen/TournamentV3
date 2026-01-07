@@ -966,7 +966,8 @@ export class DatabaseStorage implements IStorage {
         or(
           ilike(users.username, `%${query}%`),
           ilike(users.displayName, `%${query}%`),
-          ilike(users.email, `%${query}%`)
+          ilike(users.email, `%${query}%`),
+          eq(users.id, query) // Allow searching by exact ID
         )
       )
       .limit(10);

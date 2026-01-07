@@ -23,6 +23,7 @@ interface UserResult {
     username: string
     displayName: string
     avatarUrl: string
+    friendshipStatus: 'none' | 'friend' | 'pending_sent' | 'pending_received'
 }
 
 interface MessagesListViewProps {
@@ -38,7 +39,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         queryKey: ["/api/threads"],
     })
 
-    const { data: searchResults, isLoading: isSearching } = useQuery<UserResult[]>({
+    const { data: searchResults, isLoading: isSearching, refetch: refetchSearch } = useQuery<UserResult[]>({
         queryKey: ["/api/users/search", searchQuery],
         queryFn: async () => {
             if (!searchQuery || searchQuery.length < 2) return []
@@ -56,6 +57,16 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         onSuccess: (thread) => {
             setIsNewChatOpen(false)
             onSelectChat(thread.id)
+        }
+    })
+
+    const addFriendMutation = useMutation({
+        mutationFn: async (recipientId: string) => {
+            const res = await apiRequest("POST", "/api/friend-request", { recipientId })
+            return res.json()
+        },
+        onSuccess: () => {
+            refetchSearch()
         }
     })
 
@@ -163,8 +174,6 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                     )}
                 </div>
 
-                <BottomNavigation />
-
                 {/* New Chat Dialog */}
                 <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
                     <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl">
@@ -176,7 +185,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                             <Input
-                                placeholder="Search users..."
+                                placeholder="Search users by name or ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="bg-zinc-950 border-zinc-800 text-white focus-visible:ring-blue-600"
@@ -187,20 +196,43 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                                         <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
                                     </div>
                                 ) : searchResults?.map((user) => (
-                                    <button
+                                    <div
                                         key={user.id}
-                                        onClick={() => createThreadMutation.mutate(user.id)}
-                                        className="w-full flex items-center gap-3 p-3 hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                                        className="w-full flex items-center justify-between gap-3 p-3 hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                                     >
-                                        <Avatar className="h-10 w-10 border border-zinc-700">
-                                            <AvatarImage src={user.avatarUrl} />
-                                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <div className="font-medium text-white group-hover:text-blue-400 transition-colors">{user.displayName || user.username}</div>
-                                            <div className="text-sm text-zinc-500">@{user.username}</div>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-10 w-10 border border-zinc-700">
+                                                <AvatarImage src={user.avatarUrl} />
+                                                <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium text-white group-hover:text-blue-400 transition-colors">{user.displayName || user.username}</div>
+                                                <div className="text-sm text-zinc-500">@{user.username}</div>
+                                            </div>
                                         </div>
-                                    </button>
+
+                                        {/* Action Button */}
+                                        {user.friendshipStatus === 'friend' ? (
+                                            <button
+                                                onClick={() => createThreadMutation.mutate(user.id)}
+                                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full hover:bg-blue-700 transition-colors"
+                                            >
+                                                Message
+                                            </button>
+                                        ) : user.friendshipStatus === 'pending_sent' ? (
+                                            <span className="text-xs text-zinc-500 font-medium px-2">Pending</span>
+                                        ) : user.friendshipStatus === 'pending_received' ? (
+                                            <span className="text-xs text-blue-400 font-medium px-2">Request Received</span>
+                                        ) : (
+                                            <button
+                                                onClick={() => addFriendMutation.mutate(user.id)}
+                                                disabled={addFriendMutation.isPending}
+                                                className="text-xs bg-zinc-700 text-white px-3 py-1.5 rounded-full hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                                            >
+                                                {addFriendMutation.isPending ? 'Adding...' : 'Add Friend'}
+                                            </button>
+                                        )}
+                                    </div>
                                 ))}
                                 {searchQuery.length >= 2 && searchResults?.length === 0 && (
                                     <p className="text-center text-zinc-500 py-4">No users found</p>
