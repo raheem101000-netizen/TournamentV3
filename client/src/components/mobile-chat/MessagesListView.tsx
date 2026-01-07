@@ -48,11 +48,49 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         enabled: activeTab === "requests" // Only fetch when tab is active
     })
 
-    // ... (search query remains)
+    const { data: searchResults, isLoading: isSearching, refetch: refetchSearch } = useQuery<UserResult[]>({
+        queryKey: ["/api/users/search", searchQuery],
+        queryFn: async () => {
+            if (!searchQuery || searchQuery.length < 2) return []
+            // Use direct fetch to ensure no caching issues if apiRequest doesn't support custom headers easily
+            const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
+            if (!res.ok) throw new Error("Failed to search users");
+            return res.json()
+        },
+        enabled: searchQuery.length >= 2
+    })
 
-    // ... (createThreadMutation remains)
+    const createThreadMutation = useMutation({
+        mutationFn: async (participantId: string) => {
+            const res = await apiRequest("POST", "/api/threads", { participantId })
+            return res.json()
+        },
+        onSuccess: (thread) => {
+            setIsNewChatOpen(false)
+            onSelectChat(thread.id)
+        }
+    })
 
-    // ... (addFriendMutation remains)
+    const addFriendMutation = useMutation({
+        mutationFn: async (recipientId: string) => {
+            const res = await apiRequest("POST", "/api/friend-request", { recipientId })
+            return res.json()
+        },
+        onSuccess: () => {
+            refetchSearch()
+        }
+    })
+
+    const deleteThreadMutation = useMutation({
+        mutationFn: async (threadId: string) => {
+            await apiRequest("DELETE", `/api/threads/${threadId}`)
+        },
+        onSuccess: () => {
+            refetchThreads()
+        }
+    })
 
     // Friend Request Actions
     const acceptRequestMutation = useMutation({
