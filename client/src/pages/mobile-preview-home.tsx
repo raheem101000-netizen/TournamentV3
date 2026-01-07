@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +11,7 @@ import { MobileLayout } from "@/components/layouts/MobileLayout";
 
 export default function MobilePreviewHome() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [, setLocation] = useLocation();
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -132,6 +134,7 @@ export default function MobilePreviewHome() {
                 <div className="flex gap-3">
                   <Button
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold h-11 md:h-9"
+                    onClick={() => setLocation(`/tournament/${tournament.id}/register`)}
                     data-testid={`button-join-${tournament.id}`}
                   >
                     Join
@@ -262,6 +265,12 @@ export default function MobilePreviewHome() {
                 <Button
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
                   data-testid="modal-button-join"
+                  onClick={() => {
+                    if (selectedTournament) {
+                      setLocation(`/tournament/${selectedTournament.id}/register`);
+                      setSelectedTournament(null);
+                    }
+                  }}
                 >
                   Join Tournament
                 </Button>
