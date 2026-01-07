@@ -3,10 +3,22 @@ import { MessagesListView } from "@/components/mobile-chat/MessagesListView";
 import ChatChannel from "@/components/channels/ChatChannel";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { ChevronLeft } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLocation } from "wouter";
 
 export default function PreviewMessages() {
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  // Parse query params manually since wouter's useSearch isn't always available/consistent in all versions
+  const getThreadIdFromUrl = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("threadId");
+    }
+    return null;
+  };
+
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(getThreadIdFromUrl());
+
 
   if (selectedChatId) {
     return (

@@ -72,7 +72,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
 
   const handleAddFriend = async () => {
     if (!profileData || !currentUser) return;
-    
+
     try {
       const response = await fetch("/api/friend-request", {
         method: "POST",
@@ -84,7 +84,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
       });
 
       if (!response.ok) throw new Error("Failed to send friend request");
-      
+
       refetchFriendStatus();
       toast({
         title: "Friend request sent!",
@@ -101,7 +101,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
 
   const handleAcceptFriend = async () => {
     if (!friendRequestStatus?.friendRequest?.id) return;
-    
+
     try {
       const response = await fetch(`/api/friend-requests/${friendRequestStatus.friendRequest.id}/accept`, {
         method: "POST",
@@ -109,7 +109,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
       });
 
       if (!response.ok) throw new Error("Failed to accept friend request");
-      
+
       refetchFriendStatus();
       toast({
         title: "Friend added!",
@@ -126,7 +126,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
 
   const handleDeclineFriend = async () => {
     if (!friendRequestStatus?.friendRequest?.id) return;
-    
+
     try {
       const response = await fetch(`/api/friend-requests/${friendRequestStatus.friendRequest.id}/decline`, {
         method: "POST",
@@ -134,7 +134,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
       });
 
       if (!response.ok) throw new Error("Failed to decline friend request");
-      
+
       refetchFriendStatus();
       toast({
         title: "Request declined",
@@ -204,26 +204,22 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
 
   const handleMessageProfile = async () => {
     if (!profileData) return;
-    
+
     try {
-      const response = await fetch("/api/message-threads", {
+      const response = await fetch("/api/threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           participantId: profileData.id,
-          participantName: profileData.displayName || profileData.username,
-          participantAvatar: profileData.avatarUrl,
         }),
         credentials: "include",
       });
 
       if (!response.ok) throw new Error("Failed to create message thread");
-      
+
+      const thread = await response.json();
       onOpenChange(false);
-      toast({
-        title: "Message thread opened",
-        description: `Chat with ${profileData.displayName || profileData.username}`,
-      });
+      setLocation(`/messages?threadId=${thread.id}`);
     } catch (error) {
       toast({
         title: "Error",
@@ -241,7 +237,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
             <DialogHeader>
               <DialogTitle>User Profile</DialogTitle>
             </DialogHeader>
-            
+
             {/* Profile Header */}
             <div className="flex gap-4 items-start">
               <Avatar className="w-20 h-20">
@@ -264,8 +260,8 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
             {/* Action Buttons */}
             {currentUser?.id !== userId && (
               <div className="flex gap-2">
-                <Button 
-                  onClick={handleMessageProfile} 
+                <Button
+                  onClick={handleMessageProfile}
                   className="flex-1"
                   data-testid="button-message-profile-user"
                 >
