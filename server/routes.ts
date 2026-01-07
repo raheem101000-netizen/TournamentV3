@@ -213,6 +213,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Search users for new chat - Defined early to avoid 404s
+  app.get("/api/users/search", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const query = req.query.q as string;
+      if (!query) return res.json([]);
+      const foundUsers = await storage.searchUsers(query);
+      const currentUserId = req.session.userId!;
+
+      const enrichedUsers = await Promise.all(foundUsers.map(async (u) => {
+        let status = 'none';
+        if (u.id !== currentUserId) {
+          const request = await storage.getFriendRequestBetweenUsers(currentUserId, u.id);
+          if (request) {
+            if (request.status === 'accepted') {
+              status = 'friend';
+            } else if (request.status === 'pending') {
+              status = request.senderId === currentUserId ? 'pending_sent' : 'pending_received';
+            }
+          }
+        }
+
+        return {
+          id: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          avatarUrl: u.avatarUrl,
+          friendshipStatus: status
+        };
+      }));
+
+      res.json(enrichedUsers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.use('/api', generalRateLimiter);
   app.use('/api/auth', authRateLimiter);
 
@@ -5018,40 +5058,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Personal Messaging Routes ---
 
   // Search users for new chat
-  app.get("/api/users/search", requireAuth, async (req, res) => {
-    try {
-      const query = req.query.q as string;
-      if (!query) return res.json([]);
-      const foundUsers = await storage.searchUsers(query);
-      const currentUserId = req.session.userId!;
 
-      const enrichedUsers = await Promise.all(foundUsers.map(async (u) => {
-        let status = 'none';
-        if (u.id !== currentUserId) {
-          const request = await storage.getFriendRequestBetweenUsers(currentUserId, u.id);
-          if (request) {
-            if (request.status === 'accepted') {
-              status = 'friend';
-            } else if (request.status === 'pending') {
-              status = request.senderId === currentUserId ? 'pending_sent' : 'pending_received';
-            }
-          }
-        }
-
-        return {
-          id: u.id,
-          username: u.username,
-          displayName: u.displayName,
-          avatarUrl: u.avatarUrl,
-          friendshipStatus: status
-        };
-      }));
-
-      res.json(enrichedUsers);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // Get all threads for current user
   app.get("/api/threads", requireAuth, async (req, res) => {
