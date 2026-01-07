@@ -28,15 +28,16 @@ import {
 import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck, Clock, Pencil } from "lucide-react";
 import { isToday, isYesterday, format, isSameDay } from "date-fns";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
+
 const formatMessageDate = (date: Date) => {
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
   return format(date, "MMM d, yyyy");
 };
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 
 interface Chat {
   id: string;
