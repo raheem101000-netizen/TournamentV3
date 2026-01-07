@@ -313,8 +313,10 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       </div> */}
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full">
-          <div className="flex flex-col justify-end min-h-full px-4 py-4 space-y-6">
+        <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full [&>[data-radix-scroll-area-viewport]>div]:flex [&>[data-radix-scroll-area-viewport]>div]:flex-col">
+          <div className="flex flex-col min-h-full px-4 py-4">
+            {/* Spacer that grows to push messages to bottom */}
+            <div className="flex-1" />
             <AnimatePresence initial={false}>
               {messagesLoading ? (
                 <div className="flex justify-center py-8">

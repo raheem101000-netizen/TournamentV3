@@ -85,11 +85,13 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
 
   return (
     <div className="flex flex-col h-full gap-3">
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 overflow-y-auto flex flex-col space-y-3">
+        {/* Spacer that grows to push messages to bottom */}
+        <div className="flex-1" />
         {messages.map((message) => {
-          const initials = (message as any).displayName?.charAt(0).toUpperCase() || 
-                          (message as any).username?.charAt(0).toUpperCase() || 
-                          message.message?.charAt(0).toUpperCase() || "?";
+          const initials = (message as any).displayName?.charAt(0).toUpperCase() ||
+            (message as any).username?.charAt(0).toUpperCase() ||
+            message.message?.charAt(0).toUpperCase() || "?";
           const timestamp = new Date(message.createdAt).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
@@ -170,10 +172,10 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
         </Button>
       </div>
 
-      <UserProfileModal 
-        userId={selectedProfileId} 
-        open={profileModalOpen} 
-        onOpenChange={setProfileModalOpen} 
+      <UserProfileModal
+        userId={selectedProfileId}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
       />
     </div>
   );

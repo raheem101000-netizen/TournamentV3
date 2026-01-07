@@ -73,9 +73,11 @@ export default function MatchChatPanel({
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+      <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0 overflow-hidden">
+        <ScrollArea className="flex-1 pr-4 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full [&>[data-radix-scroll-area-viewport]>div]:flex [&>[data-radix-scroll-area-viewport]>div]:flex-col">
+          <div className="flex flex-col min-h-full space-y-4">
+            {/* Spacer that grows to push messages to bottom */}
+            <div className="flex-1" />
             {messages.map((msg) => {
               const isSystem = msg.isSystem === 1;
               const senderName = (msg as any).displayName?.trim() || "Unknown";
@@ -109,8 +111,8 @@ export default function MatchChatPanel({
                     </span>
                     <div
                       className={`rounded-md overflow-hidden ${isCurrentTeam
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
                         }`}
                     >
                       {msg.imageUrl && (

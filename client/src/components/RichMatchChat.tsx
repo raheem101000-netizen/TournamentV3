@@ -35,11 +35,11 @@ interface RichMatchChatProps {
   team2Id?: string;
 }
 
-export default function RichMatchChat({ 
-  matchId, 
+export default function RichMatchChat({
+  matchId,
   winnerId,
   tournamentId,
-  team1Name = "Team 1", 
+  team1Name = "Team 1",
   team2Name = "Team 2",
   team1Id = "",
   team2Id = ""
@@ -140,7 +140,7 @@ export default function RichMatchChat({
 
     const beforeMention = messageInput.substring(0, mentionIndex);
     const afterMention = messageInput.substring(mentionIndex + mentionQuery.length + 1);
-    
+
     // Insert mention tag in format: @username
     const newMessage = `${beforeMention}@${user.username} ${afterMention}`;
     setMessageInput(newMessage);
@@ -151,7 +151,7 @@ export default function RichMatchChat({
 
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string }) => {
-      return await apiRequest("POST", `/api/matches/${matchId}/messages`, { 
+      return await apiRequest("POST", `/api/matches/${matchId}/messages`, {
         message: data.message,
         userId: currentUser?.id
       });
@@ -244,7 +244,7 @@ export default function RichMatchChat({
         // Immediately update the cache with the new data
         queryClient.setQueryData([`/api/tournaments/${tournamentId}/matches`], (oldData: any) => {
           if (!Array.isArray(oldData)) return oldData;
-          return oldData.map((match: any) => 
+          return oldData.map((match: any) =>
             match.id === matchId ? { ...match, winnerId, status: 'completed' } : match
           );
         });
@@ -265,7 +265,7 @@ export default function RichMatchChat({
   // Parse mentions from message text and create interactive elements
   const renderMessageWithMentions = (text: string) => {
     if (!text) return null;
-    
+
     // Regex to find @username mentions
     const mentionRegex = /@([\w-]+)/g;
     const parts: Array<{ type: 'mention' | 'text'; content: string; username?: string }> = [];
@@ -328,21 +328,21 @@ export default function RichMatchChat({
 
   const handleSendMessage = () => {
     if (!messageInput.trim()) return;
-    
+
     // Detect if current user is mentioned
     const mentionRegex = /@([\w-]+)/g;
     let match;
     const mentionedUsernames = new Set<string>();
-    
+
     while ((match = mentionRegex.exec(messageInput)) !== null) {
       mentionedUsernames.add(match[1]);
     }
-    
+
     // Check if current user is mentioned
     const currentUserMentioned = mentionedUsernames.has(currentUser?.username || '');
-    
+
     sendMessageMutation.mutate({ message: messageInput });
-    
+
     // Show notification if user mentions themselves or others are mentioned
     if (mentionedUsernames.size > 0) {
       const mentionedList = Array.from(mentionedUsernames).join(', ');
@@ -363,7 +363,7 @@ export default function RichMatchChat({
       // Upload image to server
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const uploadResponse = await fetch('/api/objects/upload', {
         method: 'POST',
         body: formData,
@@ -388,7 +388,7 @@ export default function RichMatchChat({
         imageInputRef.current.value = '';
       }
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
-      
+
       toast({
         title: "Image Uploaded",
         description: "Your image has been shared!",
@@ -418,8 +418,10 @@ export default function RichMatchChat({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col gap-3 p-0 px-4 pb-4 pt-4 min-h-0">
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4 pt-2">
+          <ScrollArea className="flex-1 pr-4 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full [&>[data-radix-scroll-area-viewport]>div]:flex [&>[data-radix-scroll-area-viewport]>div]:flex-col">
+            <div className="flex flex-col min-h-full space-y-4 pt-2">
+              {/* Spacer that grows to push messages to bottom */}
+              <div className="flex-1" />
               {messagesLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -433,7 +435,7 @@ export default function RichMatchChat({
                   const isOwn = msg.userId === currentUser?.id;
                   const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
                   const isEditing = editingMessage?.id === msg.id;
-                  
+
                   const getInitials = () => {
                     const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
                     if (!name) return 'U';
@@ -445,8 +447,8 @@ export default function RichMatchChat({
                   };
 
                   return (
-                    <div 
-                      key={msg.id} 
+                    <div
+                      key={msg.id}
                       className={`group relative flex gap-2 p-2 -m-2 rounded-md cursor-pointer ${isOwn ? 'flex-row-reverse' : ''} ${longPressMessageId === msg.id ? 'bg-muted' : ''}`}
                       data-testid={`message-${msg.id}`}
                       onClick={() => {
@@ -466,8 +468,8 @@ export default function RichMatchChat({
                         >
                           <Avatar className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate">
                             {(msg as any).avatarUrl && (
-                              <AvatarImage 
-                                src={(msg as any).avatarUrl} 
+                              <AvatarImage
+                                src={(msg as any).avatarUrl}
                                 alt={senderName}
                               />
                             )}
@@ -479,9 +481,9 @@ export default function RichMatchChat({
                       ) : (
                         <Avatar className="h-8 w-8 flex-shrink-0">
                           {(msg as any).avatarUrl && (
-                            <AvatarImage 
-                              src={(msg as any).avatarUrl} 
-                              alt={senderName} 
+                            <AvatarImage
+                              src={(msg as any).avatarUrl}
+                              alt={senderName}
                             />
                           )}
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -492,9 +494,9 @@ export default function RichMatchChat({
                       {/* Message action menu - positioned at right of message row */}
                       {!isEditing && isOwn && longPressMessageId === msg.id && (
                         <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="h-7 justify-start gap-2 text-destructive"
                             onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
                             data-testid={`button-delete-message-${msg.id}`}
@@ -530,9 +532,9 @@ export default function RichMatchChat({
                             className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
                             data-testid={`img-message-${msg.id}`}
                           >
-                            <img 
-                              src={msg.imageUrl} 
-                              alt="Shared image" 
+                            <img
+                              src={msg.imageUrl}
+                              alt="Shared image"
                               className="max-w-full h-auto max-h-60 object-contain rounded-md"
                             />
                           </button>
@@ -666,7 +668,7 @@ export default function RichMatchChat({
                   </div>
                 )}
               </div>
-              <Button 
+              <Button
                 size="icon"
                 className="h-9 w-9"
                 onClick={handleSendMessage}
@@ -680,10 +682,10 @@ export default function RichMatchChat({
         </CardContent>
       </Card>
 
-      <UserProfileModal 
-        userId={selectedProfileId} 
-        open={profileModalOpen} 
-        onOpenChange={setProfileModalOpen} 
+      <UserProfileModal
+        userId={selectedProfileId}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
       />
 
       <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
@@ -696,9 +698,9 @@ export default function RichMatchChat({
             <X className="w-6 h-6 text-white" />
           </button>
           {enlargedImageUrl && (
-            <img 
-              src={enlargedImageUrl} 
-              alt="Enlarged image" 
+            <img
+              src={enlargedImageUrl}
+              alt="Enlarged image"
               className="max-w-full max-h-[90vh] object-contain"
               data-testid="img-enlarged"
             />
@@ -717,8 +719,8 @@ export default function RichMatchChat({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
+            <AlertDialogAction
+              onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >

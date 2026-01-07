@@ -70,7 +70,7 @@ export default function MatchChatPanelExample() {
   };
 
   return (
-    <div className="h-[600px]">
+    <div className="h-[600px] flex flex-col border rounded-lg overflow-hidden bg-background">
       <MatchChatPanel
         messages={messages}
         teams={teams}
