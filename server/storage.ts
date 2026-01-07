@@ -227,6 +227,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  searchUsers(query: string): Promise<User[]>;
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   changeUserPassword(id: string, currentPassword: string, newPassword: string): Promise<boolean>;
@@ -953,6 +954,22 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    if (!query || query.length < 2) return [];
+
+    return await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          ilike(users.username, `%${query}%`),
+          ilike(users.displayName, `%${query}%`),
+          ilike(users.email, `%${query}%`)
+        )
+      )
+      .limit(10);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {

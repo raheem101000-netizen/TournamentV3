@@ -4942,5 +4942,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Personal Messaging Routes ---
+
+  // Search users for new chat
+  app.get("/api/users/search", requireAuth, async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) return res.json([]);
+      const users = await storage.searchUsers(query);
+      // Return minimal info
+      res.json(users.map(u => ({
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl
+      })));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get all threads for current user
+  app.get("/api/threads", requireAuth, async (req, res) => {
+    try {
+      const threads = await storage.getMessageThreadsForParticipant(req.session.userId!);
+      res.json(threads);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create or get existing thread with a user
+  app.post("/api/threads", requireAuth, async (req, res) => {
+    try {
+      const { participantId } = req.body;
+      const userId = req.session.userId!;
+
+      if (!participantId) {
+        return res.status(400).json({ error: "Participant ID required" });
+      }
+
+      // Check for existing thread
+      const existing = await storage.findExistingThread(userId, participantId);
+      if (existing) {
+        return res.json(existing);
+      }
+
+      // Get participant details for the thread metadata
+      const participant = await storage.getUser(participantId);
+      if (!participant) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Create new thread
+      const thread = await storage.createMessageThread({
+        userId,
+        participantId,
+        participantName: participant.displayName || participant.username,
+        participantAvatar: participant.avatarUrl,
+        lastMessage: "Started a new conversation",
+        lastMessageSenderId: userId,
+        unreadCount: 0
+      });
+
+      res.status(201).json(thread);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get messages for a thread
+  app.get("/api/threads/:threadId/messages", requireAuth, async (req, res) => {
+    try {
+      const messages = await storage.getThreadMessages(req.params.threadId);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Send a message to a thread
+  app.post("/api/threads/:threadId/messages", requireAuth, async (req, res) => {
+    try {
+      const { message } = req.body;
+      const userId = req.session.userId!;
+      const threadId = req.params.threadId;
+
+      const user = await storage.getUser(userId);
+
+      const newMessage = await storage.createThreadMessage({
+        threadId,
+        userId,
+        username: user?.username || "Unknown",
+        message,
+        replyToId: null,
+        imageUrl: null,
+        tournamentId: null // Optional if needed
+      });
+
+      // Update thread last message
+      await storage.updateMessageThread(threadId, {
+        lastMessage: message,
+        lastMessageSenderId: userId,
+        lastMessageTime: new Date()
+      });
+
+      res.status(201).json(newMessage);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

@@ -1,51 +1,27 @@
-import { Search, Plus, Home, Compass, MessageCircle, Server, User } from "lucide-react"
+import { Search, Plus, Home, Compass, MessageCircle, Server, User, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { apiRequest } from "@/lib/queryClient"
+import { formatDistanceToNow } from "date-fns"
 
-interface Message {
+interface MessageThread {
     id: string
-    username: string
-    avatar: string
+    participantName: string
+    participantAvatar: string
     lastMessage: string
-    timestamp: string
-    unread: boolean
+    lastMessageTime: string
+    unreadCount: number
 }
 
-const mockMessages: Message[] = [
-    {
-        id: "1",
-        username: "Sarah Chen",
-        avatar: "/diverse-woman-portrait.png",
-        lastMessage: "Hey! Are we still meeting tomorrow?",
-        timestamp: "25m ago",
-        unread: true,
-    },
-    {
-        id: "2",
-        username: "Mike Johnson",
-        avatar: "/man.jpg",
-        lastMessage: "Thanks for your help earlier!",
-        timestamp: "1h ago",
-        unread: false,
-    },
-    {
-        id: "3",
-        username: "Emily Davis",
-        avatar: "/woman-2.jpg",
-        lastMessage: "Did you see the latest update?",
-        timestamp: "3h ago",
-        unread: true,
-    },
-    {
-        id: "4",
-        username: "Alex Kim",
-        avatar: "/diverse-group.png",
-        lastMessage: "Let me know when you're free",
-        timestamp: "5h ago",
-        unread: false,
-    },
-]
+interface UserResult {
+    id: string
+    username: string
+    displayName: string
+    avatarUrl: string
+}
 
 interface MessagesListViewProps {
     onSelectChat: (chatId: string) => void
@@ -53,6 +29,36 @@ interface MessagesListViewProps {
 
 export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const [activeTab, setActiveTab] = useState<"personal" | "match" | "requests">("personal")
+    const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+
+    const { data: threads, isLoading } = useQuery<MessageThread[]>({
+        queryKey: ["/api/threads"],
+    })
+
+    const { data: searchResults, isLoading: isSearching } = useQuery<UserResult[]>({
+        queryKey: ["/api/users/search", searchQuery],
+        queryFn: async () => {
+            if (!searchQuery || searchQuery.length < 2) return []
+            const res = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchQuery)}`)
+            return res.json()
+        },
+        enabled: searchQuery.length >= 2
+    })
+
+    const createThreadMutation = useMutation({
+        mutationFn: async (participantId: string) => {
+            const res = await apiRequest("POST", "/api/threads", { participantId })
+            return res.json()
+        },
+        onSuccess: (thread) => {
+            setIsNewChatOpen(false)
+            onSelectChat(thread.id)
+        }
+    })
+
+    // Filter threads based on active tab (assuming mostly personal for now)
+    const displayThreads = threads || []
 
     return (
         <div className="flex flex-col h-screen bg-black text-white">
@@ -61,7 +67,11 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-3xl font-bold">Messages</h1>
                     <div className="flex items-center gap-4">
-                        <button className="text-blue-500" aria-label="Add new message">
+                        <button
+                            onClick={() => setIsNewChatOpen(true)}
+                            className="text-blue-500 hover:text-blue-400 transition-colors"
+                            aria-label="Add new message"
+                        >
                             <Plus className="h-6 w-6" />
                         </button>
                         <button className="text-blue-500" aria-label="Search">
@@ -83,22 +93,19 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                 <div className="flex gap-2">
                     <button
                         onClick={() => setActiveTab("personal")}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "personal" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"
-                            }`}
+                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "personal" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                     >
                         Personal
                     </button>
                     <button
                         onClick={() => setActiveTab("match")}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "match" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"
-                            }`}
+                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "match" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                     >
                         Match Chats
                     </button>
                     <button
                         onClick={() => setActiveTab("requests")}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "requests" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"
-                            }`}
+                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "requests" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                     >
                         Requests
                     </button>
@@ -107,26 +114,46 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
 
             {/* Messages List */}
             <div className="flex-1 overflow-y-auto">
-                {mockMessages.map((message) => (
-                    <button
-                        key={message.id}
-                        onClick={() => onSelectChat(message.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-900 hover:bg-zinc-900 transition-colors"
-                    >
-                        <Avatar className="h-12 w-12 flex-none">
-                            <AvatarImage src={message.avatar || "/placeholder.svg"} alt={message.username} />
-                            <AvatarFallback>{message.username[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0 text-left">
-                            <div className="font-semibold text-white">{message.username}</div>
-                            <div className="text-sm text-zinc-400 truncate">{message.lastMessage}</div>
-                        </div>
-                        <div className="flex-none flex flex-col items-end gap-1">
-                            <div className="text-xs text-zinc-500">{message.timestamp}</div>
-                            {message.unread && <div className="h-2 w-2 bg-blue-500 rounded-full" />}
-                        </div>
-                    </button>
-                ))}
+                {isLoading ? (
+                    <div className="flex justify-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+                    </div>
+                ) : displayThreads.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-8 text-zinc-500">
+                        <MessageCircle className="h-12 w-12 mb-2 opacity-50" />
+                        <p>No messages yet</p>
+                        <button onClick={() => setIsNewChatOpen(true)} className="text-blue-500 text-sm mt-2 hover:underline">
+                            Start a conversation
+                        </button>
+                    </div>
+                ) : (
+                    displayThreads.map((thread) => (
+                        <button
+                            key={thread.id}
+                            onClick={() => onSelectChat(thread.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-900 hover:bg-zinc-900 transition-colors"
+                        >
+                            <Avatar className="h-12 w-12 flex-none">
+                                <AvatarImage src={thread.participantAvatar || undefined} />
+                                <AvatarFallback>{thread.participantName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0 text-left">
+                                <div className="flex justify-between items-baseline">
+                                    <div className="font-semibold text-white truncate pr-2">{thread.participantName}</div>
+                                    <div className="text-xs text-zinc-500 flex-none">
+                                        {thread.lastMessageTime && formatDistanceToNow(new Date(thread.lastMessageTime), { addSuffix: true })}
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center mt-1">
+                                    <div className="text-sm text-zinc-400 truncate pr-2">{thread.lastMessage}</div>
+                                    {thread.unreadCount > 0 && (
+                                        <div className="h-2 w-2 bg-blue-500 rounded-full flex-none" />
+                                    )}
+                                </div>
+                            </div>
+                        </button>
+                    ))
+                )}
             </div>
 
             {/* Bottom Navigation */}
@@ -152,6 +179,51 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                     <span className="text-xs">Account</span>
                 </button>
             </div>
+
+            {/* New Chat Dialog */}
+            <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+                <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl">
+                    <DialogHeader>
+                        <DialogTitle>New Message</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                            Search for a user to start a conversation with.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                        <Input
+                            placeholder="Search users..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-zinc-950 border-zinc-800 text-white"
+                        />
+                        <div className="max-h-[300px] overflow-y-auto space-y-2">
+                            {isSearching ? (
+                                <div className="flex justify-center py-4">
+                                    <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+                                </div>
+                            ) : searchResults?.map((user) => (
+                                <button
+                                    key={user.id}
+                                    onClick={() => createThreadMutation.mutate(user.id)}
+                                    className="w-full flex items-center gap-3 p-3 hover:bg-zinc-800 rounded-lg transition-colors text-left"
+                                >
+                                    <Avatar>
+                                        <AvatarImage src={user.avatarUrl} />
+                                        <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <div className="font-medium text-white">{user.displayName || user.username}</div>
+                                        <div className="text-sm text-zinc-500">@{user.username}</div>
+                                    </div>
+                                </button>
+                            ))}
+                            {searchQuery.length >= 2 && searchResults?.length === 0 && (
+                                <p className="text-center text-zinc-500 py-4">No users found</p>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
