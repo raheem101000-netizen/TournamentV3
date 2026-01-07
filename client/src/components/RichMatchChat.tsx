@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Send, Trophy, ImageIcon, Loader2, X, Pencil, Trash2, Check } from "lucide-react";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
