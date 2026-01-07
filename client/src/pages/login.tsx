@@ -45,7 +45,7 @@ export default function Login() {
         email: data.email,
         password: data.password,
       });
-      return res.json();
+      return res;
     },
     onSuccess: async (data) => {
       // Clear the user query cache to ensure the next fetch gets the fresh session

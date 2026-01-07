@@ -52,7 +52,7 @@ export default function Register() {
         email: data.email,
         password: data.password,
       });
-      return res.json();
+      return res;
     },
     onSuccess: async () => {
       const user = await refetchUser();
