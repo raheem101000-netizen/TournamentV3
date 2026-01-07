@@ -21,6 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import UserProfileModal from "@/components/UserProfileModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,7 +39,9 @@ export default function PreviewServerDetail() {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [leaveServerDialogOpen, setLeaveServerDialogOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -278,8 +282,8 @@ export default function PreviewServerDetail() {
           particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
           alphaParticles={false}
           particleBaseSize={200}
-                    cameraDistance={10}
-        sizeRandomness={0.5}
+          cameraDistance={10}
+          sizeRandomness={0.5}
           disableRotation={false}
           className="fixed inset-0 z-50 pointer-events-none"
         />
@@ -418,8 +422,8 @@ export default function PreviewServerDetail() {
           particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
           alphaParticles={false}
           particleBaseSize={200}
-                    cameraDistance={10}
-        sizeRandomness={0.5}
+          cameraDistance={10}
+          sizeRandomness={0.5}
           disableRotation={false}
           className="fixed inset-0 z-50 pointer-events-none"
         />
@@ -442,6 +446,29 @@ export default function PreviewServerDetail() {
               >
                 <ChevronDown className="w-5 h-5 rotate-90" />
               </Button>
+
+              {/* Mobile Channel Drawer */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
+                  <SheetHeader className="p-4 border-b">
+                    <SheetTitle className="flex items-center gap-2">
+                      {server.iconUrl && <img src={server.iconUrl} className="w-6 h-6 rounded" />}
+                      {server.name}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-80px)]">
+                    <div className="p-4 pb-20">
+                      <ChannelListContent onSelect={() => setMobileMenuOpen(false)} />
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{selectedChannel.icon}</span>
@@ -508,8 +535,8 @@ export default function PreviewServerDetail() {
           particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
           alphaParticles={false}
           particleBaseSize={200}
-                    cameraDistance={10}
-        sizeRandomness={0.5}
+          cameraDistance={10}
+          sizeRandomness={0.5}
           disableRotation={false}
           className="fixed inset-0 z-50 pointer-events-none"
         />
