@@ -30,8 +30,11 @@ import { isToday, isYesterday, format, isSameDay } from "date-fns";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useToast } from "@/hooks/use-toast";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
+import { motion, AnimatePresence } from "framer-motion";
+import UserProfileModal from "@/components/UserProfileModal";
 
 const formatMessageDate = (date: Date) => {
   if (isToday(date)) return "Today";
@@ -1049,359 +1052,271 @@ export default function PreviewMessages() {
                       <p>No messages yet. Start the conversation!</p>
                     </div>
                   ) : (
-                    threadMessages.map((msg, index) => {
-                      const isOwn = msg.userId === currentUser?.id;
-                      const isSystem = false;
-                      const prevMsg = threadMessages[index - 1];
-                      const isNewDay = !prevMsg || !isSameDay(new Date(msg.createdAt), new Date(prevMsg.createdAt));
+                    <AnimatePresence initial={false}>
+                      {threadMessages.map((msg, index) => {
+                        const isOwn = msg.userId === currentUser?.id;
+                        const isSystem = false;
+                        const prevMsg = threadMessages[index - 1];
+                        const isNewDay = !prevMsg || !isSameDay(new Date(msg.createdAt), new Date(prevMsg.createdAt));
 
-                      // Get proper initials
-                      const getInitials = () => {
-                        const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
-                        if (!name) return 'U';
-                        const parts = name.split(' ').filter((p: string) => p);
-                        if (parts.length > 1) {
-                          return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                        }
-                        return name.substring(0, 2).toUpperCase();
-                      };
+                        // Get proper initials
+                        const getInitials = () => {
+                          const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
+                          if (!name) return 'U';
+                          const parts = name.split(' ').filter((p: string) => p);
+                          if (parts.length > 1) {
+                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                          }
+                          return name.substring(0, 2).toUpperCase();
+                        };
 
-                      const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                        const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
 
-                      const isEditing = editingMessage?.id === msg.id;
+                        const isEditing = editingMessage?.id === msg.id;
+                        const timestamp = format(new Date(msg.createdAt), 'h:mm a');
 
-                      return (
-                        <div key={msg.id} className="flex flex-col gap-2">
-                          {/* Date Separator */}
-                          {isNewDay && (
-                            <div className="flex justify-center my-4">
-                              <span className="text-xs font-medium text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
-                                {formatMessageDate(new Date(msg.createdAt))}
-                              </span>
-                            </div>
-                          )}
+                        return (
+                          <motion.div
+                            key={msg.id}
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="flex flex-col"
+                          >
+                            {/* Date Separator */}
+                            {isNewDay && (
+                              <div className="flex justify-center my-6">
+                                <span className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">
+                                  {formatMessageDate(new Date(msg.createdAt))}
+                                </span>
+                              </div>
+                            )}
 
-                          {isSystem ? (
-                            <div className="flex justify-center my-2">
-                              <Badge variant="outline" className="gap-2 py-1">
-                                <AlertCircle className="w-3 h-3" />
-                                {msg.message}
-                              </Badge>
-                            </div>
-                          ) : (
-                            <div
-                              className={`group relative flex gap-2 max-w-[85%] ${isOwn ? 'ml-auto flex-row-reverse' : ''}`}
-                              data-testid={`message-${msg.id}`}
-                              onClick={() => {
-                                if (isEditing) return;
-                                setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
-                              }}
-                            >
-                              {/* Avatar - Only for others */}
-                              {!isOwn && (
-                                <div className="flex-shrink-0 self-end mb-1">
-                                  {msg.userId ? (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedProfileId(msg.userId);
-                                        setProfileModalOpen(true);
-                                      }}
-                                      className="p-0 border-0 bg-transparent cursor-pointer"
-                                    >
-                                      <Avatar className="h-8 w-8 hover-elevate">
+                            {isSystem ? (
+                              <div className="flex justify-center my-2">
+                                <Badge variant="outline" className="gap-2 py-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  {msg.message}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <div
+                                className={`group relative flex gap-2 max-w-[85%] ${isOwn ? 'ml-auto flex-row-reverse' : ''}`}
+                                data-testid={`message-${msg.id}`}
+                                onClick={() => {
+                                  if (isEditing) return;
+                                  setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
+                                }}
+                              >
+                                {/* Avatar - Only for others */}
+                                {!isOwn && (
+                                  <div className="flex-shrink-0 self-end mb-5">
+                                    {msg.userId ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedProfileId(msg.userId);
+                                          setProfileModalOpen(true);
+                                        }}
+                                        className="p-0 border-0 bg-transparent cursor-pointer transition-transform active:scale-95"
+                                      >
+                                        <Avatar className="h-8 w-8 hover-elevate shadow-sm">
+                                          {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
+                                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-[10px] font-bold">
+                                            {getInitials()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                      </button>
+                                    ) : (
+                                      <Avatar className="h-8 w-8 shadow-sm">
                                         {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
-                                        <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
+                                        <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
                                           {getInitials()}
                                         </AvatarFallback>
                                       </Avatar>
-                                    </button>
-                                  ) : (
-                                    <Avatar className="h-8 w-8">
-                                      {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
-                                      <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-                                        {getInitials()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Message Bubble */}
-                              <div className={`relative flex flex-col gap-1 min-w-[60px] p-3 shadow-sm
-                                ${isOwn
-                                  ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
-                                  : 'bg-muted/80 text-foreground rounded-2xl rounded-bl-sm'}
-                              `}>
-                                {/* Image Content */}
-                                {msg.imageUrl && (
-                                  <button
-                                    onClick={() => setEnlargedImageUrl(msg.imageUrl)}
-                                    className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-1"
-                                  >
-                                    <img
-                                      src={msg.imageUrl}
-                                      alt="Shared image"
-                                      className="max-w-full h-auto max-h-60 object-contain rounded-lg"
-                                    />
-                                  </button>
+                                    )}
+                                  </div>
                                 )}
 
-                                {/* Text Content */}
-                                {isEditing ? (
-                                  <div className="flex gap-2 w-full min-w-[200px]">
-                                    <Input
-                                      value={editText}
-                                      onChange={(e) => setEditText(e.target.value)}
-                                      className="flex-1 bg-background text-foreground h-8"
-                                      autoFocus
-                                    />
-                                    <Button size="icon" className="h-8 w-8" onClick={handleSaveEdit}>
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelEdit}>
-                                      <X className="h-4 w-4" />
+                                <div className="flex flex-col gap-1 min-w-0">
+                                  {/* Sender Name (for others) */}
+                                  {!isOwn && (
+                                    <span className="text-[11px] text-muted-foreground ml-1 font-medium">
+                                      {senderName}
+                                    </span>
+                                  )}
+
+                                  {/* Message Bubble */}
+                                  <div className={`relative px-4 py-3 shadow-sm min-w-[60px]
+                                    ${isOwn
+                                      ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
+                                      : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
+                                  `}>
+                                    {/* Image Content */}
+                                    {msg.imageUrl && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEnlargedImageUrl(msg.imageUrl);
+                                        }}
+                                        className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-2 w-full"
+                                      >
+                                        <OptimizedImage
+                                          src={msg.imageUrl}
+                                          alt="Shared image"
+                                          className="w-full h-auto max-h-60 object-cover rounded-lg"
+                                          thumbnailSize="lg"
+                                        />
+                                      </button>
+                                    )}
+
+                                    {/* Text Content */}
+                                    {isEditing ? (
+                                      <div className="flex gap-2 w-full min-w-[200px]">
+                                        <Input
+                                          value={editText}
+                                          onChange={(e) => setEditText(e.target.value)}
+                                          className="flex-1 bg-white/10 text-white border-0 h-8 text-sm focus-visible:ring-1 focus-visible:ring-white/50"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveEdit();
+                                            if (e.key === 'Escape') handleCancelEdit();
+                                          }}
+                                          autoFocus
+                                        />
+                                        <Button size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={handleSaveEdit}>
+                                          <Check className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={handleCancelEdit}>
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ) : msg.message && (
+                                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                                        {renderMessageWithLinks(msg.message)}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Timestamp - Outside Bubble */}
+                                  <div className={`text-[10px] text-muted-foreground/60 flex items-center gap-2 px-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                    {timestamp}
+                                    {/* Message Actions (Edit/Delete) - Only shown on long press */}
+                                    {!isEditing && isOwn && longPressMessageId === msg.id && (
+                                      <div className="flex items-center gap-2 ml-2">
+                                        <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(msg); }} className="text-primary hover:underline">Edit</button>
+                                        <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }} className="text-destructive hover:underline">Delete</button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Context Menu for Own Messages */}
+                                {!isEditing && isOwn && longPressMessageId === msg.id && (
+                                  <div className="absolute top-0 right-full mr-2 z-10">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-8 px-2 shadow-lg"
+                                      onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                   </div>
-                                ) : msg.message && (
-                                  <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isOwn ? 'text-white' : 'text-foreground'}`}>
-                                    {renderMessageWithLinks(msg.message)}
-                                  </p>
                                 )}
-
-                                {/* Timestamp & Status */}
-                                <div className={`text-[10px] flex items-center justify-end gap-1 mt-0.5 opacity-70 ${isOwn ? 'text-blue-100' : 'text-muted-foreground'}`}>
-                                  {format(new Date(msg.createdAt), 'h:mm a')}
-                                </div>
                               </div>
-
-                              {/* Context Menu for Own Messages */}
-                              {!isEditing && isOwn && longPressMessageId === msg.id && (
-                                <div className="absolute top-0 right-full mr-2 z-10">
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    className="h-8 px-2 shadow-lg"
-                                    onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
 
 
-              <div className="container max-w-lg mx-auto p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
-                {/* Staged image preview */}
-                {stagedImage && (
-                  <div className="flex items-center gap-2 p-2 bg-muted rounded-xl mb-2">
-                    <img
-                      src={stagedImage.preview}
-                      alt="Staged"
-                      className="h-16 w-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1 text-sm text-muted-foreground">
-                      Image ready to send
+              <div className="p-4 bg-background">
+                <div className="max-w-4xl mx-auto">
+                  {/* Staged image preview */}
+                  {stagedImage && (
+                    <div className="flex items-center gap-3 mb-3 p-2 bg-muted/50 rounded-xl animate-in fade-in slide-in-from-bottom-2">
+                      <div className="relative group">
+                        <img
+                          src={stagedImage.preview}
+                          alt="Staged"
+                          className="h-20 w-20 object-cover rounded-lg"
+                        />
+                        <button
+                          className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={clearStagedImage}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Ready to send</p>
+                        <p className="text-xs text-muted-foreground">Image attached</p>
+                      </div>
                     </div>
+                  )}
+
+                  <div className="flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2 border-transparent focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                    {/* Left Side Actions */}
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6 rounded-full"
-                      onClick={clearStagedImage}
+                      type="button"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={isUploadingImage}
                     >
-                      <X className="h-3 w-3" />
+                      {isUploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="h-5 w-5" />
+                      )}
+                    </Button>
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={imageInputRef}
+                      onChange={handleImageSelected}
+                    />
+
+                    {/* Text Input */}
+                    <Input
+                      placeholder="iMessage..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                      className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-[15px] placeholder:text-muted-foreground/50"
+                    />
+
+                    {/* Right Side Actions */}
+                    <Button
+                      size="icon"
+                      type="button"
+                      className={`h-8 w-8 rounded-full shrink-0 transition-all duration-300 ${messageInput.trim() || stagedImage ? 'bg-[#007AFF] text-white hover:bg-[#0069d9]' : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'}`}
+                      onClick={handleSendMessage}
+                      disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
+                    >
+                      <Send className="h-4 w-4 ml-0.5" />
                     </Button>
                   </div>
-                )}
-
-                <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-full border border-input focus-within:ring-2 focus-within:ring-ring focus-within:border-primary transition-all">
-                  {/* Left Side Actions */}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-9 w-9 rounded-full text-muted-foreground hover:bg-background hover:text-foreground shrink-0"
-                    onClick={() => imageInputRef.current?.click()}
-                    disabled={isUploadingImage}
-                  >
-                    <ImageIcon className="w-5 h-5" />
-                  </Button>
-
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={imageInputRef}
-                    onChange={handleImageSelected}
-                  />
-
-                  {/* Text Input */}
-                  <Input
-                    placeholder="Message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-9 px-2"
-                  />
-
-                  {/* Right Side Actions */}
-                  <Button
-                    size="icon"
-                    className={`h-9 w-9 rounded-full shrink-0 transition-transform ${messageInput.trim() || stagedImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'}`}
-                    onClick={handleSendMessage}
-                    disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
-                  >
-                    {isUploadingImage ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    ) : (
-                      <Send className="w-4 h-4 text-white ml-0.5" />
-                    )}
-                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
         </main>
 
-        {/* Full-Page Profile Modal - Inside conversation view */}
-        <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-50" style={{ zIndex: 50 }}>
-            {previewProfileData ? (
-              <div className="space-y-6">
-                {/* Close Button */}
-                <div className="flex justify-end -mt-2 -mr-2">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setProfileModalOpen(false)}
-                    data-testid="button-close-profile-modal"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-
-                {/* Profile Header */}
-                <div className="flex gap-4 items-start">
-                  <Avatar className="w-20 h-20">
-                    {previewProfileData.avatarUrl && (
-                      <AvatarImage src={previewProfileData.avatarUrl} alt={previewProfileData.displayName || previewProfileData.username} />
-                    )}
-                    <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                      {previewProfileData.displayName?.[0]?.toUpperCase() || previewProfileData.username?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold">{previewProfileData.displayName || previewProfileData.username}</h2>
-                    <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
-                    {previewProfileData.email && (
-                      <p className="text-sm text-muted-foreground">{previewProfileData.email}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                {currentUser?.id !== selectedProfileId && (
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleMessageProfile}
-                      className="flex-1"
-                      data-testid="button-message-profile-user"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Message
-                    </Button>
-                    {friendRequestStatus?.status === "accepted" ? (
-                      <Button variant="secondary" disabled className="flex-1" data-testid="button-friends">
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Friends
-                      </Button>
-                    ) : friendRequestStatus?.status === "pending" && friendRequestStatus?.isSender ? (
-                      <Button variant="secondary" disabled className="flex-1" data-testid="button-request-pending">
-                        <Clock className="w-4 h-4 mr-2" />
-                        Request Sent
-                      </Button>
-                    ) : friendRequestStatus?.status === "pending" && !friendRequestStatus?.isSender ? (
-                      <Button onClick={handleAddFriend} className="flex-1" data-testid="button-accept-friend">
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Accept Request
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleAddFriend}
-                        disabled={isFriendRequestSent}
-                        variant={isFriendRequestSent ? "secondary" : "outline"}
-                        className="flex-1"
-                        data-testid="button-add-friend-profile"
-                      >
-                        {isFriendRequestSent ? (
-                          <>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Requested
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Add Friend
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* Bio */}
-                {previewProfileData.bio && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Bio</h3>
-                    <p className="text-sm text-foreground">{previewProfileData.bio}</p>
-                  </div>
-                )}
-
-                {/* Achievements */}
-                {!achievementsLoading && previewAchievements.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-3">Achievements</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {previewAchievements.map((achievement: any) => {
-                        const IconComponent = getAchievementIcon(achievement.iconUrl);
-                        const colorClass = getAchievementColor(achievement.iconUrl);
-                        return (
-                          <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                            <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
-                              <IconComponent className={`w-5 h-5 ${colorClass}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm">{achievement.title}</h4>
-                              {achievement.game && <p className="text-xs text-muted-foreground">{achievement.game}</p>}
-                              {achievement.serverName && <p className="text-xs text-muted-foreground">{achievement.serverName}</p>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {!achievementsLoading && previewAchievements.length === 0 && (
-                  <div className="text-center py-6">
-                    <p className="text-sm text-muted-foreground">No achievements yet</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* User Profile Modal - Shared component */}
+        <UserProfileModal
+          userId={selectedProfileId}
+          open={profileModalOpen}
+          onOpenChange={setProfileModalOpen}
+        />
 
         {/* Enlarged Image Dialog */}
         <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
