@@ -16,15 +16,15 @@ export function MobileLayout({
     return (
         <>
             {showParticles && (
-                <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="fixed inset-0 z-50 pointer-events-none">
                     <Particles
                         particleColors={['#ffffff', '#ffffff', '#ffffff']}
                         particleCount={150}
                         particleSpread={15}
                         speed={0.05}
-                        particleBaseSize={200}
-                        cameraDistance={10}
-                        sizeRandomness={0.5}
+                        particleBaseSize={100}
+                        cameraDistance={20}
+                        sizeRandomness={0.3}
                         moveParticlesOnHover={false}
                         alphaParticles={false}
                         disableRotation={false}
