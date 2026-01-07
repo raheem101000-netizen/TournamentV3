@@ -39,7 +39,8 @@ const formatMessageDate = (date: Date) => {
 };
 
 interface ChatChannelProps {
-  channelId: string;
+  channelId?: string;
+  threadId?: string;
   isPreview?: boolean;
 }
 
@@ -71,7 +72,7 @@ function renderMessageWithLinks(text: string): JSX.Element {
   );
 }
 
-export default function ChatChannel({ channelId, isPreview = false }: ChatChannelProps) {
+export default function ChatChannel({ channelId, threadId, isPreview = false }: ChatChannelProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -90,11 +91,23 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  // Determine API endpoints based on mode
+  const apiEndpoint = threadId
+    ? `/api/threads/${threadId}/messages`
+    : `/api/channels/${channelId}/messages`;
+
+  const queryKey = threadId
+    ? ["/api/threads", threadId, "messages"]
+    : ["/api/channels", channelId, "messages"];
+
+  const activeId = threadId || channelId;
+
   // Fetch messages from API with polling for real-time updates
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery<ChannelMessage[]>({
-    queryKey: ["/api/channels", channelId, "messages"],
+    queryKey: queryKey,
     queryFn: async () => {
-      const response = await fetch(`/api/channels/${channelId}/messages?limit=500`, {
+      if (!activeId) return [];
+      const response = await fetch(`${apiEndpoint}?limit=500`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -102,19 +115,19 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       }
       return response.json();
     },
-    enabled: !!channelId,
+    enabled: !!activeId,
     refetchInterval: 3000,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
 
-  // Refetch messages when channelId changes
+  // Refetch messages when activeId changes
   useEffect(() => {
-    if (channelId) {
+    if (activeId) {
       refetchMessages();
     }
-  }, [channelId, refetchMessages]);
+  }, [activeId, refetchMessages]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -124,7 +137,9 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
   // REST API mutation for sending messages
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: { message: string; imageUrl: string | null }) => {
-      const response = await fetch(`/api/channels/${channelId}/messages`, {
+      if (!activeId) throw new Error("No active chat");
+
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(messageData),
@@ -140,7 +155,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
+      queryClient.invalidateQueries({ queryKey: queryKey });
       setMessageInput("");
       setStagedImage(null);
     },
@@ -161,7 +176,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
+      queryClient.invalidateQueries({ queryKey: queryKey });
       setEditingMessage(null);
       setEditText("");
       toast({ title: "Message updated" });
@@ -178,7 +193,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
       await apiRequest("DELETE", `/api/messages/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/channels", channelId, "messages"] });
+      queryClient.invalidateQueries({ queryKey: queryKey });
       setDeleteDialogOpen(false);
       setMessageToDelete(null);
       toast({ title: "Message deleted" });
