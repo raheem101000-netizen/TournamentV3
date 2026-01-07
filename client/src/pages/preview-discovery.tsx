@@ -106,7 +106,7 @@ export default function PreviewDiscovery() {
         iconUrl: serverIconUrl,
         backgroundUrl: serverBackgroundUrl,
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({

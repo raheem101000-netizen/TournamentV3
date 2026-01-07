@@ -13,9 +13,9 @@ interface ImageUploadFieldProps {
   required?: boolean;
 }
 
-export default function ImageUploadField({ 
+export default function ImageUploadField({
   label = "Image",
-  value, 
+  value,
   onChange,
   placeholder = "Enter image URL",
   required = false
@@ -82,16 +82,16 @@ export default function ImageUploadField({
 
       const data = await response.json();
       const fileUrl = data.fileUrl || data.url;
-      
+
       console.log('[ImageUpload] File uploaded successfully:', fileUrl);
-      
+
       // Update with the final uploaded URL
       onChange(fileUrl);
       setPreview(fileUrl);
-      
+
       // Clean up the local object URL
       URL.revokeObjectURL(localPreviewUrl);
-      
+
       toast({
         title: "Image uploaded",
         description: "Your image has been uploaded successfully.",
@@ -123,7 +123,7 @@ export default function ImageUploadField({
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      
+
       <div className="space-y-2">
         <Input
           placeholder={placeholder}
@@ -144,7 +144,7 @@ export default function ImageUploadField({
         className="hidden"
         data-testid="input-file-upload"
       />
-      
+
       <Button
         type="button"
         variant="outline"
@@ -168,9 +168,9 @@ export default function ImageUploadField({
 
       {preview && (
         <div className="relative rounded-md border overflow-hidden" data-testid="image-preview">
-          <img 
-            src={preview} 
-            alt="Preview" 
+          <img
+            src={preview}
+            alt="Preview"
             className="w-full h-48 object-cover"
           />
           <Button

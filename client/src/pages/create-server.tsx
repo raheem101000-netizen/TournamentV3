@@ -65,7 +65,7 @@ export default function CreateServer() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateServerForm) => {
       const res = await apiRequest('POST', '/api/servers', data);
-      return res.json();
+      return res;
     },
     onSuccess: (data: any) => {
       toast({

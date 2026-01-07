@@ -70,7 +70,7 @@ export default function CreateTournament() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateTournamentForm) => {
       const res = await apiRequest('POST', '/api/tournaments', data);
-      return res.json();
+      return res;
     },
     onSuccess: (data: any) => {
       toast({
@@ -120,9 +120,8 @@ export default function CreateTournament() {
             {[1, 2, 3].map((step) => (
               <div
                 key={step}
-                className={`flex-1 h-2 rounded-full ${
-                  step <= currentStep ? 'bg-primary' : 'bg-secondary'
-                }`}
+                className={`flex-1 h-2 rounded-full ${step <= currentStep ? 'bg-primary' : 'bg-secondary'
+                  }`}
               />
             ))}
           </div>
