@@ -37,8 +37,10 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
 
     const handleDragEnd = async (event: any, info: PanInfo) => {
         const offset = info.offset.x;
-        // Snap to -80 if dragged past -40
-        if (offset < -40) {
+        const velocity = info.velocity.x;
+
+        // Snap to -80 if dragged past -60 or fast swipe left
+        if (offset < -60 || velocity < -500) {
             await controls.start({ x: -80 });
         } else {
             await controls.start({ x: 0 });
@@ -56,7 +58,7 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
             {/* Delete Action Background */}
             <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 flex items-center justify-center z-0">
                 <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="h-full w-full flex items-center justify-center">
-                    <Trash2 className="h-6 w-6 text-white" />
+                    <X className="h-6 w-6 text-white" />
                 </button>
             </div>
 
