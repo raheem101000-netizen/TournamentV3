@@ -1051,15 +1051,18 @@ export default function PreviewMessages() {
               </CardHeader>
             )}
             <CardContent className="flex-1 flex flex-col p-0 pb-4 min-h-0 overflow-hidden">
-              <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full">
-                <div className="flex flex-col justify-end min-h-full px-4 py-4 space-y-1">
-                  {/* Loading spinner for history - at actual top */}
+              <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full [&>[data-radix-scroll-area-viewport]>div]:flex [&>[data-radix-scroll-area-viewport]>div]:flex-col">
+                <div className="flex flex-col min-h-full px-4 py-4">
+                  {/* Spacer that grows to push messages to bottom */}
+                  <div className="flex-1" />
+
+                  {/* Loading spinner for history - at actual top of messages */}
                   {isFetchingNextPage && (
                     <div className="flex justify-center py-2 h-8">
                       <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                     </div>
                   )}
-                  {/* Invisible element to trigger loading more - at actual top */}
+                  {/* Invisible element to trigger loading more */}
                   <div ref={topRef} className="h-1 flex-shrink-0" />
 
                   {messagesLoading ? (
