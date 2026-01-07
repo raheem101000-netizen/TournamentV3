@@ -31,6 +31,73 @@ interface FriendRequest {
 
 // ... (UserResult interface remains)
 
+
+function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageThread; onSelect: () => void; onDelete: () => void }) {
+    const controls = useAnimation();
+    const x = useMotionValue(0);
+
+    const handleDragEnd = async (event: any, info: PanInfo) => {
+        const offset = info.offset.x;
+        const velocity = info.velocity.x;
+
+        // Snap to -80 if dragged past -60 or fast swipe left
+        if (offset < -60 || velocity < -500) {
+            await controls.start({ x: -80 });
+        } else {
+            await controls.start({ x: 0 });
+        }
+    };
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="relative w-full overflow-hidden bg-black border-b border-zinc-900/50"
+        >
+            {/* Delete Action Background */}
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 flex items-center justify-center z-0">
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="h-full w-full flex items-center justify-center">
+                    <X className="h-6 w-6 text-white" />
+                </button>
+            </div>
+
+            {/* Draggable Thread Content */}
+            <motion.button
+                style={{ x }}
+                drag="x"
+                dragConstraints={{ left: -80, right: 0 }}
+                dragElastic={0.1}
+                onDragEnd={handleDragEnd}
+                animate={controls}
+                onClick={onSelect}
+                className="relative z-10 w-full flex items-center gap-3 px-4 py-3 bg-black hover:bg-zinc-900/50 transition-colors"
+                whileTap={{ cursor: "grabbing" }}
+            >
+                <Avatar className="h-14 w-14 flex-none border border-zinc-800 pointer-events-none">
+                    <AvatarImage src={thread.participantAvatar || undefined} />
+                    <AvatarFallback>{thread.participantName[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 text-left pointer-events-none">
+                    <div className="flex justify-between items-baseline mb-1">
+                        <div className="font-semibold text-white truncate pr-2 text-base">{thread.participantName}</div>
+                        <div className="text-xs text-zinc-500 flex-none font-medium">
+                            {thread.lastMessageTime && formatDistanceToNow(new Date(thread.lastMessageTime), { addSuffix: true })}
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <div className="text-sm text-zinc-400 truncate pr-2 leading-snug">{thread.lastMessage}</div>
+                        {thread.unreadCount > 0 && (
+                            <div className="h-2.5 w-2.5 bg-blue-500 rounded-full flex-none ring-2 ring-black" />
+                        )}
+                    </div>
+                </div>
+            </motion.button>
+        </motion.div>
+    );
+}
+
 export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const [activeTab, setActiveTab] = useState<"personal" | "match" | "requests">("personal")
     const [isNewChatOpen, setIsNewChatOpen] = useState(false)
