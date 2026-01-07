@@ -13,7 +13,7 @@ export default function TournamentRegister() {
   const [match, params] = useRoute("/tournament/:id/register");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  
+
   const tournamentId = params?.id;
 
   const { data: tournament, isLoading } = useQuery<Tournament>({
@@ -132,7 +132,7 @@ export default function TournamentRegister() {
                   {tournament.startDate ? format(new Date(tournament.startDate), "MMM d, yyyy • h:mm a") : "TBD"}
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Users className="w-4 h-4" />
@@ -175,19 +175,13 @@ export default function TournamentRegister() {
         </Card>
 
         {/* Payment Information */}
-        {((tournament.paymentMethod && tournament.paymentMethod !== "none") || tournament.paymentLink) && (
+        {(tournament.paymentLink || tournament.paymentInstructions) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Payment Information</CardTitle>
               <CardDescription>Details for paying your entry fee</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {tournament.paymentMethod && tournament.paymentMethod !== "none" && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
-                  <p className="font-semibold capitalize">{tournament.paymentMethod.replace("_", " ")}</p>
-                </div>
-              )}
               {tournament.paymentLink && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Payment Link</p>

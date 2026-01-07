@@ -718,8 +718,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             setShowMatchChat(true);
                           }}
                           className={`p-3 rounded-lg border transition-all text-left ${selectedMatchId === match.id
-                              ? 'bg-accent text-accent-foreground border-accent'
-                              : 'bg-card border-border hover:border-primary/50 hover-elevate'
+                            ? 'bg-accent text-accent-foreground border-accent'
+                            : 'bg-card border-border hover:border-primary/50 hover-elevate'
                             }`}
                           data-testid={`button-match-${match.id}`}
                         >
@@ -1400,7 +1400,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
   const [endDate, setEndDate] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"none" | "stripe" | "paypal" | "cryptocurrency">("none");
+
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState("");
   const [totalTeams, setTotalTeams] = useState("-1");
@@ -1419,7 +1419,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       setEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "");
       setPlatform(tournament.platform || "");
       setRegion(tournament.region || "");
-      setPaymentMethod(tournament.paymentMethod as any || "none");
+
       setPaymentLink(tournament.paymentLink || "");
       setPaymentInstructions(tournament.paymentInstructions || "");
       setTotalTeams(String(tournament.totalTeams || -1));
@@ -1450,7 +1450,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       endDate: endDate ? new Date(endDate) : null,
       platform: platform.trim() || null,
       region: region.trim() || null,
-      paymentMethod,
+
       paymentLink: paymentLink.trim() || null,
       paymentInstructions: paymentInstructions.trim() || null,
       totalTeams: parseInt(totalTeams) || -1,
@@ -1567,22 +1567,6 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
 
           <div className="border-t pt-4 mt-4">
             <h3 className="text-sm font-semibold mb-3">Payment & Capacity Settings</h3>
-
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="edit-paymentMethod">Payment Method</Label>
-              <select
-                id="edit-paymentMethod"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
-                data-testid="select-edit-payment-method"
-              >
-                <option value="none">No Payment Required</option>
-                <option value="stripe">Stripe</option>
-                <option value="paypal">PayPal</option>
-                <option value="cryptocurrency">Cryptocurrency</option>
-              </select>
-            </div>
 
             <div className="space-y-2 mb-4">
               <Label htmlFor="edit-paymentInstructions">Payment Instructions</Label>

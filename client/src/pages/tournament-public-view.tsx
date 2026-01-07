@@ -99,8 +99,8 @@ export default function TournamentPublicView() {
             {matches.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {matches.map((match) => {
-                  const team1 = getTeamById(match.team1Id);
-                  const team2 = getTeamById(match.team2Id);
+                  const team1 = getTeamById(match.team1Id || undefined);
+                  const team2 = getTeamById(match.team2Id || undefined);
                   return (
                     <div key={match.id}>
                       <MatchCard

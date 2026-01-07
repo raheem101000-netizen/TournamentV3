@@ -140,7 +140,7 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
 
   const handleEdit = (message: ChannelMessage) => {
     setEditingId(message.id);
-    setEditContent(message.message);
+    setEditContent(message.message || "");
   };
 
   const handleSaveEdit = () => {

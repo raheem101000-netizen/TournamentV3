@@ -283,6 +283,7 @@ export default function PreviewMessages() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
 
   // Fetch current user
   const { data: currentUser } = useQuery<User>({
@@ -473,11 +474,12 @@ export default function PreviewMessages() {
     enabled: !!selectedChat,
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: any[]) => {
-      // If we got fewer messages than the limit (50), there are no more older messages
+      // If we got fewer messages than the limit, no more older messages
       if (!lastPage || lastPage.length < 50) return undefined;
-      // The pages are returned in chronological order (oldest -> newest)
-      // So the oldest message of the batch is at index 0
-      return lastPage[0]?.createdAt;
+
+      // IMPORTANT: Pages are returned newest-first from API
+      // To get OLDER messages, use the OLDEST message's timestamp (last in array after reverse)
+      return lastPage[lastPage.length - 1]?.createdAt;
     },
     queryFn: async ({ pageParam }) => {
       if (!selectedChat) return [];
@@ -489,30 +491,47 @@ export default function PreviewMessages() {
       const params = new URLSearchParams();
       params.append("limit", "50");
       if (pageParam) {
-        params.append("before", pageParam);
+        params.append("before", pageParam); // Get messages BEFORE this timestamp
       }
 
       const response = await fetch(`${baseUrl}?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch messages");
-      return response.json();
+      const data = await response.json();
+
+      // CRITICAL: Reverse each page so oldest is first
+      return data.reverse();
     },
   });
 
-  // Flatten pages into a single array - backend returns chronological order (oldest→newest)
-  const threadMessages = messagesData?.pages.flat() || [];
+  // Flatten pages into a single array - oldest to newest
+  // Pages come in order: [newest page, older page, oldest page]
+  // After reversing each page, we need to reverse the page order too
+  const threadMessages = messagesData?.pages
+    .slice() // Create copy
+    .reverse() // Reverse page order so oldest page is first
+    .flat() || []; // Now messages flow: oldest → newest
 
-  // Auto-scroll to latest message when messages load or change
-  // Smarter logic: Only scroll if we were already near bottom, or if it's the initial load
+  // Auto-scroll to latest message - ONLY on NEW messages, not history loading
   useEffect(() => {
-    // Only scroll to bottom if we are NOT fetching history (prevent jump)
-    // And if we have data
-    if (threadMessages.length > 0 && !isFetchingNextPage) {
+    const currentCount = threadMessages.length;
+    const prevCount = prevMessageCountRef.current;
+
+    // Only scroll if:
+    // 1. We have messages
+    // 2. NOT currently fetching older messages (prevents scroll jump)
+    // 3. Message count increased (new message added)
+    if (currentCount > 0 && !isFetchingNextPage && currentCount > prevCount) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [threadMessages.length, isFetchingNextPage]); // Depend on length to trigger on new messages
 
-  // Infinite scroll trigger
-  const { ref: topRef, inView } = useInView();
+    prevMessageCountRef.current = currentCount;
+  }, [threadMessages.length, isFetchingNextPage]);
+
+  // Infinite scroll trigger - at TOP of scroll area to load older messages
+  const { ref: topRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: "100px", // Trigger 100px before reaching top
+  });
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {

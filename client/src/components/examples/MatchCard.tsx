@@ -3,7 +3,7 @@ import MatchCard from '../MatchCard';
 export default function MatchCardExample() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <MatchCard 
+      <MatchCard
         match={{
           id: "1",
           tournamentId: "t1",
@@ -16,12 +16,12 @@ export default function MatchCardExample() {
           team2Score: null,
           isBye: 0,
         }}
-        team1={{ id: "1", name: "Alpha Squad", tournamentId: "t1", wins: 2, losses: 0, points: 6 }}
-        team2={{ id: "2", name: "Beta Force", tournamentId: "t1", wins: 1, losses: 1, points: 3 }}
+        team1={{ id: "1", name: "Alpha Squad", tournamentId: "t1", wins: 2, losses: 0, points: 6, game: null, isRemoved: 0 }}
+        team2={{ id: "2", name: "Beta Force", tournamentId: "t1", wins: 1, losses: 1, points: 3, game: null, isRemoved: 0 }}
         onSubmitScore={(id) => console.log('Submit score for match:', id)}
         onViewChat={(id) => console.log('View chat for match:', id)}
       />
-      <MatchCard 
+      <MatchCard
         match={{
           id: "2",
           tournamentId: "t1",
@@ -34,10 +34,10 @@ export default function MatchCardExample() {
           team2Score: 12,
           isBye: 0,
         }}
-        team1={{ id: "3", name: "Charlie Warriors", tournamentId: "t1", wins: 3, losses: 0, points: 9 }}
-        team2={{ id: "4", name: "Delta Legends", tournamentId: "t1", wins: 0, losses: 3, points: 0 }}
+        team1={{ id: "3", name: "Charlie Warriors", tournamentId: "t1", wins: 3, losses: 0, points: 9, game: null, isRemoved: 0 }}
+        team2={{ id: "4", name: "Delta Legends", tournamentId: "t1", wins: 0, losses: 3, points: 0, game: null, isRemoved: 0 }}
       />
-      <MatchCard 
+      <MatchCard
         match={{
           id: "3",
           tournamentId: "t1",
@@ -50,11 +50,11 @@ export default function MatchCardExample() {
           team2Score: null,
           isBye: 1,
         }}
-        team1={{ id: "5", name: "Echo Champions", tournamentId: "t1", wins: 2, losses: 1, points: 6 }}
+        team1={{ id: "5", name: "Echo Champions", tournamentId: "t1", wins: 2, losses: 1, points: 6, game: null, isRemoved: 0 }}
       />
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-muted-foreground mb-2">Compact View</h4>
-        <MatchCard 
+        <MatchCard
           match={{
             id: "4",
             tournamentId: "t1",
@@ -67,8 +67,8 @@ export default function MatchCardExample() {
             team2Score: 18,
             isBye: 0,
           }}
-          team1={{ id: "1", name: "Alpha Squad", tournamentId: "t1", wins: 3, losses: 0, points: 9 }}
-          team2={{ id: "2", name: "Beta Force", tournamentId: "t1", wins: 1, losses: 2, points: 3 }}
+          team1={{ id: "1", name: "Alpha Squad", tournamentId: "t1", wins: 3, losses: 0, points: 9, game: null, isRemoved: 0 }}
+          team2={{ id: "2", name: "Beta Force", tournamentId: "t1", wins: 1, losses: 2, points: 3, game: null, isRemoved: 0 }}
           compact
         />
       </div>
