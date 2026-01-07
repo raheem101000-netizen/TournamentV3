@@ -356,7 +356,6 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                 {/* ... (keep existing dialog code) ... */}
                 <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
                     <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl max-h-[85vh] overflow-y-auto top-[20%] translate-y-0 sm:top-[50%] sm:-translate-y-1/2">
-                        {/* ... (existing content) ... */}
                         <DialogHeader>
                             <DialogTitle>New Message</DialogTitle>
                             <DialogDescription className="text-zinc-400">
