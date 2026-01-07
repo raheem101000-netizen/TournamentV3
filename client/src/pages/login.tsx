@@ -123,20 +123,18 @@ export default function Login() {
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="animate-slide-up [animation-delay:100ms]">
-                      <div className="flex items-center justify-center gap-3">
-                        <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[80px] text-right shrink-0">
-                          EMAIL:
-                        </span>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            className="w-[200px] bg-white/90 text-black border-0 rounded-full h-9 text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
-                            {...field}
-                            data-testid="input-email"
-                          />
-                        </FormControl>
-                      </div>
+                    <FormItem className="animate-slide-up [animation-delay:100ms] flex flex-col items-center">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase mb-2">
+                        EMAIL:
+                      </span>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          className="w-[280px] bg-white/90 text-black border-0 rounded-full h-10 text-center text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
+                          {...field}
+                          data-testid="input-email"
+                        />
+                      </FormControl>
                       <FormMessage className="text-red-400 mt-1 text-xs text-center" />
                     </FormItem>
                   )}
@@ -146,20 +144,18 @@ export default function Login() {
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem className="animate-slide-up [animation-delay:200ms]">
-                      <div className="flex items-center justify-center gap-3">
-                        <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase w-[80px] text-right shrink-0">
-                          PASSWORD:
-                        </span>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            className="w-[200px] bg-white/90 text-black border-0 rounded-full h-9 text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
-                            {...field}
-                            data-testid="input-password"
-                          />
-                        </FormControl>
-                      </div>
+                    <FormItem className="animate-slide-up [animation-delay:200ms] flex flex-col items-center">
+                      <span className="text-white/70 text-[11px] font-medium tracking-widest uppercase mb-2">
+                        PASSWORD:
+                      </span>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          className="w-[280px] bg-white/90 text-black border-0 rounded-full h-10 text-center text-sm px-4 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 transition-all duration-300 hover:bg-white focus:bg-white shadow-inner"
+                          {...field}
+                          data-testid="input-password"
+                        />
+                      </FormControl>
                       <FormMessage className="text-red-400 mt-1 text-xs text-center" />
                     </FormItem>
                   )}

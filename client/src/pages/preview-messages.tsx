@@ -1,5 +1,6 @@
 import { useState, useRef, ChangeEvent, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 import { Link, useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import Particles from "@/components/ui/particles";
@@ -25,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck, Clock, Pencil } from "lucide-react";
+import { isToday, isYesterday, format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -434,34 +436,66 @@ export default function PreviewMessages() {
 
   // Fetch messages for selected thread or match
   // If selectedChat has a matchId, fetch from match API, otherwise from thread API
-  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<any[]>({
+  // Fetch messages for selected thread or match with infinite scroll
+  const {
+    data: messagesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: messagesLoading
+  } = useInfiniteQuery({
     queryKey: selectedChat?.matchId
       ? ["/api/matches", selectedChat.matchId, "messages"]
       : ["/api/message-threads", selectedChat?.id, "messages"],
     enabled: !!selectedChat,
-    queryFn: async () => {
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: any[]) => {
+      // If we got fewer messages than the limit (50), there are no more older messages
+      if (!lastPage || lastPage.length < 50) return undefined;
+      // The pages are returned in chronological order (oldest -> newest)
+      // So the oldest message of the batch is at index 0
+      return lastPage[0]?.createdAt;
+    },
+    queryFn: async ({ pageParam }) => {
       if (!selectedChat) return [];
 
-      const url = selectedChat.matchId
+      const baseUrl = selectedChat.matchId
         ? `/api/matches/${selectedChat.matchId}/messages`
         : `/api/message-threads/${selectedChat.id}/messages`;
 
-      const response = await fetch(url);
+      const params = new URLSearchParams();
+      params.append("limit", "50");
+      if (pageParam) {
+        params.append("before", pageParam);
+      }
+
+      const response = await fetch(`${baseUrl}?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
     },
   });
 
+  // Flatten pages into a single array
+  const threadMessages = messagesData?.pages.slice().reverse().flat() || [];
+
   // Auto-scroll to latest message when messages load or change
   // Smarter logic: Only scroll if we were already near bottom, or if it's the initial load
   useEffect(() => {
-    if (threadMessages.length > 0 && !messagesLoading) {
-      // Check if this is initial load or a new message
-      // For now, simple behavior: scroll to bottom on new messages if close to bottom
-      // In a real infinite scroll implementation, we'd check scroll position more carefully
+    // Only scroll to bottom if we are NOT fetching history (prevent jump)
+    // And if we have data
+    if (threadMessages.length > 0 && !isFetchingNextPage) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [threadMessages.length, messagesLoading]); // Depend on length to trigger on new messages
+  }, [threadMessages.length, isFetchingNextPage]); // Depend on length to trigger on new messages
+
+  // Infinite scroll trigger
+  const { ref: topRef, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const acceptedChats = threads.map(threadToChat);
 
@@ -974,9 +1008,18 @@ export default function PreviewMessages() {
                 </CardTitle>
               </CardHeader>
             )}
-            <CardContent className="flex-1 flex flex-col p-0 px-6 pb-6 pt-4 min-h-0 overflow-hidden">
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="space-y-4 pt-2 pb-4 min-h-full flex flex-col justify-end">
+            <CardContent className="flex-1 flex flex-col p-0 pb-4 min-h-0 overflow-hidden">
+              <ScrollArea className="flex-1 min-h-0 [&>[data-radix-scroll-area-viewport]]:h-full [&>[data-radix-scroll-area-viewport]>div]:min-h-full">
+                <div className="space-y-1 pt-4 px-4 min-h-full flex flex-col justify-end">
+                  {/* Loading spinner for history */}
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center py-2 h-8">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {/* Invisible element to trigger loading more */}
+                  <div ref={topRef} className="h-1" />
+
                   {messagesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -986,13 +1029,14 @@ export default function PreviewMessages() {
                       <p>No messages yet. Start the conversation!</p>
                     </div>
                   ) : (
-                    threadMessages.map((msg) => {
+                    threadMessages.map((msg, index) => {
                       const isOwn = msg.userId === currentUser?.id;
                       const isSystem = false;
+                      const prevMsg = threadMessages[index - 1];
+                      const isNewDay = !prevMsg || !isSameDay(new Date(msg.createdAt), new Date(prevMsg.createdAt));
 
-                      // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
+                      // Get proper initials
                       const getInitials = () => {
-                        // Use enriched displayName first, fallback to username, then message username
                         const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
                         if (!name) return 'U';
                         const parts = name.split(' ').filter((p: string) => p);
@@ -1002,136 +1046,130 @@ export default function PreviewMessages() {
                         return name.substring(0, 2).toUpperCase();
                       };
 
-                      // Get sender name to display
                       const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                      const senderUsername = msg.username?.trim() || '';
-
-                      if (isSystem) {
-                        return (
-                          <div key={msg.id} className="flex justify-center">
-                            <Badge variant="outline" className="gap-2 py-1">
-                              <AlertCircle className="w-3 h-3" />
-                              {msg.message}
-                            </Badge>
-                          </div>
-                        );
-                      }
 
                       const isEditing = editingMessage?.id === msg.id;
 
                       return (
-                        <div
-                          key={msg.id}
-                          className={`group relative flex gap-3 p-2 -m-2 rounded-md cursor-pointer ${longPressMessageId === msg.id ? 'bg-muted' : ''}`}
-                          data-testid={`message-${msg.id}`}
-                          onClick={() => {
-                            if (isEditing) return;
-                            setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
-                          }}
-                        >
-                          {msg.userId ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedProfileId(msg.userId);
-                                setProfileModalOpen(true);
-                              }}
-                              className="p-0 border-0 bg-transparent cursor-pointer"
-                              data-testid={`button-avatar-${msg.id}`}
-                            >
-                              <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
-                                {msg.avatarUrl && (
-                                  <AvatarImage src={msg.avatarUrl} alt={senderName} />
-                                )}
-                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {getInitials()}
-                                </AvatarFallback>
-                              </Avatar>
-                            </button>
+                        <div key={msg.id} className="flex flex-col gap-2">
+                          {/* Date Separator */}
+                          {isNewDay && (
+                            <div className="flex justify-center my-4">
+                              <span className="text-xs font-medium text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
+                                {formatMessageDate(new Date(msg.createdAt))}
+                              </span>
+                            </div>
+                          )}
+
+                          {isSystem ? (
+                            <div className="flex justify-center my-2">
+                              <Badge variant="outline" className="gap-2 py-1">
+                                <AlertCircle className="w-3 h-3" />
+                                {msg.message}
+                              </Badge>
+                            </div>
                           ) : (
-                            <Avatar className="h-8 w-8">
-                              {msg.avatarUrl && (
-                                <AvatarImage src={msg.avatarUrl} alt={senderName} />
+                            <div
+                              className={`group relative flex gap-2 max-w-[85%] ${isOwn ? 'ml-auto flex-row-reverse' : ''}`}
+                              data-testid={`message-${msg.id}`}
+                              onClick={() => {
+                                if (isEditing) return;
+                                setLongPressMessageId(longPressMessageId === msg.id ? null : msg.id);
+                              }}
+                            >
+                              {/* Avatar - Only for others */}
+                              {!isOwn && (
+                                <div className="flex-shrink-0 self-end mb-1">
+                                  {msg.userId ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedProfileId(msg.userId);
+                                        setProfileModalOpen(true);
+                                      }}
+                                      className="p-0 border-0 bg-transparent cursor-pointer"
+                                    >
+                                      <Avatar className="h-8 w-8 hover-elevate">
+                                        {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
+                                        <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
+                                          {getInitials()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    </button>
+                                  ) : (
+                                    <Avatar className="h-8 w-8">
+                                      {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
+                                      <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
+                                        {getInitials()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                </div>
                               )}
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials()}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                          {/* Message action menu - positioned at right of message row */}
-                          {!isEditing && isOwn && longPressMessageId === msg.id && (
-                            <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 justify-start gap-2 text-destructive"
-                                onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
-                                data-testid={`button-delete-message-${msg.id}`}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                              </Button>
-                            </div>
-                          )}
-                          <div className="flex flex-col gap-1 max-w-[70%]">
-                            <div className="flex items-center gap-2">
-                              {msg.userId ? (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedProfileId(msg.userId);
-                                    setProfileModalOpen(true);
-                                  }}
-                                  className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
-                                  data-testid={`user-link-${msg.id}`}
-                                >
-                                  {senderName}
-                                </button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">
-                                  {senderName}
-                                </span>
-                              )}
-                            </div>
-                            {msg.imageUrl && (
-                              <button
-                                onClick={() => setEnlargedImageUrl(msg.imageUrl)}
-                                className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
-                                data-testid={`button-img-message-${msg.id}`}
-                              >
-                                <img
-                                  src={msg.imageUrl}
-                                  alt="Shared image"
-                                  className="max-w-full h-auto max-h-60 object-contain rounded-md"
-                                />
-                              </button>
-                            )}
-                            {isEditing ? (
-                              <div className="flex gap-2 w-full">
-                                <Input
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                  className="flex-1"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveEdit();
-                                    if (e.key === 'Escape') handleCancelEdit();
-                                  }}
-                                  autoFocus
-                                  data-testid="input-edit-message"
-                                />
-                                <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
-                                  <X className="h-4 w-4" />
-                                </Button>
+
+                              {/* Message Bubble */}
+                              <div className={`relative flex flex-col gap-1 min-w-[60px] p-3 shadow-sm
+                                ${isOwn
+                                  ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
+                                  : 'bg-muted/80 text-foreground rounded-2xl rounded-bl-sm'}
+                              `}>
+                                {/* Image Content */}
+                                {msg.imageUrl && (
+                                  <button
+                                    onClick={() => setEnlargedImageUrl(msg.imageUrl)}
+                                    className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-1"
+                                  >
+                                    <img
+                                      src={msg.imageUrl}
+                                      alt="Shared image"
+                                      className="max-w-full h-auto max-h-60 object-contain rounded-lg"
+                                    />
+                                  </button>
+                                )}
+
+                                {/* Text Content */}
+                                {isEditing ? (
+                                  <div className="flex gap-2 w-full min-w-[200px]">
+                                    <Input
+                                      value={editText}
+                                      onChange={(e) => setEditText(e.target.value)}
+                                      className="flex-1 bg-background text-foreground h-8"
+                                      autoFocus
+                                    />
+                                    <Button size="icon" className="h-8 w-8" onClick={handleSaveEdit}>
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelEdit}>
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : msg.message && (
+                                  <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isOwn ? 'text-white' : 'text-foreground'}`}>
+                                    {renderMessageWithLinks(msg.message)}
+                                  </p>
+                                )}
+
+                                {/* Timestamp & Status */}
+                                <div className={`text-[10px] flex items-center justify-end gap-1 mt-0.5 opacity-70 ${isOwn ? 'text-blue-100' : 'text-muted-foreground'}`}>
+                                  {format(new Date(msg.createdAt), 'h:mm a')}
+                                </div>
                               </div>
-                            ) : msg.tournamentId ? (
-                              <TournamentEmbed tournamentId={msg.tournamentId} />
-                            ) : msg.message ? (
-                              <p className="text-base text-foreground whitespace-pre-wrap">{renderMessageWithLinks(msg.message)}</p>
-                            ) : null}
-                          </div>
+
+                              {/* Context Menu for Own Messages */}
+                              {!isEditing && isOwn && longPressMessageId === msg.id && (
+                                <div className="absolute top-0 right-full mr-2 z-10">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="h-8 px-2 shadow-lg"
+                                    onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -1141,14 +1179,14 @@ export default function PreviewMessages() {
               </ScrollArea>
 
 
-              <div className="space-y-2 pt-4 border-t">
+              <div className="p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
                 {/* Staged image preview */}
                 {stagedImage && (
-                  <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                  <div className="flex items-center gap-2 p-2 bg-muted rounded-xl mb-2">
                     <img
                       src={stagedImage.preview}
                       alt="Staged"
-                      className="h-16 w-16 object-cover rounded-md"
+                      className="h-16 w-16 object-cover rounded-lg"
                     />
                     <div className="flex-1 text-sm text-muted-foreground">
                       Image ready to send
@@ -1156,54 +1194,54 @@ export default function PreviewMessages() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6 flex-shrink-0"
+                      className="h-6 w-6 rounded-full"
                       onClick={clearStagedImage}
-                      data-testid="button-clear-staged-image"
                     >
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
                 )}
-                <div className="flex gap-2">
+
+                <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-full border border-input focus-within:ring-2 focus-within:ring-ring focus-within:border-primary transition-all">
+                  {/* Left Side Actions */}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 rounded-full text-muted-foreground hover:bg-background hover:text-foreground shrink-0"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                  </Button>
+
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
                     ref={imageInputRef}
                     onChange={handleImageSelected}
-                    data-testid="input-file-upload"
                   />
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => imageInputRef.current?.click()}
-                    disabled={isUploadingImage}
-                    data-testid="button-upload-image"
-                  >
-                    {isUploadingImage ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ImageIcon className="w-4 h-4" />
-                    )}
-                  </Button>
+
+                  {/* Text Input */}
                   <Input
-                    placeholder="Type a message or attach an image..."
+                    placeholder="Message..."
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    className="flex-1"
-                    data-testid="input-message"
+                    className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-9 px-2"
                   />
+
+                  {/* Right Side Actions */}
                   <Button
                     size="icon"
+                    className={`h-9 w-9 rounded-full shrink-0 transition-transform ${messageInput.trim() || stagedImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'}`}
                     onClick={handleSendMessage}
                     disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
-                    data-testid="button-send-message"
                   >
                     {isUploadingImage ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="w-4 h-4 text-white ml-0.5" />
                     )}
                   </Button>
                 </div>
