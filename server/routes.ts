@@ -5029,6 +5029,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a thread
+  app.delete("/api/threads/:threadId", requireAuth, async (req, res) => {
+    try {
+      const threadId = req.params.threadId;
+      const userId = req.session.userId!;
+
+      const thread = await storage.getMessageThread(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      // Only allow participants to delete
+      if (thread.userId !== userId && thread.participantId !== userId) {
+        return res.status(403).json({ error: "Not authorized to delete this thread" });
+      }
+
+      await storage.deleteThread(threadId);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get messages for a thread
   app.get("/api/threads/:threadId/messages", requireAuth, async (req, res) => {
     try {

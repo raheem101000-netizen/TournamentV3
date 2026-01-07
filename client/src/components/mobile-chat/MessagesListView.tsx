@@ -1,13 +1,14 @@
-import { Search, Plus, MessageCircle, Loader2 } from "lucide-react"
+import { Search, Plus, MessageCircle, Loader2, Trash2, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useState, useRef } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { apiRequest } from "@/lib/queryClient"
 import { formatDistanceToNow } from "date-fns"
 import { BottomNavigation } from "@/components/BottomNavigation"
 import { MobileLayout } from "@/components/layouts/MobileLayout"
+import { motion, useAnimation, PanInfo, AnimatePresence, useMotionValue } from "framer-motion"
 
 interface MessageThread {
     id: string
@@ -30,12 +31,76 @@ interface MessagesListViewProps {
     onSelectChat: (chatId: string) => void
 }
 
+function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageThread; onSelect: () => void; onDelete: () => void }) {
+    const controls = useAnimation();
+    const x = useMotionValue(0);
+
+    const handleDragEnd = async (event: any, info: PanInfo) => {
+        const offset = info.offset.x;
+        // Snap to -80 if dragged past -40
+        if (offset < -40) {
+            await controls.start({ x: -80 });
+        } else {
+            await controls.start({ x: 0 });
+        }
+    };
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="relative w-full overflow-hidden bg-black border-b border-zinc-900/50"
+        >
+            {/* Delete Action Background */}
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 flex items-center justify-center z-0">
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="h-full w-full flex items-center justify-center">
+                    <Trash2 className="h-6 w-6 text-white" />
+                </button>
+            </div>
+
+            {/* Draggable Thread Content */}
+            <motion.button
+                style={{ x }}
+                drag="x"
+                dragConstraints={{ left: -80, right: 0 }}
+                dragElastic={0.1}
+                onDragEnd={handleDragEnd}
+                animate={controls}
+                onClick={onSelect}
+                className="relative z-10 w-full flex items-center gap-3 px-4 py-3 bg-black hover:bg-zinc-900/50 transition-colors"
+                whileTap={{ cursor: "grabbing" }}
+            >
+                <Avatar className="h-14 w-14 flex-none border border-zinc-800 pointer-events-none">
+                    <AvatarImage src={thread.participantAvatar || undefined} />
+                    <AvatarFallback>{thread.participantName[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 text-left pointer-events-none">
+                    <div className="flex justify-between items-baseline mb-1">
+                        <div className="font-semibold text-white truncate pr-2 text-base">{thread.participantName}</div>
+                        <div className="text-xs text-zinc-500 flex-none font-medium">
+                            {thread.lastMessageTime && formatDistanceToNow(new Date(thread.lastMessageTime), { addSuffix: true })}
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <div className="text-sm text-zinc-400 truncate pr-2 leading-snug">{thread.lastMessage}</div>
+                        {thread.unreadCount > 0 && (
+                            <div className="h-2.5 w-2.5 bg-blue-500 rounded-full flex-none ring-2 ring-black" />
+                        )}
+                    </div>
+                </div>
+            </motion.button>
+        </motion.div>
+    );
+}
+
 export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const [activeTab, setActiveTab] = useState<"personal" | "match" | "requests">("personal")
     const [isNewChatOpen, setIsNewChatOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const { data: threads, isLoading } = useQuery<MessageThread[]>({
+    const { data: threads, isLoading, refetch: refetchThreads } = useQuery<MessageThread[]>({
         queryKey: ["/api/threads"],
     })
 
@@ -71,6 +136,15 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         },
         onSuccess: () => {
             refetchSearch()
+        }
+    })
+
+    const deleteThreadMutation = useMutation({
+        mutationFn: async (threadId: string) => {
+            await apiRequest("DELETE", `/api/threads/${threadId}`)
+        },
+        onSuccess: () => {
+            refetchThreads()
         }
     })
 
@@ -149,32 +223,16 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                             </button>
                         </div>
                     ) : (
-                        displayThreads.map((thread) => (
-                            <button
-                                key={thread.id}
-                                onClick={() => onSelectChat(thread.id)}
-                                className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-900/50 hover:bg-zinc-900/50 transition-colors"
-                            >
-                                <Avatar className="h-14 w-14 flex-none border border-zinc-800">
-                                    <AvatarImage src={thread.participantAvatar || undefined} />
-                                    <AvatarFallback>{thread.participantName[0]}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0 text-left">
-                                    <div className="flex justify-between items-baseline mb-1">
-                                        <div className="font-semibold text-white truncate pr-2 text-base">{thread.participantName}</div>
-                                        <div className="text-xs text-zinc-500 flex-none font-medium">
-                                            {thread.lastMessageTime && formatDistanceToNow(new Date(thread.lastMessageTime), { addSuffix: true })}
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-zinc-400 truncate pr-2 leading-snug">{thread.lastMessage}</div>
-                                        {thread.unreadCount > 0 && (
-                                            <div className="h-2.5 w-2.5 bg-blue-500 rounded-full flex-none ring-2 ring-black" />
-                                        )}
-                                    </div>
-                                </div>
-                            </button>
-                        ))
+                        <AnimatePresence>
+                            {displayThreads.map((thread) => (
+                                <SwipeableThreadItem
+                                    key={thread.id}
+                                    thread={thread}
+                                    onSelect={() => onSelectChat(thread.id)}
+                                    onDelete={() => deleteThreadMutation.mutate(thread.id)}
+                                />
+                            ))}
+                        </AnimatePresence>
                     )}
                 </div>
 
@@ -245,6 +303,6 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                     </DialogContent>
                 </Dialog>
             </div>
-        </MobileLayout>
+        </MobileLayout >
     )
 }

@@ -196,6 +196,7 @@ export interface IStorage {
   getAllMessageThreads(): Promise<MessageThread[]>;
   getMessageThreadsByUser(userId: string): Promise<MessageThread[]>;
   getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]>;
+  deleteThread(threadId: string): Promise<void>;
   createMessageThread(data: InsertMessageThread): Promise<MessageThread>;
   getMessageThread(id: string): Promise<MessageThread | undefined>;
   updateMessageThread(id: string, data: Partial<MessageThread>): Promise<MessageThread | undefined>;
@@ -1576,6 +1577,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(friendRequests.id, id))
       .returning();
     return request || undefined;
+  }
+  async deleteThread(threadId: string): Promise<void> {
+    await db.delete(messageThreads).where(eq(messageThreads.id, threadId));
   }
 }
 
