@@ -275,6 +275,8 @@ export default function PreviewMessages() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<ThreadMessage | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
+  const [playerSearchOpen, setPlayerSearchOpen] = useState(false);
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -287,6 +289,17 @@ export default function PreviewMessages() {
   // Fetch message threads from API
   const { data: threads = [], isLoading } = useQuery<MessageThread[]>({
     queryKey: ["/api/message-threads"],
+  });
+
+  // Player search query
+  const { data: searchResults = [], isLoading: searchLoading } = useQuery<User[]>({
+    queryKey: ["/api/users/search", playerSearchQuery],
+    enabled: playerSearchQuery.length >= 2,
+    queryFn: async () => {
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(playerSearchQuery)}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
   });
 
   // Fetch match details when viewing a match chat
@@ -482,8 +495,8 @@ export default function PreviewMessages() {
     },
   });
 
-  // Flatten pages into a single array
-  const threadMessages = messagesData?.pages.slice().reverse().flat() || [];
+  // Flatten pages into a single array - backend returns chronological order (oldest→newest)
+  const threadMessages = messagesData?.pages.flat() || [];
 
   // Auto-scroll to latest message when messages load or change
   // Smarter logic: Only scroll if we were already near bottom, or if it's the initial load
@@ -1186,7 +1199,7 @@ export default function PreviewMessages() {
               </ScrollArea>
 
 
-              <div className="p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+              <div className="container max-w-lg mx-auto p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
                 {/* Staged image preview */}
                 {stagedImage && (
                   <div className="flex items-center gap-2 p-2 bg-muted rounded-xl mb-2">
@@ -1450,6 +1463,15 @@ export default function PreviewMessages() {
               data-testid="button-create-group-header"
             >
               <Plus className="w-5 h-5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setPlayerSearchOpen(true)}
+              data-testid="button-find-players"
+              title="Find Players"
+            >
+              <Search className="w-5 h-5" />
             </Button>
           </div>
 
@@ -1811,6 +1833,115 @@ export default function PreviewMessages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Find Players Dialog */}
+      <Dialog open={playerSearchOpen} onOpenChange={(open) => {
+        setPlayerSearchOpen(open);
+        if (!open) setPlayerSearchQuery("");
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Find Players
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by username..."
+                className="pl-9"
+                value={playerSearchQuery}
+                onChange={(e) => setPlayerSearchQuery(e.target.value)}
+                autoFocus
+                data-testid="input-player-search"
+              />
+            </div>
+
+            {playerSearchQuery.length < 2 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Type at least 2 characters to search
+              </p>
+            ) : searchLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : searchResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No players found matching "{playerSearchQuery}"
+              </p>
+            ) : (
+              <ScrollArea className="max-h-[300px]">
+                <div className="space-y-2">
+                  {searchResults
+                    .filter(user => user.id !== currentUser?.id)
+                    .map((user) => (
+                      <Card
+                        key={user.id}
+                        className="p-3 hover-elevate cursor-pointer border"
+                        data-testid={`search-result-${user.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.username} />}
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {user.username?.slice(0, 2).toUpperCase() || "??"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{user.displayName || user.username}</p>
+                            <p className="text-xs text-muted-foreground">@{user.username}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch("/api/message-threads", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    participantId: user.id,
+                                    participantName: user.displayName || user.username,
+                                    participantAvatar: user.avatarUrl,
+                                  }),
+                                  credentials: "include",
+                                });
+
+                                if (!response.ok) throw new Error("Failed to create thread");
+                                const thread = await response.json();
+
+                                setPlayerSearchOpen(false);
+                                setPlayerSearchQuery("");
+                                setSelectedChat(threadToChat(thread));
+                                queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+
+                                toast({
+                                  title: "Chat opened",
+                                  description: `Now chatting with ${user.displayName || user.username}`,
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to start conversation",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            data-testid={`button-message-${user.id}`}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1" />
+                            Message
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
