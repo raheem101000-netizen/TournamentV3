@@ -225,27 +225,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const foundUsers = await storage.searchUsers(query);
       const currentUserId = req.session.userId!;
 
-      const enrichedUsers = await Promise.all(foundUsers.map(async (u) => {
-        let status = 'none';
-        if (u.id !== currentUserId) {
-          const request = await storage.getFriendRequestBetweenUsers(currentUserId, u.id);
-          if (request) {
-            if (request.status === 'accepted') {
-              status = 'friend';
-            } else if (request.status === 'pending') {
-              status = request.senderId === currentUserId ? 'pending_sent' : 'pending_received';
-            }
-          }
-        }
+      // Optimized: Bulk fetch friendship status
+      const foundUserIds = foundUsers.map(u => u.id).filter(id => id !== currentUserId);
+      const friendRequests = await storage.getBulkFriendRequests(currentUserId, foundUserIds);
 
+      // Create a map for quick access
+      // Map key: otherUserId, Value: request status
+      const friendshipMap = new Map<string, 'friend' | 'pending_sent' | 'pending_received'>();
+
+      friendRequests.forEach(req => {
+        const isSender = req.senderId === currentUserId;
+        const otherId = isSender ? req.recipientId : req.senderId;
+
+        if (req.status === 'accepted') {
+          friendshipMap.set(otherId, 'friend');
+        } else if (req.status === 'pending') {
+          friendshipMap.set(otherId, isSender ? 'pending_sent' : 'pending_received');
+        }
+      });
+
+      const enrichedUsers = foundUsers.map(u => {
         return {
           id: u.id,
           username: u.username,
           displayName: u.displayName,
           avatarUrl: u.avatarUrl,
-          friendshipStatus: status
+          friendshipStatus: u.id === currentUserId ? 'none' : (friendshipMap.get(u.id) || 'none')
         };
-      }));
+      });
 
       res.json(enrichedUsers);
     } catch (error: any) {

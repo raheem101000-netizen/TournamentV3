@@ -1,4 +1,4 @@
-import { eq, and, or, sql, ilike, isNull, desc, lt } from "drizzle-orm";
+import { eq, and, or, sql, ilike, isNull, desc, lt, inArray } from "drizzle-orm";
 import { db } from "./db.js";
 import bcrypt from "bcrypt";
 import {
@@ -291,6 +291,7 @@ export interface IStorage {
   getFriendRequestBetweenUsers(userId1: string, userId2: string): Promise<FriendRequest | undefined>;
   getPendingFriendRequests(userId: string): Promise<FriendRequest[]>;
   updateFriendRequest(id: string, data: Partial<FriendRequest>): Promise<FriendRequest | undefined>;
+  getBulkFriendRequests(userId: string, targetUserIds: string[]): Promise<FriendRequest[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1597,6 +1598,24 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return request || undefined;
   }
+
+  async getBulkFriendRequests(userId: string, targetUserIds: string[]): Promise<FriendRequest[]> {
+    if (!targetUserIds.length) return [];
+
+    return await db.select().from(friendRequests).where(
+      and(
+        or(
+          // Requests where I am sender and recipient is in list
+          and(eq(friendRequests.senderId, userId), inArray(friendRequests.recipientId, targetUserIds)),
+          // Requests where I am recipient and sender is in list
+          and(eq(friendRequests.recipientId, userId), inArray(friendRequests.senderId, targetUserIds))
+        ),
+        // We only care about pending or accepted
+        inArray(friendRequests.status, ['pending', 'accepted'])
+      )
+    );
+  }
+
   async deleteThread(threadId: string): Promise<void> {
     await db.delete(messageThreads).where(eq(messageThreads.id, threadId));
   }
