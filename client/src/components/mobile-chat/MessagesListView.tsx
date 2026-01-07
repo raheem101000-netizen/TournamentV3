@@ -1,7 +1,13 @@
-// ... (imports remain)
 import { Search, Plus, MessageCircle, Loader2, Trash2, X, Check, XCircle } from "lucide-react"
-
-// ... (existing imports)
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { useState, useRef } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { apiRequest } from "@/lib/queryClient"
+import { formatDistanceToNow } from "date-fns"
+import { MobileLayout } from "@/components/layouts/MobileLayout"
+import { motion, useAnimation, PanInfo, AnimatePresence, useMotionValue } from "framer-motion"
 
 interface MessageThread {
     id: string
