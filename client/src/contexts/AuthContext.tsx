@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 
 interface User {
@@ -28,8 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [, setLocation] = useLocation();
 
-  const { data: user, isLoading, refetch } = useQuery<User>({
+  const { data: user, isLoading, refetch } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
     refetchOnWindowFocus: true,
     staleTime: 5 * 60 * 1000, // 5 minutes - allows caching but not forever
@@ -49,10 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 1. Immediately update UI state locally (Zero-latency)
       queryClient.setQueryData(['/api/auth/me'], null);
       setIsAuthenticated(false);
-      
+
       // 2. Clear all sensitive data
       queryClient.clear();
-      
+
       // 3. Centralized logout always goes to login via client-side routing
       setLocation('/login');
     },

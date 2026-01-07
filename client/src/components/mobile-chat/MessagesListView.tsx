@@ -43,7 +43,11 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         queryKey: ["/api/users/search", searchQuery],
         queryFn: async () => {
             if (!searchQuery || searchQuery.length < 2) return []
-            const res = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchQuery)}`)
+            // Use direct fetch to ensure no caching issues if apiRequest doesn't support custom headers easily
+            const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
+            if (!res.ok) throw new Error("Failed to search users");
             return res.json()
         },
         enabled: searchQuery.length >= 2
@@ -174,9 +178,8 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                     )}
                 </div>
 
-                {/* New Chat Dialog */}
                 <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl">
+                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl max-h-[85vh] overflow-y-auto top-[20%] translate-y-0 sm:top-[50%] sm:-translate-y-1/2">
                         <DialogHeader>
                             <DialogTitle>New Message</DialogTitle>
                             <DialogDescription className="text-zinc-400">
