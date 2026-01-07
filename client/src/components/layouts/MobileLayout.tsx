@@ -33,7 +33,7 @@ export function MobileLayout({
                 </div>
             )}
 
-            <div className="min-h-screen pb-20 relative z-10">
+            <div className={`min-h-screen relative z-10 ${showBottomNav ? 'pb-20' : ''}`}>
                 {children}
             </div>
 

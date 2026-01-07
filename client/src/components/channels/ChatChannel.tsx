@@ -495,7 +495,7 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
       </div>
 
       {/* Input Area - Pill Shaped */}
-      <div className="p-4 bg-background border-t">
+      <div className="p-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-20">
         <div className="max-w-4xl mx-auto">
           {stagedImage && (
             <div className="flex items-center gap-3 mb-3 p-2 bg-muted/50 rounded-xl animate-in fade-in slide-in-from-bottom-2">
@@ -524,8 +524,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
               Join the server to send messages
             </div>
           ) : (
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2 border-transparent focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <form onSubmit={handleSendMessage} className="relative flex items-end gap-2">
+              <div className="flex-1 flex items-center gap-2 bg-zinc-900/50 rounded-[24px] px-3 py-1 border border-zinc-800 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
                 <Button
                   size="icon"
                   variant="ghost"
