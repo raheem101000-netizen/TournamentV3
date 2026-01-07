@@ -35,11 +35,11 @@ interface SubmitScoreDialogProps {
   onSelectWinner: (winnerId: string) => Promise<void>;
 }
 
-export default function SubmitScoreDialog({ 
-  open, 
-  onOpenChange, 
-  team1, 
-  team2, 
+export default function SubmitScoreDialog({
+  open,
+  onOpenChange,
+  team1,
+  team2,
   matchId,
   onSelectWinner,
 }: SubmitScoreDialogProps) {
@@ -115,7 +115,7 @@ export default function SubmitScoreDialog({
       if (uploadedFile) {
         const formData = new FormData();
         formData.append('file', uploadedFile);
-        
+
         const uploadResponse = await fetch('/api/objects/upload', {
           method: 'POST',
           body: formData,
@@ -147,7 +147,7 @@ export default function SubmitScoreDialog({
         const error = await response.json();
         throw new Error(error.error || 'Failed to send message');
       }
-      
+
       const newMessage = await response.json();
       setMessages(prev => [...prev, newMessage]);
       setMessageInput("");
@@ -200,10 +200,10 @@ export default function SubmitScoreDialog({
                 messages.map((msg) => {
                   const senderName = msg.senderDisplayName || (msg.userId === user?.id ? (user?.displayName || user?.username || "You") : "Unknown");
                   const isCurrentUser = msg.userId === user?.id;
-                  
+
                   return (
-                    <div 
-                      key={msg.id} 
+                    <div
+                      key={msg.id}
                       className={`flex gap-2 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
                       data-testid={`message-${msg.id}`}
                     >
@@ -215,9 +215,9 @@ export default function SubmitScoreDialog({
                       <div className={`flex flex-col gap-1 max-w-md ${isCurrentUser ? 'items-end' : ''}`}>
                         <span className="text-xs text-foreground">{senderName}</span>
                         {msg.imageUrl && (
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Uploaded file" 
+                          <img
+                            src={msg.imageUrl}
+                            alt="Uploaded file"
                             className="max-h-48 rounded w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => setEnlargedImageUrl(msg.imageUrl)}
                             onError={(e) => {
@@ -296,7 +296,7 @@ export default function SubmitScoreDialog({
                 disabled={isSending}
                 data-testid="input-chat-message"
               />
-              <Button 
+              <Button
                 size="icon"
                 onClick={handleSendMessage}
                 disabled={isSending || (!messageInput.trim() && !uploadedFile)}
@@ -309,14 +309,14 @@ export default function SubmitScoreDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-4 border-t">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             data-testid="button-close-chat"
           >
             Close
           </Button>
-          <Button 
+          <Button
             onClick={() => handleSelectWinner(team1.id)}
             disabled={isSelectingWinner}
             data-testid="button-team1-wins"
@@ -324,7 +324,7 @@ export default function SubmitScoreDialog({
             {isSelectingWinner ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {getTeamDisplayName(team1)} Wins
           </Button>
-          <Button 
+          <Button
             onClick={() => handleSelectWinner(team2.id)}
             disabled={isSelectingWinner}
             data-testid="button-team2-wins"
@@ -336,11 +336,15 @@ export default function SubmitScoreDialog({
       </DialogContent>
 
       <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex items-center justify-center p-0 bg-black/95">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex items-center justify-center p-0 bg-black/95" aria-describedby="score-evidence-description">
+          <DialogTitle className="sr-only">Score Evidence Preview</DialogTitle>
+          <div id="score-evidence-description" className="sr-only">
+            Enlarged view of the submitted score evidence image
+          </div>
           {enlargedImageUrl && (
-            <img 
-              src={enlargedImageUrl} 
-              alt="Enlarged" 
+            <img
+              src={enlargedImageUrl}
+              alt="Enlarged"
               className="max-w-full max-h-[90vh] object-contain"
             />
           )}

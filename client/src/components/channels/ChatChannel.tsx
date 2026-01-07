@@ -566,8 +566,11 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
 
       {/* Image enlargement dialog */}
       <Dialog open={!!enlargedImageUrl} onOpenChange={() => setEnlargedImageUrl(null)}>
-        <DialogContent className="max-w-4xl p-2 bg-black/90 border-0">
+        <DialogContent className="max-w-4xl p-2 bg-black/90 border-0" aria-describedby="chat-image-preview-desc">
           <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          <div id="chat-image-preview-desc" className="sr-only">
+            Enlarged preview of the shared image
+          </div>
           {enlargedImageUrl && (
             <img
               src={enlargedImageUrl}

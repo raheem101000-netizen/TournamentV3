@@ -689,7 +689,11 @@ export default function RichMatchChat({
       />
 
       <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 border-0 bg-black/90 flex items-center justify-center">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 border-0 bg-black/90 flex items-center justify-center" aria-describedby="enlarged-image-description">
+          <DialogTitle className="sr-only">Enlarged Image Preview</DialogTitle>
+          <div id="enlarged-image-description" className="sr-only">
+            Preview of the image sent in chat
+          </div>
           <button
             onClick={() => setEnlargedImageUrl(null)}
             className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
