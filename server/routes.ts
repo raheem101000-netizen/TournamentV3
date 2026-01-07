@@ -4405,27 +4405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =============== ADMIN PANEL ROUTES ===============
 
   // Search registered users for achievement awarding (by username only)
-  app.get("/api/users/search", async (req, res) => {
-    try {
-      const query = req.query.q as string;
-      if (!query || query.length < 1) {
-        return res.json([]);
-      }
-      const allUsers = await storage.getAllUsers();
-      // Match by username only - more reliable than display name
-      const filtered = allUsers.filter(user =>
-        user.username.toLowerCase().includes(query.toLowerCase())
-      );
-      res.json(filtered.map(u => ({
-        id: u.id,
-        username: u.username,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl,
-      })));
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+
 
   // Note: All admin endpoints are defined in the secured admin section below with requireAdmin middleware
 
