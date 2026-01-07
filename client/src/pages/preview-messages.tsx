@@ -23,7 +23,7 @@ export default function PreviewMessages() {
   if (selectedChatId) {
     return (
       <MobileLayout showBottomNav={false}>
-        <div className="flex flex-col h-screen bg-black text-white pb-20">
+        <div className="flex flex-col h-[100dvh] bg-black text-white">
           {/* Header */}
           <div className="flex-none flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-black z-10">
             <button
