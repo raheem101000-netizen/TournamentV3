@@ -30,6 +30,7 @@ const mockUser = {
   bio: "Competitive gamer | Tournament organizer | Always looking for new teammates",
   friendCount: 247,
   level: 42,
+  displayName: "Pro Gamer",
 };
 
 import type { TeamProfile } from "@shared/schema";
@@ -488,7 +489,7 @@ export default function PreviewAccount() {
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
         particleBaseSize={200}
-                    cameraDistance={10}
+        cameraDistance={10}
         sizeRandomness={0.5}
         disableRotation={false}
         className="fixed inset-0 z-50 pointer-events-none"

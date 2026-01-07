@@ -9,17 +9,17 @@ import { Send, AlertCircle, Image as ImageIcon, X } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
 
 interface MatchChatPanelProps {
-  messages: (ChatMessage & { imageUrl?: string; displayName?: string; avatarUrl?: string })[];
+  messages: (ChatMessage & { imageUrl?: string | null; displayName?: string; avatarUrl?: string })[];
   teams: Team[];
   currentTeamId?: string;
   onSendMessage: (message: string, image?: File) => void;
 }
 
-export default function MatchChatPanel({ 
-  messages, 
-  teams, 
-  currentTeamId, 
-  onSendMessage 
+export default function MatchChatPanel({
+  messages,
+  teams,
+  currentTeamId,
+  onSendMessage
 }: MatchChatPanelProps) {
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -93,8 +93,8 @@ export default function MatchChatPanel({
               }
 
               return (
-                <div 
-                  key={msg.id} 
+                <div
+                  key={msg.id}
                   className={`flex gap-3 ${isCurrentTeam ? 'flex-row-reverse' : ''}`}
                   data-testid={`message-${msg.id}`}
                 >
@@ -107,17 +107,16 @@ export default function MatchChatPanel({
                     <span className="text-xs text-muted-foreground">
                       {senderName}
                     </span>
-                    <div 
-                      className={`rounded-md overflow-hidden ${
-                        isCurrentTeam 
-                          ? 'bg-primary text-primary-foreground' 
+                    <div
+                      className={`rounded-md overflow-hidden ${isCurrentTeam
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted'
-                      }`}
+                        }`}
                     >
                       {msg.imageUrl && (
-                        <img 
-                          src={msg.imageUrl} 
-                          alt="Shared image" 
+                        <img
+                          src={msg.imageUrl}
+                          alt="Shared image"
                           className="max-w-full h-auto max-h-60 object-contain"
                         />
                       )}
@@ -135,9 +134,9 @@ export default function MatchChatPanel({
         <div className="space-y-2">
           {imagePreview && (
             <div className="relative inline-block">
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
+              <img
+                src={imagePreview}
+                alt="Preview"
                 className="max-h-32 rounded-md border"
               />
               <Button
@@ -175,8 +174,8 @@ export default function MatchChatPanel({
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
               data-testid="input-chat-message"
             />
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               onClick={handleSend}
               disabled={!input.trim() && !selectedImage}
               data-testid="button-send-message"
