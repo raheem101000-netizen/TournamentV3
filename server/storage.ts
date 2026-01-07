@@ -234,6 +234,9 @@ export interface IStorage {
   changeUserPassword(id: string, currentPassword: string, newPassword: string): Promise<boolean>;
   deleteUser(id: string): Promise<void>;
 
+  // Server management
+  deleteServer(id: string): Promise<void>;
+
   // Achievement operations
   createAchievement(data: InsertAchievement): Promise<Achievement>;
   getAchievementsByUser(userId: string): Promise<Achievement[]>;
@@ -270,7 +273,7 @@ export interface IStorage {
   getAllAchievements(): Promise<Achievement[]>;
   deleteAchievement(achievementId: string): Promise<void>;
   deleteTournament(tournamentId: string): Promise<void>;
-  deleteServer(serverId: string): Promise<void>;
+
   getAllReports(): Promise<Report[]>;
   updateReport(reportId: string, data: Partial<Report>): Promise<Report | undefined>;
   getAllCustomerServiceMessages(): Promise<CustomerServiceMessage[]>;
@@ -1389,6 +1392,34 @@ export class DatabaseStorage implements IStorage {
     return server || undefined;
   }
 
+  async deleteServer(id: string): Promise<void> {
+    // Delete all related data first to avoid foreign key constraints (if manual handling is needed)
+    // Order: Bans, Invites, Members, Roles, Channel Messages, Channels, Categories, Server
+
+    // 1. Bans & Invites
+    await db.delete(serverBans).where(eq(serverBans.serverId, id));
+    await db.delete(serverInvites).where(eq(serverInvites.serverId, id));
+
+    // 2. Members
+    await db.delete(serverMembers).where(eq(serverMembers.serverId, id));
+
+    // 3. Roles
+    await db.delete(serverRoles).where(eq(serverRoles.serverId, id));
+
+    // 4. Channels & Messages
+    // First get all channels to delete their messages
+    const serverChannels = await this.getChannelsByServer(id);
+    for (const channel of serverChannels) {
+      await this.deleteChannel(channel.id); // This deletes messages too
+    }
+
+    // 5. Categories
+    await db.delete(channelCategories).where(eq(channelCategories.serverId, id));
+
+    // 6. The Server itself
+    await db.delete(servers).where(eq(servers.id, id));
+  }
+
   // Admin operations
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.createdAt);
@@ -1429,19 +1460,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(tournaments).where(eq(tournaments.id, tournamentId));
   }
 
-  async deleteServer(serverId: string): Promise<void> {
-    // Delete related data first
-    await db.delete(channelMessages).where(
-      sql`${channelMessages.channelId} IN (SELECT id FROM channels WHERE server_id = ${serverId})`
-    );
-    await db.delete(channels).where(eq(channels.serverId, serverId));
-    await db.delete(channelCategories).where(eq(channelCategories.serverId, serverId));
-    await db.delete(serverMembers).where(eq(serverMembers.serverId, serverId));
-    await db.delete(serverRoles).where(eq(serverRoles.serverId, serverId));
-    await db.delete(serverBans).where(eq(serverBans.serverId, serverId));
-    await db.delete(serverInvites).where(eq(serverInvites.serverId, serverId));
-    await db.delete(servers).where(eq(servers.id, serverId));
-  }
+
 
   async banUser(userId: string): Promise<User | undefined> {
     const [user] = await db

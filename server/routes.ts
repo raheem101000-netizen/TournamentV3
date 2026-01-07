@@ -2758,6 +2758,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/servers/:id - Update server details
+  app.patch("/api/servers/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const server = await storage.getServer(req.params.id);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      // Only owner can update server
+      if (server.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the server owner can update settings" });
+      }
+
+      const allowedUpdates = {
+        name: req.body.name,
+        description: req.body.description,
+        isPublic: req.body.isPublic,
+        welcomeMessage: req.body.welcomeMessage,
+        iconUrl: req.body.iconUrl,
+        backgroundUrl: req.body.backgroundUrl,
+      };
+
+      // Filter out undefined values
+      const updates = Object.fromEntries(
+        Object.entries(allowedUpdates).filter(([_, v]) => v !== undefined)
+      );
+
+      const updatedServer = await storage.updateServer(req.params.id, updates);
+      res.json(updatedServer);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/servers/:id - Delete server
+  app.delete("/api/servers/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const server = await storage.getServer(req.params.id);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      // Only owner can delete server
+      if (server.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the server owner can delete the server" });
+      }
+
+      await storage.deleteServer(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/servers/:serverId/members/:userId - Kick member
+  app.delete("/api/servers/:serverId/members/:userId", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { serverId, userId } = req.params;
+
+      const server = await storage.getServer(serverId);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      // Only owner can kick members (for now)
+      if (server.ownerId !== req.session.userId) {
+        return res.status(403).json({ error: "Only the server owner can kick members" });
+      }
+
+      // Cannot kick the owner
+      if (userId === server.ownerId) {
+        return res.status(400).json({ error: "Cannot kick the server owner" });
+      }
+
+      await storage.deleteMemberFromServer(serverId, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/servers/:serverId/join", async (req, res) => {
     try {
       const { userId } = req.body;

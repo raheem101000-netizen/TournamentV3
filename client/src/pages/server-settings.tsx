@@ -394,6 +394,28 @@ export default function ServerSettings() {
     },
   });
 
+  const deleteServerMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/servers/${serverId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/servers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
+      toast({
+        title: "Server deleted",
+        description: "Server has been permanently deleted.",
+      });
+      navigate("/myservers");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete server",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onServerSubmit = (data: z.infer<typeof serverProfileSchema>) => {
     updateServerMutation.mutate({
       ...data,
@@ -605,6 +627,45 @@ export default function ServerSettings() {
                     </Button>
                   </form>
                 </Form>
+
+                <div className="mt-8 pt-8 border-t">
+                  <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-destructive">Delete Server</p>
+                        <p className="text-sm text-muted-foreground">
+                          Once you delete a server, there is no going back. Please be certain.
+                        </p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" data-testid="button-delete-server">Delete Server</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the server
+                              <span className="font-semibold text-foreground"> {server.name} </span>
+                              and remove all data associated with it including channels, roles, and member history.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => deleteServerMutation.mutate()}
+                              data-testid="button-confirm-delete-server"
+                            >
+                              {deleteServerMutation.isPending ? "Deleting..." : "Delete Server"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
