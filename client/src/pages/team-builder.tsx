@@ -55,7 +55,7 @@ export default function TeamBuilder() {
   const createTeamMutation = useMutation({
     mutationFn: async (data: CreateTeamForm & { ownerId: string }) => {
       const res = await apiRequest('POST', '/api/team-profiles', data);
-      return res.json();
+      return res;
     },
     onSuccess: async (teamProfile: any) => {
       // Create team members
@@ -72,6 +72,12 @@ export default function TeamBuilder() {
         description: "Team created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/team-profiles"] });
+      // Also invalidate user-specific team lists that might be cached
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === 'string' &&
+          query.queryKey[0].includes('team-profiles')
+      });
       setLocation("/account");
     },
     onError: (error: any) => {
@@ -218,7 +224,7 @@ export default function TeamBuilder() {
 
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">Team Members</h3>
-                
+
                 <div className="space-y-3 mb-4">
                   {members.map((member, index) => (
                     <div

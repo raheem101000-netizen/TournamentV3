@@ -144,7 +144,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const createThreadMutation = useMutation({
         mutationFn: async (participantId: string) => {
             const res = await apiRequest("POST", "/api/threads", { participantId })
-            return res.json()
+            return res
         },
         onSuccess: (thread) => {
             setIsNewChatOpen(false)
@@ -155,7 +155,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const addFriendMutation = useMutation({
         mutationFn: async (recipientId: string) => {
             const res = await apiRequest("POST", "/api/friend-request", { recipientId })
-            return res.json()
+            return res
         },
         onSuccess: () => {
             refetchSearch()
@@ -175,12 +175,13 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     const acceptRequestMutation = useMutation({
         mutationFn: async (requestId: string) => {
             const res = await apiRequest("POST", `/api/friend-requests/${requestId}/accept`)
-            return res.json()
+            return res
         },
         onSuccess: () => {
             refetchRequests()
             // Invalidate friends list or threads as needed
             queryClient.invalidateQueries({ queryKey: ["/api/users/search"] })
+            queryClient.invalidateQueries({ queryKey: ["/api/friends"] })
         }
     })
 
@@ -193,7 +194,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
             // WAIT - I need to be sure about decline. 
             // I'll stick to Accept for now and potentially "Ignore" which just hides it? 
             // Let's implement Accept first.
-            return res.json()
+            return res
         },
         onSuccess: () => {
             refetchRequests()
@@ -367,7 +368,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                 {/* New Chat Dialog */}
                 {/* ... (keep existing dialog code) ... */}
                 <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl max-h-[85vh] overflow-y-auto top-[20%] translate-y-0 sm:top-[50%] sm:-translate-y-1/2">
+                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl max-h-[85vh] overflow-y-auto top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] gap-0 p-0">
                         <DialogHeader>
                             <DialogTitle>New Message</DialogTitle>
                             <DialogDescription className="text-zinc-400">

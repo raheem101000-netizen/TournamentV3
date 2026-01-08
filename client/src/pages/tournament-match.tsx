@@ -135,7 +135,7 @@ export default function TournamentMatch() {
       return data;
     },
   });
-  
+
   // Log errors
   if (messagesError) {
     console.error(`[DASHBOARD-CHAT] Query error:`, messagesError);
@@ -162,7 +162,7 @@ export default function TournamentMatch() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         console.error(`[DASHBOARD-CHAT-SEND] Failed to send message:`, error);
@@ -196,9 +196,9 @@ export default function TournamentMatch() {
 
   const handleUpdateScore = async (team: "team1" | "team2") => {
     if (!matchDetails) return;
-    
-    const score = team === "team1" 
-      ? (matchDetails.match.team1Score || 0) + 1 
+
+    const score = team === "team1"
+      ? (matchDetails.match.team1Score || 0) + 1
       : (matchDetails.match.team2Score || 0) + 1;
 
     try {
@@ -206,11 +206,16 @@ export default function TournamentMatch() {
         [team === "team1" ? "team1Score" : "team2Score"]: score,
         status: "in_progress",
       });
-      
+
       qc.invalidateQueries({
         queryKey: [`/api/tournaments/${tournamentId}/matches/${matchId}/details`],
       });
-      
+      qc.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === 'string' &&
+          query.queryKey[0].includes("achievements"),
+      });
+
       toast({ title: `${team === "team1" ? "Team 1" : "Team 2"} score updated!` });
     } catch (error: any) {
       toast({
@@ -345,7 +350,7 @@ export default function TournamentMatch() {
             <p className="text-sm text-muted-foreground mb-4">
               Chat about this match with team members. All messages with usernames and avatars are fully clickable and link to user profiles.
             </p>
-            <Button 
+            <Button
               onClick={navigateToMatchChat}
               data-testid="button-open-match-chat"
             >

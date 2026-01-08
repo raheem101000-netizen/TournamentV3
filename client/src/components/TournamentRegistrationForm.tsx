@@ -76,7 +76,7 @@ export default function TournamentRegistrationForm({
         userId: user?.id,
         responses: data,
       });
-      return res.json();
+      return res; // apiRequest already returns the parsed JSON data
     },
     onSuccess: () => {
       toast({

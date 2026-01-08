@@ -76,7 +76,17 @@ export default function ImageUploadField({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          const text = await response.text();
+          try {
+            errorData = JSON.parse(text);
+          } catch {
+            errorData = { error: text || `Upload failed with status ${response.status}` };
+          }
+        } catch {
+          errorData = { error: "Upload failed" };
+        }
         throw new Error(errorData.error || 'Upload failed');
       }
 

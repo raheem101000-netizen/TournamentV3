@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { MessageSquare, Megaphone, ChevronDown, ChevronUp } from "lucide-react";
+import { MessageSquare, Megaphone, ChevronDown, ChevronUp, Lock } from "lucide-react";
 
 interface CreateChannelDialogProps {
   serverId: string;
@@ -43,6 +44,7 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
   const [channelType, setChannelType] = useState<ChannelType>("chat");
   const [selectedIcon, setSelectedIcon] = useState("💬");
   const [showAllIcons, setShowAllIcons] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const handleTypeChange = (type: ChannelType) => {
     setChannelType(type);
@@ -64,6 +66,7 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
       setChannelType("chat");
       setSelectedIcon("💬");
       setShowAllIcons(false);
+      setIsPrivate(false);
     },
     onError: (error: any) => {
       toast({
@@ -86,12 +89,12 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
     }
 
     const slug = name.toLowerCase().replace(/\s+/g, "-");
-    
+
     createChannelMutation.mutate({
       name: name.trim(),
       type: channelType,
       icon: selectedIcon,
-      isPrivate: 0,
+      isPrivate: isPrivate ? 1 : 0,
       slug,
       serverId,
       position: 999,
@@ -129,10 +132,9 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
               onValueChange={(value) => handleTypeChange(value as ChannelType)}
               className="space-y-2"
             >
-              <div 
-                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                  channelType === "chat" ? "border-primary bg-primary/5" : "border-border hover-elevate"
-                }`}
+              <div
+                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${channelType === "chat" ? "border-primary bg-primary/5" : "border-border hover-elevate"
+                  }`}
                 onClick={() => handleTypeChange("chat")}
               >
                 <RadioGroupItem value="chat" id="type-chat" />
@@ -147,10 +149,9 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
                 </div>
               </div>
 
-              <div 
-                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                  channelType === "announcements" ? "border-primary bg-primary/5" : "border-border hover-elevate"
-                }`}
+              <div
+                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${channelType === "announcements" ? "border-primary bg-primary/5" : "border-border hover-elevate"
+                  }`}
                 onClick={() => handleTypeChange("announcements")}
               >
                 <RadioGroupItem value="announcements" id="type-announcements" />
@@ -165,6 +166,24 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
                 </div>
               </div>
             </RadioGroup>
+          </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-md">
+            <div className="space-y-0.5">
+              <Label htmlFor="private-channel" className="text-base flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Private Channel
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Only selected members and roles can view this channel
+              </p>
+            </div>
+            <Switch
+              id="private-channel"
+              checked={isPrivate}
+              onCheckedChange={setIsPrivate}
+              data-testid="switch-private-channel"
+            />
           </div>
 
           <div className="space-y-3">
@@ -183,7 +202,7 @@ export default function CreateChannelDialog({ serverId, open, onOpenChange }: Cr
                 </Button>
               ))}
             </div>
-            
+
             <Button
               type="button"
               variant="ghost"

@@ -136,7 +136,7 @@ export interface IStorage {
   getRegistration(id: string): Promise<Registration | undefined>;
   getRegistrationsByTournament(tournamentId: string): Promise<Registration[]>;
   updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined>;
-
+  deleteRegistration(id: string): Promise<void>;
   createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse>;
   getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
 
@@ -254,6 +254,7 @@ export interface IStorage {
   getMembersByTeam(teamId: string): Promise<TeamMember[]>;
   getTeamMembers(teamId: string): Promise<TeamMember[]>;
   getTeamMembersWithUsers(teamId: string): Promise<(TeamMember & { user: User | null })[]>;
+  deleteTeamMember(id: string): Promise<void>;
   updateTeamMember(memberId: string, data: Partial<TeamMember>): Promise<TeamMember | undefined>;
   deleteMemberFromTeam(teamId: string, userId: string): Promise<void>;
 
@@ -512,7 +513,6 @@ export class DatabaseStorage implements IStorage {
     const [registration] = await db.insert(registrations).values({
       ...data,
       userId: data.userId,
-      updatedAt: new Date()
     }).returning();
     return registration;
   }
@@ -533,6 +533,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(registrations.id, id))
       .returning();
     return registration || undefined;
+  }
+
+  async deleteRegistration(id: string): Promise<void> {
+    await db.delete(registrations).where(eq(registrations.id, id));
   }
 
   async createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse> {
@@ -1114,7 +1118,6 @@ export class DatabaseStorage implements IStorage {
   async getMembersByTeam(teamId: string): Promise<TeamMember[]> {
     return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
-
   async getTeamMembers(teamId: string): Promise<TeamMember[]> {
     return await this.getMembersByTeam(teamId);
   }
@@ -1128,6 +1131,10 @@ export class DatabaseStorage implements IStorage {
       })
     );
     return result;
+  }
+
+  async deleteTeamMember(id: string): Promise<void> {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
   }
 
   async updateTeamMember(memberId: string, data: Partial<TeamMember>): Promise<TeamMember | undefined> {

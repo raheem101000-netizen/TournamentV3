@@ -5,7 +5,7 @@ import Particles from "@/components/ui/particles";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2 } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2, Search, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -53,6 +53,10 @@ export default function PreviewAccount() {
   const [editMemberPosition, setEditMemberPosition] = useState("");
   const [editMemberRole, setEditMemberRole] = useState("");
   const [deleteTeamConfirm, setDeleteTeamConfirm] = useState(false);
+
+  // Add member state
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const { user: authUser } = useAuth();
   const { toast } = useToast();
@@ -111,6 +115,18 @@ export default function PreviewAccount() {
     enabled: !!selectedTeam,
   });
 
+  // Search users query for adding members
+  const { data: searchResults = [], isLoading: isSearching } = useQuery<any[]>({
+    queryKey: ["/api/users/search", memberSearchQuery],
+    queryFn: async () => {
+      if (!memberSearchQuery || memberSearchQuery.length < 2) return [];
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(memberSearchQuery)}`);
+      if (!res.ok) throw new Error("Failed to search users");
+      return res.json();
+    },
+    enabled: addMemberOpen && memberSearchQuery.length >= 2,
+  });
+
   // Check if current user is the team owner
   const isTeamOwner = selectedTeam && authUser?.id === selectedTeam.ownerId;
 
@@ -153,6 +169,61 @@ export default function PreviewAccount() {
     },
     onError: (error: any) => {
       toast({ title: "Failed to update member", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation to add team member
+  const addMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!selectedTeam) throw new Error("No team selected");
+      const res = await apiRequest("POST", "/api/team-members", {
+        teamId: selectedTeam.id,
+        userId: userId,
+        role: "Member",
+        position: "Member"
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("members"),
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("team-profiles"),
+      });
+      toast({ title: "Member added successfully" });
+      setAddMemberOpen(false);
+      setMemberSearchQuery("");
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add member", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation to remove team member
+  const removeMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      await apiRequest("DELETE", `/api/team-members/${memberId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("members"),
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("team-profiles"),
+      });
+      toast({ title: "Member removed successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to remove member", description: error.message, variant: "destructive" });
     },
   });
 
@@ -754,10 +825,18 @@ export default function PreviewAccount() {
 
                 {/* Team Members Section */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Team Members
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Team Members
+                    </h4>
+                    {isTeamOwner && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAddMemberOpen(true)} data-testid="button-add-member-dialog">
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Member
+                      </Button>
+                    )}
+                  </div>
                   {teamMembersLoading ? (
                     <p className="text-sm text-muted-foreground">Loading members...</p>
                   ) : teamMembers.length === 0 ? (
@@ -843,6 +922,17 @@ export default function PreviewAccount() {
                                   <Pencil className="w-4 h-4" />
                                 </Button>
                               )}
+                              {isTeamOwner && member.role !== "Owner" && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => removeMemberMutation.mutate(member.id)}
+                                  data-testid={`button-remove-member-${member.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -853,6 +943,63 @@ export default function PreviewAccount() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Member Dialog */}
+      <Dialog open={addMemberOpen} onOpenChange={(open) => { setAddMemberOpen(open); setMemberSearchQuery(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={memberSearchQuery}
+                onChange={(e) => setMemberSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-member"
+              />
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto space-y-2">
+              {isSearching ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : memberSearchQuery.length >= 2 && searchResults.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No users found</p>
+              ) : (
+                searchResults.map((user: any) => {
+                  const isAlreadyMember = teamMembers.some(m => m.userId === user.id);
+                  return (
+                    <div key={user.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={user.avatarUrl} />
+                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{user.displayName || user.username}</p>
+                          <p className="text-xs text-muted-foreground">@{user.username}</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={isAlreadyMember || addMemberMutation.isPending}
+                        onClick={() => addMemberMutation.mutate(user.id)}
+                        data-testid={`button-add-user-${user.id}`}
+                      >
+                        {isAlreadyMember ? "Added" : "Add"}
+                      </Button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

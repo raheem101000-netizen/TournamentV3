@@ -1,58 +1,60 @@
-import { useRoute, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import Particles from "@/components/ui/particles";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronLeft, Hash, Lock, Megaphone, MessageSquare, Trophy, Users, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ChevronDown, Lock, ChevronLeft, BookOpen, Users, Crown, Search, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
-import ChatChannel from "@/components/channels/ChatChannel";
-import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
-import type { Server, Channel } from "@shared/schema";
+import type { Server, Channel, ChannelCategory } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ServerPreview() {
   const [match, params] = useRoute("/server/:serverId/preview");
   const [, setLocation] = useLocation();
+  const serverId = params?.serverId;
   const { user } = useAuth();
   const { toast } = useToast();
-  const serverId = params?.serverId;
-  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
-  const [showWelcomePage, setShowWelcomePage] = useState(true); // Start with welcome page
 
-  const { data: server } = useQuery<Server>({
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [showMembers, setShowMembers] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+
+  const { data: server, isLoading: serverLoading } = useQuery<Server>({
     queryKey: [`/api/servers/${serverId}`],
     enabled: !!serverId,
   });
 
-  const { data: channels = [] } = useQuery<Channel[]>({
+  const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
-    refetchInterval: 5000,
-    staleTime: 0,
   });
 
-  // Only show selected channel if user explicitly clicked one
-  const selectedChannel = selectedChannelId ? channels.find(c => c.id === selectedChannelId) : null;
-
-  // Fetch user's servers to check membership - use stable key that doesn't include undefined
-  const { data: userServers, isLoading: userServersLoading } = useQuery<Server[]>({
-    queryKey: ['/api/users', user?.id, 'servers'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const res = await fetch(`/api/users/${user.id}/servers`, { credentials: 'include' });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!user?.id,
-    staleTime: 0, // Always refetch to ensure fresh data
+  const { data: categories = [] } = useQuery<ChannelCategory[]>({
+    queryKey: [`/api/servers/${serverId}/categories`],
+    enabled: !!serverId,
   });
 
-  // Check if user is already a member or owner of this server
-  const isOwner = server?.ownerId === user?.id;
-  const isMember = userServers?.some((s) => s.id === serverId) || false;
-  const membershipLoading = !!user?.id && userServersLoading;
+  interface EnrichedMember {
+    id: string;
+    userId: string;
+    username: string;
+    avatarUrl: string | null;
+    isOwner: boolean;
+    roleName: string;
+    roleColor: string;
+  }
+
+  const { data: members = [] } = useQuery<EnrichedMember[]>({
+    queryKey: [`/api/servers/${serverId}/members`],
+    enabled: !!serverId,
+  });
 
   const joinServerMutation = useMutation({
     mutationFn: async () => {
@@ -77,321 +79,226 @@ export default function ServerPreview() {
     },
   });
 
-  const getChannelIcon = (type: string) => {
-    switch (type) {
-      case "announcements":
-        return <Megaphone className="h-4 w-4" />;
-      case "chat":
-        return <MessageSquare className="h-4 w-4" />;
-      case "tournament_dashboard":
-        return <Trophy className="h-4 w-4" />;
-      default:
-        return <Hash className="h-4 w-4" />;
-    }
-  };
-
-  if (!server) {
+  if (serverLoading || channelsLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading server...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">Loading server preview...</p>
       </div>
     );
   }
 
-  // Separate channels by type and privacy
+  if (!server) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">Server not found</p>
+      </div>
+    );
+  }
+
+  // Group channels
   const tournamentDashboard = channels.find(c => c.type === "tournament_dashboard");
   const otherChannels = channels.filter(c => c.type !== "tournament_dashboard");
-  const publicChannels = otherChannels.filter(c => !c.isPrivate);
+  const publicChannels = otherChannels.filter(c => !c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Server Header */}
-      <div 
-        className="relative h-32 bg-cover bg-center"
-        style={{
-          backgroundImage: server.backgroundUrl 
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${server.backgroundUrl})`
-            : 'linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.5))'
-        }}
-      >
-        <div className="absolute inset-0 flex items-end p-4">
-          <div className="flex items-center gap-3 w-full">
-            {server.iconUrl && (
-              <img 
-                src={server.iconUrl} 
-                alt={server.name}
-                className="w-16 h-16 rounded-lg border-2 border-background"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-white truncate" data-testid="server-name">
-                {server.name}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex items-center gap-1 text-xs text-white/80">
-                  <Users className="h-3 w-3" />
-                  <span>{server.memberCount?.toLocaleString()} members</span>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {server.category}
-                </Badge>
-              </div>
-            </div>
+    <div className="flex flex-col min-h-screen bg-background pb-20">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-lg mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setLocation("/")}
-              className="text-white hover:bg-white/20 bg-background/80 backdrop-blur"
               data-testid="button-back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Channels Sidebar */}
-        <div className="w-60 border-r flex-shrink-0 overflow-y-auto bg-muted/30">
-          <div className="p-3 space-y-4">
-            {/* Welcome Page - Always show first */}
-            <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2">
-                Welcome
-              </h3>
-              <button
-                onClick={() => {
-                  setShowWelcomePage(true);
-                  setSelectedChannelId(null);
-                }}
-                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
-                  showWelcomePage
-                    ? "bg-accent text-accent-foreground"
-                    : "hover-elevate text-muted-foreground hover:text-foreground"
-                }`}
-                data-testid="button-welcome-page"
-              >
-                <BookOpen className="h-4 w-4" />
-                <span className="truncate">Welcome Page</span>
-              </button>
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={server.iconUrl || undefined} alt={server.name} />
+              <AvatarFallback className="text-2xl">
+                {server.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold truncate">{server.name}</h1>
+                <Badge variant="outline" className="text-xs">Preview</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{server.memberCount?.toLocaleString() || 0} members</p>
             </div>
+          </div>
+        </div>
+      </header>
 
-            {/* Tournament Dashboard - Always visible in preview, access controlled by content */}
-            {tournamentDashboard && (
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2 flex items-center gap-1">
-                  <Lock className="h-3 w-3" />
-                  Private
-                </h3>
-                <div className="space-y-0.5">
-                  <button
-                    onClick={() => {
-                      setShowWelcomePage(false);
-                      setSelectedChannelId(tournamentDashboard.id);
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
-                      !showWelcomePage && selectedChannelId === tournamentDashboard.id
-                        ? "bg-accent text-accent-foreground"
-                        : "hover-elevate text-muted-foreground hover:text-foreground"
-                    }`}
-                    data-testid={`button-channel-${tournamentDashboard.slug}`}
-                  >
-                    {getChannelIcon(tournamentDashboard.type)}
-                    <span className="truncate">{tournamentDashboard.name}</span>
-                    <Lock className="h-3 w-3 ml-auto" />
-                  </button>
-                </div>
+      <main className="container max-w-lg mx-auto px-4 py-4 flex-1 space-y-6">
+        {/* Welcome Section */}
+        <Card>
+          <CardHeader className="gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              Welcome to {server.name}
+            </CardTitle>
+            {server.description && (
+              <CardDescription>{server.description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {server.welcomeMessage ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <p className="whitespace-pre-wrap">{server.welcomeMessage}</p>
               </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No welcome message set.</p>
             )}
 
-            {/* Public Channels */}
-            {publicChannels.length > 0 && (
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2">
-                  Channels
-                </h3>
-                <div className="space-y-0.5">
-                  {publicChannels.map((channel) => (
-                    <button
-                      key={channel.id}
-                      onClick={() => {
-                        setShowWelcomePage(false);
-                        setSelectedChannelId(channel.id);
-                      }}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
-                        !showWelcomePage && selectedChannelId === channel.id
-                          ? "bg-accent text-accent-foreground"
-                          : "hover-elevate text-muted-foreground hover:text-foreground"
-                      }`}
-                      data-testid={`button-channel-${channel.slug}`}
-                    >
-                      {getChannelIcon(channel.type)}
-                      <span className="truncate">{channel.name}</span>
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2 border-t">
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{members.length} members</span>
               </div>
-            )}
+              <Badge variant="outline">{server.category}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Channels List (Read Only) */}
+        <div className="space-y-4">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+            Channels Preview
+          </h3>
+
+          <div className="space-y-1">
+            {categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((category) => {
+              const categoryChannels = publicChannels.filter(c => c.categoryId === category.id);
+              if (categoryChannels.length === 0) return null;
+
+              return (
+                <div key={category.id} className="space-y-2">
+                  <div className="flex items-center gap-2 px-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {category.name}
+                    </h4>
+                  </div>
+                  <div className="space-y-1">
+                    {categoryChannels.map((channel) => (
+                      <Card
+                        key={channel.id}
+                        className="p-3 border-0 shadow-none opacity-80"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{channel.icon}</span>
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <span className="font-medium truncate">{channel.name}</span>
+                          </div>
+                          <Lock className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Uncategorized */}
+            {publicChannels.filter(c => !c.categoryId).map((channel) => (
+              <Card
+                key={channel.id}
+                className="p-3 border-0 shadow-none opacity-80"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{channel.icon}</span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className="font-medium truncate">{channel.name}</span>
+                  </div>
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* Channel Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden" data-testid="channel-content">
-          {showWelcomePage ? (
-            <>
-              <div className="flex-1 overflow-y-auto p-4">
-                {/* Welcome Page Header */}
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                  <BookOpen className="h-4 w-4" />
-                  <h2 className="text-lg font-semibold">Welcome</h2>
-                </div>
-
-                {/* Welcome Page Content */}
-                <Card>
-                  <CardHeader className="gap-2">
-                    <CardTitle className="flex items-center gap-2">
-                      {server.iconUrl && (
-                        <img 
-                          src={server.iconUrl} 
-                          alt={server.name}
-                          className="w-8 h-8 rounded"
-                        />
-                      )}
-                      Welcome to {server.name}
-                    </CardTitle>
-                    {server.description && (
-                      <CardDescription>{server.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {server.welcomeMessage ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <p className="whitespace-pre-wrap" data-testid="text-welcome-message">
-                          {server.welcomeMessage}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        No welcome message has been set for this server.
-                      </p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {server.gameTags?.map((tag) => (
-                        <Badge key={tag} variant="secondary">{tag}</Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2 border-t">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{server.memberCount?.toLocaleString() || 0} members</span>
-                      </div>
-                      <Badge variant="outline">{server.category}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Members Preview */}
+        <Collapsible open={showMembers} onOpenChange={setShowMembers}>
+          <div className="space-y-2">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between gap-2 px-2 cursor-pointer hover-elevate rounded-md py-1">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Members ({members.length})
+                </h3>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showMembers ? 'rotate-180' : ''}`} />
               </div>
-
-              {/* Sticky Join/Enter Button */}
-              <div className="border-t p-4 bg-background/95 backdrop-blur sticky bottom-0">
-                {membershipLoading ? (
-                  <Button disabled className="w-full" data-testid="button-loading">
-                    Loading...
-                  </Button>
-                ) : isMember || isOwner ? (
-                  <Button
-                    onClick={() => setLocation(`/server/${serverId}`)}
-                    data-testid="button-enter-server"
-                    className="w-full"
-                  >
-                    {isOwner ? "Manage Server" : "Enter Server"}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => joinServerMutation.mutate()}
-                    disabled={joinServerMutation.isPending}
-                    data-testid="button-join-server"
-                    className="w-full"
-                  >
-                    {joinServerMutation.isPending ? "Joining..." : "Join Server"}
-                  </Button>
-                )}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="relative mb-2 px-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  className="h-8 pl-8 text-xs"
+                  placeholder="Search members..."
+                  value={memberSearchQuery}
+                  onChange={(e) => setMemberSearchQuery(e.target.value)}
+                />
               </div>
-            </>
-          ) : selectedChannel ? (
-            <>
-              <div className="flex-1 overflow-y-auto p-4">
-                {/* Channel Header */}
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                  {getChannelIcon(selectedChannel.type)}
-                  <h2 className="text-lg font-semibold">{selectedChannel.name}</h2>
-                  {selectedChannel.isPrivate && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Lock className="h-3 w-3 mr-1" />
-                      Private
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Channel content based on type */}
-                {selectedChannel.type === "tournament_dashboard" && (
-                  <Card>
-                    <CardContent className="py-8">
-                      <div className="flex flex-col items-center gap-4">
-                        <Lock className="w-10 h-10 text-muted-foreground" />
-                        <div className="text-center space-y-2">
-                          <h3 className="font-semibold">Preview Only</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Join the server to access the Tournament Dashboard
-                          </p>
+              <div className="space-y-1">
+                {members
+                  .filter(m => m.username.toLowerCase().includes(memberSearchQuery.toLowerCase()))
+                  .slice(0, 10) // Limit preview
+                  .map((member) => (
+                    <Card
+                      key={member.id}
+                      className="p-2 border-0 shadow-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={member.avatarUrl || undefined} />
+                          <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate text-sm">{member.username}</span>
+                            {member.isOwner && (
+                              <Crown className="h-3 w-3 text-yellow-500" />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-                {selectedChannel.type === "announcements" && (
-                  <AnnouncementsChannel channelId={selectedChannel.id} />
-                )}
-                {selectedChannel.type === "chat" && (
-                  <ChatChannel channelId={selectedChannel.id} isPreview={true} />
+                    </Card>
+                  ))}
+                {members.length > 10 && (
+                  <p className="text-xs text-center text-muted-foreground pt-2">
+                    Join to see all {members.length} members
+                  </p>
                 )}
               </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
-              {/* Sticky Join/Enter Button */}
-              <div className="border-t p-4 bg-background/95 backdrop-blur sticky bottom-0">
-                {membershipLoading ? (
-                  <Button disabled className="w-full" data-testid="button-loading">
-                    Loading...
-                  </Button>
-                ) : isMember || isOwner ? (
-                  <Button
-                    onClick={() => setLocation(`/server/${serverId}`)}
-                    data-testid="button-enter-server"
-                    className="w-full"
-                  >
-                    {isOwner ? "Manage Server" : "Enter Server"}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => joinServerMutation.mutate()}
-                    disabled={joinServerMutation.isPending}
-                    data-testid="button-join-server"
-                    className="w-full"
-                  >
-                    {joinServerMutation.isPending ? "Joining..." : "Join Server"}
-                  </Button>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-muted-foreground">Select a channel to view</p>
-            </div>
-          )}
+      </main>
+
+      {/* Sticky Join Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-50">
+        <div className="container max-w-lg mx-auto">
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => joinServerMutation.mutate()}
+            disabled={joinServerMutation.isPending}
+          >
+            {joinServerMutation.isPending ? "Joining..." : `Join ${server.name}`}
+          </Button>
         </div>
       </div>
+
+      <Particles
+        particleCount={50}
+        particleSpread={10}
+        speed={0.1}
+        particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
+        alphaParticles={false}
+        particleBaseSize={100}
+        className="fixed inset-0 z-0 pointer-events-none"
+      />
     </div>
   );
 }

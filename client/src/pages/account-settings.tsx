@@ -114,9 +114,8 @@ export default function AccountSettings() {
       }
       console.log('[UpdateMutation] Sending PATCH with data:', JSON.stringify(data, null, 2));
       const response = await apiRequest("PATCH", `/api/users/${authUser.id}`, data);
-      const json = await response.json();
-      console.log('[UpdateMutation] Response:', json);
-      return json;
+      console.log('[UpdateMutation] Response:', response);
+      return response;
     },
     onSuccess: (response: any) => {
       console.log('[UpdateMutation] onSuccess triggered, response:', response);

@@ -65,6 +65,7 @@ export default function RichMatchChat({
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
+    refetchInterval: 3000,
   });
 
   // Auto-scroll to latest message when messages load or change
@@ -433,6 +434,8 @@ export default function RichMatchChat({
               ) : (
                 threadMessages.map((msg) => {
                   const isOwn = msg.userId === currentUser?.id;
+                  const isAdmin = (currentUser as any)?.role === 'admin' || (currentUser as any)?.role === 'organizer';
+                  const canDelete = isOwn || isAdmin;
                   const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
                   const isEditing = editingMessage?.id === msg.id;
 
@@ -492,7 +495,7 @@ export default function RichMatchChat({
                         </Avatar>
                       )}
                       {/* Message action menu - positioned at right of message row */}
-                      {!isEditing && isOwn && longPressMessageId === msg.id && (
+                      {!isEditing && canDelete && longPressMessageId === msg.id && (
                         <div className="absolute right-2 top-2 flex flex-col gap-1 bg-card border rounded-md shadow-md p-1 z-10">
                           <Button
                             size="sm"

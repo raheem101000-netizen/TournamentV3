@@ -28,12 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-interface User {
-  id: string;
-  username: string;
-  displayName?: string;
-  avatarUrl?: string;
-}
+import type { User } from "@shared/schema";
 
 const achievementTypes = [
   { id: "champion", name: "Champion", icon: Trophy, rarity: "legendary", description: "Tournament Winner" },
@@ -121,6 +116,27 @@ export default function PreviewOrganizerAward() {
   const selectedAchievementData = achievementTypes.find(a => a.id === selectedAchievement);
   const isFormValid = selectedRecipientId && selectedAchievement;
   const players = searchResults || [];
+
+  // Check for organizer permissions
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ["/api/auth/me"],
+  });
+
+  if (!currentUser) return null;
+
+  // Strict access Control: Only admins or users with explicit capability
+  if (!currentUser.isAdmin && !(currentUser as any).canIssueAchievements) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Shield className="w-12 h-12 text-muted-foreground" />
+        <h1 className="text-2xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground">You do not have permission to access the Organizer Panel.</p>
+        <Button onClick={() => setLocation("/account")} variant="outline">
+          Back to Account
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -349,7 +365,7 @@ export default function PreviewOrganizerAward() {
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
         particleBaseSize={200}
-                    cameraDistance={10}
+        cameraDistance={10}
         sizeRandomness={0.5}
         disableRotation={false}
         className="fixed inset-0 z-50 pointer-events-none"

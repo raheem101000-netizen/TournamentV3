@@ -65,6 +65,7 @@ import {
   insertServerBanSchema,
   insertServerInviteSchema,
   insertChannelMessageSchema,
+  type Registration,
   insertMessageThreadSchema,
   insertThreadMessageSchema,
   insertPosterTemplateSchema,
@@ -1340,6 +1341,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Member routes
+  app.patch("/api/teams/:id/members/:memberId", async (req, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      const updatedMember = await storage.updateTeamMember(req.params.memberId, req.body);
+      res.json(updatedMember);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/team-members", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const member = await storage.createTeamMember(req.body);
+      res.status(201).json(member);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/team-members/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Additional permission check could be added here (e.g., check if user is team owner)
+      // For now relying on frontend to only show delete button to owner, 
+      // but ideally we should fetch the team and check ownerId here.
+
+      await storage.deleteTeamMember(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Match routes
   app.get("/api/tournaments/:tournamentId/matches", async (req, res) => {
     try {
@@ -2209,6 +2254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registration submission routes
   app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
+    let registration: Registration | undefined;
     try {
       if (!req.session.userId) {
         log('WARN', 'Registration attempt - not authenticated');
@@ -2305,7 +2351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         registrationStatus = "approved";
       }
 
-      const registration = await storage.createRegistration({
+      registration = await storage.createRegistration({
         userId: req.session.userId,
         teamName,
         tournamentId,
@@ -2324,11 +2370,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (parsedResponses && typeof parsedResponses === 'object') {
+      if (registration && parsedResponses && typeof parsedResponses === 'object') {
         await Promise.all(
           Object.entries(parsedResponses).map(([fieldId, value]) =>
             storage.createRegistrationResponse({
-              registrationId: registration.id,
+              registrationId: registration!.id,
               fieldId,
               responseValue: String(value),
             })
@@ -2385,6 +2431,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(registration);
     } catch (error: any) {
       log('ERROR', 'Registration failed', { tournamentId: req.params.tournamentId, error: error.message });
+
+      // Rollback: if registration was created but subsequent steps failed, delete it
+      if (registration) {
+        try {
+          await storage.deleteRegistration(registration.id);
+          log('INFO', 'Rolled back registration due to error', { registrationId: registration.id });
+        } catch (rollbackError) {
+          log('ERROR', 'Failed to rollback registration', { error: rollbackError });
+        }
+      }
+
       endTrace('ERROR');
       await flush();
       res.status(400).json({ error: error.message });

@@ -78,6 +78,11 @@ export default function CreateTournament() {
         description: "Tournament created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === 'string' &&
+          query.queryKey[0].includes("achievements"),
+      });
       setLocation("/");
     },
     onError: (error: any) => {

@@ -112,6 +112,11 @@ export default function AdminPanel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/achievements"] });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === 'string' &&
+          query.queryKey[0].includes("achievements"),
+      });
       setAchievementForm({
         userId: "",
         achievementId: "",
@@ -455,12 +460,12 @@ export default function AdminPanel() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Achievement Type</label>
-                  <Select 
-                    value={achievementForm.achievementId} 
+                  <Select
+                    value={achievementForm.achievementId}
                     onValueChange={(val) => {
                       const achievement = predefinedAchievements.find(a => a.id === val);
-                      setAchievementForm((p) => ({ 
-                        ...p, 
+                      setAchievementForm((p) => ({
+                        ...p,
                         achievementId: val,
                         title: achievement?.title || val
                       }));
@@ -719,10 +724,10 @@ export default function AdminPanel() {
                     >
                       <div className="flex-1 flex items-center gap-3">
                         {s.iconUrl && (
-                          <img 
-                            src={s.iconUrl} 
-                            alt={s.name} 
-                            className="w-10 h-10 rounded-md object-cover" 
+                          <img
+                            src={s.iconUrl}
+                            alt={s.name}
+                            className="w-10 h-10 rounded-md object-cover"
                           />
                         )}
                         <div>

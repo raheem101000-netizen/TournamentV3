@@ -64,7 +64,7 @@ export default function PreviewMyServers() {
         iconUrl: serverIconUrl,
         backgroundUrl: serverBackgroundUrl,
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({
