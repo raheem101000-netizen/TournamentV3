@@ -524,8 +524,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
               Join the server to send messages
             </div>
           ) : (
-            <form onSubmit={handleSendMessage} className="relative flex items-end gap-2">
-              <div className="flex-1 flex items-center gap-2 bg-zinc-900/50 rounded-[24px] px-3 py-1 border border-zinc-800 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+            <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 max-w-4xl mx-auto w-full">
+              <div className="flex-1 flex items-center gap-2 bg-zinc-900/50 rounded-[24px] px-3 py-1 border border-zinc-800 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all backdrop-blur-sm">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -543,8 +543,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                 </Button>
 
                 <Input
-                  placeholder="iMessage..."
-                  className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-[15px] placeholder:text-muted-foreground/50"
+                  placeholder="iMessage"
+                  className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-[15px] placeholder:text-muted-foreground/50 text-center"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   data-testid="input-chat-message"
@@ -553,7 +553,7 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                 <Button
                   size="icon"
                   type="submit"
-                  className={`h-8 w-8 rounded-full shrink-0 transition-all duration-300 ${messageInput.trim() || stagedImage ? 'bg-[#007AFF] text-white hover:bg-[#0069d9]' : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'}`}
+                  className={`h-8 w-8 rounded-full shrink-0 transition-all duration-300 ${messageInput.trim() || stagedImage ? 'bg-[#007AFF] text-white hover:bg-[#0069d9]' : 'bg-transparent text-muted-foreground hover:bg-muted-foreground/10'}`}
                   disabled={!messageInput.trim() && !stagedImage}
                   data-testid="button-send-message"
                 >
