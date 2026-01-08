@@ -489,13 +489,13 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                 })
               )}
             </AnimatePresence>
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-16" />
           </div>
         </ScrollArea>
       </div>
 
       {/* Input Area - iOS Style */}
-      <div className="pb-1 pt-2 bg-black/90 backdrop-blur-xl border-t border-white/5 z-20 w-full mb- safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 pb-[calc(env(safe-area-inset-bottom)+4px)] pt-2 bg-black/90 backdrop-blur-xl border-t border-white/5 z-50 w-full">
         <div className="max-w-4xl mx-auto">
           {stagedImage && (
             <div className="flex items-center gap-3 mb-3 p-2 bg-muted/50 rounded-xl animate-in fade-in slide-in-from-bottom-2">
