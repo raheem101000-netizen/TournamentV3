@@ -23,24 +23,30 @@ export default function PreviewMessages() {
   if (selectedChatId) {
     return (
       <MobileLayout showBottomNav={false}>
-        <div className="flex flex-col h-[100dvh] bg-black text-white">
+        <div className="flex flex-col h-[100dvh] bg-black text-white overflow-hidden">
           {/* Header */}
-          <div className="flex-none flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-black z-10">
+          <div className="flex-none flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-black z-10">
             <button
               onClick={() => setSelectedChatId(null)}
-              className="text-blue-500 flex items-center gap-1"
+              className="text-blue-500 flex items-center gap-1 min-w-[60px]"
               aria-label="Back"
             >
               <ChevronLeft className="h-6 w-6" />
               <span className="text-lg">Back</span>
             </button>
 
-            {/* We could fetch thread details here to show name/avatar, 
-                for now we'll show a generic header or just "Chat" 
-                until we lift state or fetch details */}
-            <div className="flex-1 flex justify-center mr-8"> {/* mr-8 balances the back button */}
-              <span className="font-semibold text-lg">Chat</span>
-            </div>
+            <span className="font-semibold text-lg">Chat</span>
+
+            <button
+              className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
+              onClick={() => {
+                // Placeholder for rename or group settings
+                // toast({ title: "Coming Soon", description: "Custom group names coming soon!" });
+                alert("Custom group names coming soon!");
+              }}
+            >
+              Edit
+            </button>
           </div>
 
           {/* Chat Area */}

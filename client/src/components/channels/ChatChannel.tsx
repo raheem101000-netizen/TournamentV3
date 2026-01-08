@@ -489,7 +489,7 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                 })
               )}
             </AnimatePresence>
-            <div ref={messagesEndRef} className="h-16" />
+            <div ref={messagesEndRef} className="h-32" />
           </div>
         </ScrollArea>
       </div>
