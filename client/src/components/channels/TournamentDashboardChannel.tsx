@@ -457,17 +457,19 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
-              Edit
-            </Button>
-            <Button variant="destructive" size="icon" onClick={() => {
-              console.log('[DELETE] Trash button clicked, opening dialog');
-              setIsDeleteDialogOpen(true);
-            }} data-testid="button-delete-tournament">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          {user?.id === selectedTournament.organizerId && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
+                Edit
+              </Button>
+              <Button variant="destructive" size="icon" onClick={() => {
+                console.log('[DELETE] Trash button clicked, opening dialog');
+                setIsDeleteDialogOpen(true);
+              }} data-testid="button-delete-tournament">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -717,29 +719,29 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             handleMatchClick(match.id);
                             setShowMatchChat(true);
                           }}
-                          className={`p-3 rounded-lg border transition-all text-left ${selectedMatchId === match.id
+                          className={`p-4 rounded-lg border transition-all text-left w-full ${selectedMatchId === match.id
                             ? 'bg-accent text-accent-foreground border-accent'
                             : 'bg-card border-border hover:border-primary/50 hover-elevate'
                             }`}
                           data-testid={`button-match-${match.id}`}
                         >
-                          <div className="flex items-center justify-center gap-2 mb-2">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
                               {user1.avatar && (
-                                <img src={user1.avatar} alt={user1.username || ''} className="w-5 h-5 rounded-full object-cover" />
+                                <img src={user1.avatar} alt={user1.username || ''} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                               )}
-                              <span className="font-semibold text-sm truncate text-primary">@{user1.username || 'Player 1'}</span>
+                              <span className="font-semibold text-sm text-primary truncate">@{user1.username || 'Player 1'}</span>
                             </div>
-                            <div className="text-xs text-muted-foreground whitespace-nowrap">vs</div>
-                            <div className="flex items-center gap-1">
+                            <div className="text-xs text-muted-foreground text-center">vs</div>
+                            <div className="flex items-center gap-2">
                               {user2.avatar && (
-                                <img src={user2.avatar} alt={user2.username || ''} className="w-5 h-5 rounded-full object-cover" />
+                                <img src={user2.avatar} alt={user2.username || ''} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                               )}
-                              <span className="font-semibold text-sm truncate text-primary">@{user2.username || 'Player 2'}</span>
+                              <span className="font-semibold text-sm text-primary truncate">@{user2.username || 'Player 2'}</span>
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground text-center mb-2">Round {match.round}</div>
-                          <div className="text-xs text-center">
+                          <div className="text-xs text-muted-foreground text-center mt-3 pt-2 border-t">Round {match.round}</div>
+                          <div className="text-xs text-center mt-1">
                             {match.winnerId ? (
                               <div className="font-semibold text-green-600 dark:text-green-400 flex items-center justify-center gap-1">
                                 Winner:
@@ -1063,9 +1065,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                 {selectedTournamentTeams.map((team) => {
                   const memberUsername = (team as any).members?.[0]?.username;
                   return (
-                    <Card key={team.id}>
-                      <CardHeader>
-                        <CardTitle>@{memberUsername || 'Unknown'}</CardTitle>
+                    <Card key={team.id} className="overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base truncate" title={`@${memberUsername || 'Unknown'}`}>
+                          @{memberUsername || 'Unknown'}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="flex gap-4 text-sm">
