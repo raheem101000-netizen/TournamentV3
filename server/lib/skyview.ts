@@ -7,6 +7,70 @@ const API_KEY = process.env.SKYVIEW_API_KEY || 'demo123';
 const SERVICE_NAME = 'tourni1010-backend';
 const TENANT_ID = 'Tourni1010'; // <--- 🔴 REQUIRED FOR SKYVIEW
 
+// --- IMPORTANT ROUTES TO TRACE ---
+// Critical, High, and Medium priority routes (all write operations)
+export const IMPORTANT_ROUTES = [
+  // ========== 🔴 CRITICAL (Authentication & Account) ==========
+  'POST /api/auth/login',
+  'POST /api/auth/register',
+  'POST /api/auth/logout',
+  'POST /api/auth/resend-verification',
+  'PATCH /api/users/:id',
+  'POST /api/users/:id/password',
+  'POST /api/users/:id/disable',
+  'DELETE /api/users/:id',
+
+  // ========== 🟠 HIGH PRIORITY (Tournament Operations) ==========
+  'POST /api/tournaments',
+  'PATCH /api/tournaments/:id',
+  'DELETE /api/tournaments/:id',
+  'POST /api/tournaments/:tournamentId/generate-fixtures',
+  'POST /api/tournaments/:tournamentId/matches/custom',
+  'POST /api/tournaments/:tournamentId/registrations',
+  'POST /api/tournaments/:tournamentId/registration-config',
+  'PUT /api/tournaments/:id/registration/config',
+
+  // ========== 🟠 HIGH PRIORITY (Match Operations) ==========
+  'PATCH /api/matches/:id',
+  'DELETE /api/matches/:id',
+  'POST /api/matches/:matchId/winner',
+  'DELETE /api/matches/:matchId/participants/:participantId',
+
+  // ========== 🟡 MEDIUM PRIORITY (Server Management) ==========
+  'POST /api/servers',
+  'PATCH /api/servers/:id',
+  'DELETE /api/servers/:id',
+  'POST /api/servers/:serverId/join',
+  'POST /api/servers/:serverId/channels',
+  'DELETE /api/servers/:serverId/members/:userId',
+
+  // ========== 🟡 MEDIUM PRIORITY (Team Management) ==========
+  'POST /api/teams',
+  'PATCH /api/teams/:id',
+  'PATCH /api/teams/:id/members/:memberId',
+  'POST /api/team-members',
+  'DELETE /api/team-members/:id',
+  'POST /api/team-profiles',
+  'PATCH /api/team-profiles/:id',
+
+  // ========== 🟡 MEDIUM PRIORITY (Registration Management) ==========
+  'PATCH /api/registrations/:id',
+
+  // ========== 🟡 MEDIUM PRIORITY (Achievements & Content) ==========
+  'POST /api/achievements',
+  'POST /api/poster-templates',
+  'PATCH /api/poster-templates/:id',
+  'DELETE /api/poster-templates/:id',
+];
+
+// Helper to check if a route should be traced
+export function shouldTrace(routeName: string): boolean {
+  return IMPORTANT_ROUTES.some(pattern => {
+    const regex = new RegExp('^' + pattern.replace(/:[^/]+/g, '[^/]+') + '$');
+    return regex.test(routeName);
+  });
+}
+
 const traceContext = new AsyncLocalStorage<{ traceId: string; spanId: string }>();
 const pendingSpans: any[] = [];
 const pendingLogs: any[] = [];
@@ -69,7 +133,7 @@ export async function flush() {
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeSpans: [{
           spans: pendingSpans.map(s => ({
             name: s.name, traceId: s.traceId, spanId: s.spanId,
-            parentSpanId: s.parentSpanId, // Add parent span ID for distributed tracing
+            parentSpanId: s.parentSpanId,
             startTimeUnixNano: s.startTime + '000000', endTimeUnixNano: (s.endTime || Date.now()) + '000000',
             status: { code: s.status === 'ERROR' ? 2 : 1 }, attributes: []
           }))
