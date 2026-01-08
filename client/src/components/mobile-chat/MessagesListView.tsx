@@ -29,7 +29,19 @@ interface FriendRequest {
     senderAvatar: string | null
 }
 
-// ... (UserResult interface remains)
+
+interface MessagesListViewProps {
+    onSelectChat: (chatId: string) => void
+}
+
+interface UserResult {
+    id: string
+    username: string
+    displayName?: string
+    avatarUrl?: string
+    friendshipStatus: 'friend' | 'pending_sent' | 'pending_received' | 'none'
+}
+
 
 
 function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageThread; onSelect: () => void; onDelete: () => void }) {

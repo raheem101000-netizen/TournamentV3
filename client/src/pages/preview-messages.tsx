@@ -60,7 +60,7 @@ export default function PreviewMessages() {
 
   return (
     <MessagesListView
-      onSelectChat={(chatId) => setSelectedChatId(chatId)}
+      onSelectChat={(chatId: string) => setSelectedChatId(chatId)}
     />
   );
 }

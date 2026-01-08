@@ -22,7 +22,16 @@ export default function VerifyEmail() {
 
       try {
         const response = await fetch(`/api/auth/verify?token=${token}`);
-        const data = await response.json();
+
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          // Fallback if server sends text/html error
+          const text = await response.text();
+          throw new Error(text || `Verification failed with status ${response.status}`);
+        }
 
         if (response.ok) {
           setStatus("success");
@@ -34,9 +43,10 @@ export default function VerifyEmail() {
           setStatus("error");
           setMessage(data.error || "Failed to verify email");
         }
-      } catch (error) {
+      } catch (error: any) {
+        console.error("Verification error:", error);
         setStatus("error");
-        setMessage("An error occurred during verification");
+        setMessage(error.message || "An error occurred during verification");
       }
     };
 

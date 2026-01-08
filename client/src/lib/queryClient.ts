@@ -26,7 +26,19 @@ export async function apiRequest<T = any>(
     return {} as T;
   }
 
-  return res.json();
+  const contentType = res.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return res.json();
+  }
+
+  // Return text if not JSON, or empty object if empty
+  const text = await res.text();
+  if (!text) return {} as T;
+  try {
+    return JSON.parse(text); // Try parsing just in case content-type was wrong
+  } catch (e) {
+    return { message: text } as unknown as T; // Return as object with message
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

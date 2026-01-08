@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function CheckEmail() {
   const [, setLocation] = useLocation();
@@ -20,27 +21,13 @@ export default function CheckEmail() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const data = await apiRequest('POST', "/api/auth/resend-verification", { email });
+      // apiRequest throws if !ok, so if we get here it's success
+      setIsSent(true);
+      toast({
+        title: "Success",
+        description: "Verification email sent! Check your inbox.",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsSent(true);
-        toast({
-          title: "Success",
-          description: "Verification email sent! Check your inbox.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to resend verification email",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       toast({
         title: "Error",
