@@ -674,16 +674,14 @@ export class DatabaseStorage implements IStorage {
     const tournamentIds = userTournaments.map(t => t.tournamentId);
     console.log("[MSG-THREADS] Tournament IDs:", tournamentIds);
 
-    // Get all teams in those tournaments - simplified with or logic
-    let teamIds: string[] = [];
-    for (const tournamentId of tournamentIds) {
-      const tournamentTeams = await db
-        .select({ id: teams.id })
-        .from(teams)
-        .where(eq(teams.tournamentId, tournamentId));
-      console.log("[MSG-THREADS] Teams in tournament", tournamentId, ":", tournamentTeams.length);
-      teamIds.push(...tournamentTeams.map(t => t.id));
-    }
+    // Get all teams in those tournaments - simplified with a single batch query
+    const tournamentTeams = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(inArray(teams.tournamentId, tournamentIds));
+
+    console.log("[MSG-THREADS] Total teams found in user tournaments:", tournamentTeams.length);
+    const teamIds = tournamentTeams.map(t => t.id);
 
     console.log("[MSG-THREADS] Total team IDs:", teamIds);
 
