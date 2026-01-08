@@ -382,31 +382,6 @@ export default function CreateTournament() {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="visibility"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Tournament Visibility</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-tournament-visibility">
-                              <SelectValue placeholder="Select visibility" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="public">Public (Posted on Homepage)</SelectItem>
-                            <SelectItem value="private">Private (Only in Server)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Who can see and join this tournament
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
               )}
 

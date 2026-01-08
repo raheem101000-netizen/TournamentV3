@@ -134,7 +134,7 @@ export default function PreviewAccount() {
   const updateTeamMutation = useMutation({
     mutationFn: async ({ teamId, data }: { teamId: string; data: any }) => {
       const response = await apiRequest("PATCH", `/api/team-profiles/${teamId}`, data);
-      return response.json();
+      return response;
     },
     onSuccess: (updatedTeam) => {
       // Update selectedTeam with the new data from the server
@@ -156,7 +156,7 @@ export default function PreviewAccount() {
   const updateMemberMutation = useMutation({
     mutationFn: async ({ memberId, data }: { memberId: string; data: any }) => {
       const response = await apiRequest("PATCH", `/api/team-members/${memberId}`, data);
-      return response.json();
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -182,7 +182,7 @@ export default function PreviewAccount() {
         role: "Member",
         position: "Member"
       });
-      return res.json();
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
