@@ -258,7 +258,7 @@ export default function MobilePreviewHome() {
             <p className="text-muted-foreground font-medium">No tournaments found</p>
             {(searchQuery || gameFilter !== "all") && (
               <Button
-                variant="link"
+                variant="ghost"
                 onClick={() => { setSearchQuery(""); setGameFilter("all"); }}
                 className="mt-2 text-xs"
               >

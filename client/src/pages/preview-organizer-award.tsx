@@ -224,7 +224,7 @@ export default function PreviewOrganizerAward() {
                               data-testid={`player-option-${player.id}`}
                             >
                               <Avatar className="w-6 h-6">
-                                <AvatarImage src={player.avatarUrl} />
+                                <AvatarImage src={player.avatarUrl || undefined} />
                                 <AvatarFallback>{player.username.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
