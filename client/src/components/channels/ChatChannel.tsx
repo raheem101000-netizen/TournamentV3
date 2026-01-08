@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { MessageSquare, Send, X, Image as ImageIcon, Paperclip, Loader2, Pencil, Trash2, Check } from "lucide-react";
+import { MessageSquare, Send, X, Image as ImageIcon, Paperclip, Loader2, Pencil, Trash2, Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -494,8 +494,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
         </ScrollArea>
       </div>
 
-      {/* Input Area - Pill Shaped */}
-      <div className="p-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-20">
+      {/* Input Area - iOS Style */}
+      <div className="pb-1 pt-2 bg-black/90 backdrop-blur-xl border-t border-white/5 z-20 w-full mb- safe-area-bottom">
         <div className="max-w-4xl mx-auto">
           {stagedImage && (
             <div className="flex items-center gap-3 mb-3 p-2 bg-muted/50 rounded-xl animate-in fade-in slide-in-from-bottom-2">
@@ -524,42 +524,52 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
               Join the server to send messages
             </div>
           ) : (
-            <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 max-w-4xl mx-auto w-full">
-              <div className="flex-1 flex items-center gap-2 bg-zinc-900/50 rounded-[24px] px-3 py-1 border border-zinc-800 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all backdrop-blur-sm">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  type="button"
-                  className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0"
-                  onClick={handleImageUpload}
-                  disabled={isUploadingImage}
-                  data-testid="button-attach-image"
-                >
-                  {isUploadingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImageIcon className="h-5 w-5" />
-                  )}
-                </Button>
+            <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 max-w-4xl mx-auto w-full px-2 pb-2">
+              <Button
+                size="icon"
+                type="button"
+                className="h-8 w-8 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700 shrink-0"
+                onClick={handleImageUpload}
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-5 w-5" />
+                )}
+              </Button>
 
+              <div className="flex-1 flex items-center bg-zinc-900 rounded-[18px] px-3 py-1 border border-zinc-800/50 min-h-[36px]">
                 <Input
                   placeholder="iMessage"
-                  className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-[15px] placeholder:text-muted-foreground/50 text-center"
+                  className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-7 text-[16px] placeholder:text-zinc-500 leading-tight"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  data-testid="input-chat-message"
                 />
 
+                {/* Send Button inside or outside? iOS has mic inside, arrow appears when typing. 
+                    For now, keeping Send button on the right of the whole bar or inside?
+                    The user's ref image shows 'iMessage' centered, and a mic on the right. 
+                    But when typing, it usually changes to a blue arrow. 
+                    Let's place the Send button outside to the right for clarity, or inside if we want exact mimic.
+                    User's "lowered" request implies compactness. Let's keep it simple: Button Right.
+                */}
+              </div>
+
+              {/* Only show Send button if there is text, otherwise maybe Mic (placeholder) or nothing? 
+                   For functionality, always showing Send is safer, but iOS hides it.
+                   Let's show the Send button only when typing, mimicking iOS.
+               */}
+              {(messageInput.trim() || stagedImage) && (
                 <Button
                   size="icon"
                   type="submit"
-                  className={`h-8 w-8 rounded-full shrink-0 transition-all duration-300 ${messageInput.trim() || stagedImage ? 'bg-[#007AFF] text-white hover:bg-[#0069d9]' : 'bg-transparent text-muted-foreground hover:bg-muted-foreground/10'}`}
+                  className="h-8 w-8 rounded-full bg-[#007AFF] text-white hover:bg-[#0069d9] shrink-0 animate-in zoom-in spin-in-90 duration-200"
                   disabled={!messageInput.trim() && !stagedImage}
-                  data-testid="button-send-message"
                 >
-                  <Send className="h-4 w-4 ml-0.5" />
+                  <Send className="h-4 w-4" />
                 </Button>
-              </div>
+              )}
             </form>
           )}
           <input
