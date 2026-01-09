@@ -51,6 +51,7 @@ export default function RichMatchChat({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionIndex, setMentionIndex] = useState(-1);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [stagedImage, setStagedImage] = useState<{ file: File; preview: string } | null>(null);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [editText, setEditText] = useState("");
@@ -327,83 +328,103 @@ export default function RichMatchChat({
     );
   };
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() && !stagedImage) return;
 
-    // Detect if current user is mentioned
-    const mentionRegex = /@([\w-]+)/g;
-    let match;
-    const mentionedUsernames = new Set<string>();
+    let imageUrl: string | null = null;
 
-    while ((match = mentionRegex.exec(messageInput)) !== null) {
-      mentionedUsernames.add(match[1]);
-    }
+    // Upload image if staged
+    if (stagedImage) {
+      setIsUploadingImage(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', stagedImage.file);
 
-    // Check if current user is mentioned
-    const currentUserMentioned = mentionedUsernames.has(currentUser?.username || '');
+        const uploadResponse = await fetch('/api/objects/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-    sendMessageMutation.mutate({ message: messageInput });
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
 
-    // Show notification if user mentions themselves or others are mentioned
-    if (mentionedUsernames.size > 0) {
-      const mentionedList = Array.from(mentionedUsernames).join(', ');
-      toast({
-        title: "Mentions Sent",
-        description: `You mentioned: @${mentionedList}`,
-        variant: "default",
-      });
-    }
-  };
-
-  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingImage(true);
-    try {
-      // Upload image to server
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const uploadResponse = await fetch('/api/objects/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image');
+        const uploadData = await uploadResponse.json();
+        imageUrl = uploadData.url || uploadData.fileUrl;
+      } catch (error) {
+        console.error("Image upload error:", error);
+        toast({
+          title: "Upload Failed",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+        setIsUploadingImage(false);
+        return;
       }
+      setIsUploadingImage(false);
+    }
 
-      const uploadData = await uploadResponse.json();
-      const imageUrl = uploadData.url || uploadData.fileUrl;
-
-      // Send message with image
+    // Send message with optional image
+    try {
       await apiRequest("POST", `/api/matches/${matchId}/messages`, {
-        message: "",
+        message: messageInput.trim(),
         imageUrl: imageUrl,
         userId: currentUser?.id
       });
 
-      // Clear input and refresh messages
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
+
+      // Clear inputs
+      setMessageInput("");
+      setStagedImage(null);
       if (imageInputRef.current) {
         imageInputRef.current.value = '';
       }
-      queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
 
-      toast({
-        title: "Image Uploaded",
-        description: "Your image has been shared!",
-        variant: "default",
-      });
+      // Detect mentions
+      if (messageInput.trim()) {
+        const mentionRegex = /@([\w-]+)/g;
+        let match;
+        const mentionedUsernames = new Set<string>();
+
+        while ((match = mentionRegex.exec(messageInput)) !== null) {
+          mentionedUsernames.add(match[1]);
+        }
+
+        if (mentionedUsernames.size > 0) {
+          const mentionedList = Array.from(mentionedUsernames).join(', ');
+          toast({
+            title: "Mentions Sent",
+            description: `You mentioned: @${mentionedList}`,
+            variant: "default",
+          });
+        }
+      }
     } catch (error: any) {
-      console.error("Image upload error:", error);
+      console.error("Message send error:", error);
       toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload image. Please try again.",
+        title: "Send Failed",
+        description: error.message || "Failed to send message.",
         variant: "destructive",
       });
-    } finally {
-      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setStagedImage({ file, preview: previewUrl });
+  };
+
+  const clearStagedImage = () => {
+    if (stagedImage) {
+      URL.revokeObjectURL(stagedImage.preview);
+      setStagedImage(null);
+    }
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
     }
   };
 
@@ -624,7 +645,28 @@ export default function RichMatchChat({
                   <ImageIcon className="w-4 h-4" />
                 )}
               </Button>
+              {/* Message input area */}
               <div className="flex-1 relative">
+                {/* Staged Image Preview */}
+                {stagedImage && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-background border rounded-md">
+                    <div className="relative inline-block">
+                      <img
+                        src={stagedImage.preview}
+                        alt="Staged upload"
+                        className="max-h-40 rounded"
+                      />
+                      <button
+                        onClick={clearStagedImage}
+                        className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full"
+                        type="button"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <Input
                   placeholder="Type @ to mention... or type a message"
                   value={messageInput}
@@ -675,10 +717,10 @@ export default function RichMatchChat({
                 size="icon"
                 className="h-9 w-9"
                 onClick={handleSendMessage}
-                disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                disabled={(!messageInput.trim() && !stagedImage) || isUploadingImage}
                 data-testid="button-send-message"
               >
-                <Send className="w-4 h-4" />
+                {isUploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
           </div>
