@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import Particles from "@/components/ui/particles";
 
@@ -11,22 +11,12 @@ interface MobileLayoutProps {
 export function MobileLayout({
     children,
     showBottomNav = true,
-    showParticles = true
+    showParticles = false // Changed default to false for performance
 }: MobileLayoutProps) {
-    const [mountParticles, setMountParticles] = useState(false);
-
-    useEffect(() => {
-        // Defer particles loading to improve initial page load performance (LCP)
-        const timer = setTimeout(() => {
-            setMountParticles(true);
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, []);
-
     return (
         <>
-            {showParticles && mountParticles && (
-                <div className="fixed inset-0 z-50 pointer-events-none animate-fade-in duration-1000">
+            {showParticles && (
+                <div className="fixed inset-0 z-50 pointer-events-none">
                     <Particles
                         particleColors={['#ffffff', '#ffffff', '#ffffff']}
                         particleCount={150}
