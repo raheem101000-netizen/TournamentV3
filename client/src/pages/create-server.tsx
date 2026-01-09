@@ -284,6 +284,21 @@ export default function CreateServer() {
                   disabled={createMutation.isPending}
                   className="flex-1"
                   data-testid="button-create-server"
+                  onClick={(e) => {
+                    // Debug: Check if form is valid
+                    const errors = form.formState.errors;
+                    if (Object.keys(errors).length > 0) {
+                      e.preventDefault();
+                      toast({
+                        title: "Form validation failed",
+                        description: Object.entries(errors).map(([key, err]: [string, any]) =>
+                          `${key}: ${err.message}`
+                        ).join('\n'),
+                        variant: "destructive"
+                      });
+                      console.error('[CREATE SERVER] Validation errors:', errors);
+                    }
+                  }}
                 >
                   {createMutation.isPending ? "Creating..." : "Create Server"}
                 </Button>
