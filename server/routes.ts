@@ -5247,7 +5247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send a message to a thread
   app.post("/api/threads/:threadId/messages", requireAuth, async (req, res) => {
     try {
-      const { message } = req.body;
+      const { message, imageUrl } = req.body;
       const userId = req.session.userId!;
       const threadId = req.params.threadId;
 
@@ -5259,7 +5259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user?.username || "Unknown",
         message,
         replyToId: null,
-        imageUrl: null,
+        imageUrl: imageUrl || null,
         tournamentId: null // Optional if needed
       });
 
