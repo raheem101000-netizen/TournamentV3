@@ -406,7 +406,7 @@ export default function PreviewMyServers() {
                     <Button
                       className="flex-1"
                       onClick={handleCreateServer}
-                      disabled={createServerMutation.isPending || !serverIconUrl || !serverBackgroundUrl}
+                      disabled={createServerMutation.isPending || !serverIconUrl}
                       data-testid="button-confirm-create"
                     >
                       {createServerMutation.isPending ? "Creating..." : "Create Server"}
