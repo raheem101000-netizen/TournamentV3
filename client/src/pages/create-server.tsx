@@ -1,5 +1,4 @@
-// Force rebuild Fri Jan  9 19:04:41 CET 2026
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
