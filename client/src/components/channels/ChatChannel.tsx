@@ -173,7 +173,7 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
   const editMessageMutation = useMutation({
     mutationFn: async ({ id, message }: { id: string; message: string }) => {
       const response = await apiRequest("PATCH", `/api/messages/${id}`, { message });
-      return response.json();
+      return response; // apiRequest already returns parsed JSON
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey });

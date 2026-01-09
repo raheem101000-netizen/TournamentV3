@@ -38,7 +38,7 @@ const createServerSchema = z.object({
   gameTags: z.array(z.string()).optional(),
   isPublic: z.number().default(1),
   iconUrl: z.string().min(1, "Server icon is required"),
-  backgroundUrl: z.string().min(1, "Server background image is required"),
+  backgroundUrl: z.string().optional(), // Made optional - not critical for server creation
 });
 
 type CreateServerForm = z.infer<typeof createServerSchema>;
@@ -207,11 +207,10 @@ export default function CreateServer() {
                 render={({ field }) => (
                   <FormItem>
                     <ImageUploadField
-                      label="Server Background"
+                      label="Server Background (Optional)"
                       value={field.value || ""}
                       onChange={field.onChange}
                       placeholder="Upload your server background image"
-                      required
                     />
                     <FormMessage />
                   </FormItem>
