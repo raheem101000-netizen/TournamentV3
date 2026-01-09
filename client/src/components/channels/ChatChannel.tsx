@@ -437,13 +437,13 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                                   e.stopPropagation();
                                   setEnlargedImageUrl((message as any).imageUrl);
                                 }}
-                                className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-2 w-full"
+                                className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-2 w-full max-w-[200px]"
                                 data-testid={`button-img-message-${message.id}`}
                               >
                                 <OptimizedImage
                                   src={(message as any).imageUrl}
                                   alt="Shared image"
-                                  className="w-full h-auto max-h-60 object-cover rounded-lg"
+                                  className="w-full h-auto max-h-32 object-cover rounded-lg"
                                   thumbnailSize="lg"
                                 />
                               </button>
