@@ -3339,6 +3339,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertTeamProfileSchema.parse(req.body);
       const teamProfile = await storage.createTeamProfile(validatedData);
+
+      // Automatically add owner as a team member with "Owner" role
+      try {
+        await storage.createTeamMember({
+          teamId: teamProfile.id,
+          userId: teamProfile.ownerId,
+          role: "Owner",
+          position: null,
+        });
+      } catch (memberError) {
+        console.error("Failed to add owner as team member:", memberError);
+        // Don't fail team creation if member addition fails - frontend will retry
+      }
+
       res.status(201).json(teamProfile);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
