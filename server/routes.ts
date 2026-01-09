@@ -3649,8 +3649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload endpoint - saves to disk using multer with thumbnail generation
-  // File upload endpoint - saves to DB
+  // File upload endpoint - saves to Vercel Blob (CDN) or DB fallback
   app.post("/api/objects/upload", requireAuth, upload.single("file"), async (req, res) => {
     try {
       const file = req.file;
@@ -3662,14 +3661,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ext = path.extname(file.originalname);
       const filename = `${fileId}${ext}`;
 
-      // Store in DB
+      // Try Vercel Blob first (CDN-backed, much faster)
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        try {
+          const { put } = await import('@vercel/blob');
+
+          const blob = await put(filename, file.buffer, {
+            access: 'public',
+            contentType: file.mimetype,
+            addRandomSuffix: false, // We already have UUID in filename
+          });
+
+          console.log(`[BLOB] Uploaded ${filename} to CDN: ${blob.url}`);
+
+          // Return CDN URL (served globally with caching)
+          return res.json({
+            url: blob.url,
+            fileUrl: blob.url
+          });
+        } catch (blobError: any) {
+          console.error('[BLOB] Upload failed, falling back to DB:', blobError.message);
+          // Fall through to DB storage
+        }
+      }
+
+      // Fallback: Store in DB (slower, no CDN)
+      console.log(`[DB] Storing ${filename} in PostgreSQL (no Blob token or Blob failed)`);
       const { uploadedFiles } = await import("../shared/schema.js");
       const { db } = await import("./db.js");
 
       const fileData = file.buffer.toString('base64');
 
       await db.insert(uploadedFiles).values({
-        id: filename, // Use filename as ID for simplicity
+        id: filename,
         filename: file.originalname,
         mimeType: file.mimetype,
         data: fileData,
