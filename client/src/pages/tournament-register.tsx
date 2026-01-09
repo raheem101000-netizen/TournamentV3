@@ -86,7 +86,7 @@ export default function TournamentRegister() {
           <CardHeader>
             <CardTitle className="text-lg">Tournament Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto">
             {tournament.imageUrl && (
               <img
                 src={tournament.imageUrl}
