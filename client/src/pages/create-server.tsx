@@ -86,8 +86,16 @@ export default function CreateServer() {
   });
 
   const onSubmit = (data: CreateServerForm) => {
+    console.log('[CREATE SERVER] Form submitted with data:', data);
     createMutation.mutate(data);
   };
+
+  // Log form errors for debugging
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.error('[CREATE SERVER] Form validation errors:', form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   return (
     <div className="container max-w-2xl mx-auto p-6 overflow-y-auto max-h-screen">
