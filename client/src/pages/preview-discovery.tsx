@@ -483,7 +483,7 @@ export default function PreviewDiscovery() {
                   <Button
                     className="flex-1"
                     onClick={handleCreateServer}
-                    disabled={createServerMutation.isPending || welcomeMessage.length < 10 || !serverIconUrl || !serverBackgroundUrl}
+                    disabled={createServerMutation.isPending || !serverIconUrl}
                     data-testid="button-confirm-create"
                   >
                     {createServerMutation.isPending ? "Creating..." : "Create Server"}
