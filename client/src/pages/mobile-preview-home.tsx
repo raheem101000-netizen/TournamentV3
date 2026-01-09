@@ -128,7 +128,7 @@ export default function MobilePreviewHome() {
 
         {/* Responsive Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredTournaments.map((tournament, index) => (
+          {filteredTournaments.map((tournament) => (
             <Card
               key={tournament.id}
               className="overflow-hidden hover-elevate group"
@@ -158,7 +158,6 @@ export default function MobilePreviewHome() {
                   alt={tournament.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   thumbnailSize="lg"
-                  priority={index === 0}
                   fallback={
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
                       <div className="relative">
@@ -283,11 +282,17 @@ export default function MobilePreviewHome() {
             </DialogHeader>
 
             <div className="space-y-4">
-              <img
-                src={selectedTournament?.imageUrl || undefined}
+              <OptimizedImage
+                src={selectedTournament?.imageUrl}
                 alt={selectedTournament?.name || "Tournament"}
-                className="w-full h-48 object-cover rounded-lg shadow-sm"
-                loading="lazy"
+                className="w-full rounded-lg aspect-video object-cover shadow-sm"
+                thumbnailSize="lg"
+                priority={true}
+                fallback={
+                  <div className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center">
+                    <Trophy className="h-16 w-16 text-muted-foreground/30" />
+                  </div>
+                }
               />
 
               <div className="grid grid-cols-2 gap-3 text-sm">

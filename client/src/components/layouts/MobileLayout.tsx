@@ -11,7 +11,7 @@ interface MobileLayoutProps {
 export function MobileLayout({
     children,
     showBottomNav = true,
-    showParticles = true // Re-enabled for aesthetics, loads instantly
+    showParticles = false // Changed default to false for performance
 }: MobileLayoutProps) {
     return (
         <>
