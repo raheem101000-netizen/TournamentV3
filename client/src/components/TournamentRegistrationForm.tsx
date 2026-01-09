@@ -26,13 +26,15 @@ interface RegistrationConfig {
 
 interface TournamentRegistrationFormProps {
   tournamentId: string;
-  tournamentName: string;
+  tournamentName?: string;
+  serverId?: string;
   onRegistrationSuccess?: () => void;
 }
 
 export default function TournamentRegistrationForm({
   tournamentId,
   tournamentName,
+  serverId,
   onRegistrationSuccess,
 }: TournamentRegistrationFormProps) {
   const { user } = useAuth();
@@ -81,7 +83,19 @@ export default function TournamentRegistrationForm({
       });
       return res; // apiRequest already returns the parsed JSON data
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Auto-join the tournament's server if serverId is provided
+      if (serverId) {
+        try {
+          await apiRequest('POST', `/api/servers/${serverId}/join`);
+          queryClient.invalidateQueries({ queryKey: ['/api/my-servers'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+        } catch (error) {
+          // Silently fail if already a member or other non-critical error
+          console.warn('Server join attempt:', error);
+        }
+      }
+
       toast({
         title: "Success!",
         description: "Registration submitted successfully",

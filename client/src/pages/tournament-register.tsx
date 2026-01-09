@@ -211,6 +211,7 @@ export default function TournamentRegister() {
           <TournamentRegistrationForm
             tournamentId={tournamentId}
             tournamentName={tournament.name}
+            serverId={tournament.serverId || undefined}
             onRegistrationSuccess={() => {
               setLocation("/");
             }}
