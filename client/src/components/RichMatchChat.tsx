@@ -540,7 +540,8 @@ export default function RichMatchChat({
                         )}
 
                         {/* Message Bubble - iOS Messages Style */}
-                        <div className={`relative px-4 py-3 shadow-sm min-w-[60px]
+                        <div className={`relative shadow-sm min-w-[60px]
+                          ${msg.imageUrl && !msg.message ? 'p-0' : 'px-4 py-3'}
                           ${isOwn
                             ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
                             : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
@@ -553,13 +554,13 @@ export default function RichMatchChat({
                                 e.stopPropagation();
                                 setEnlargedImageUrl(msg.imageUrl);
                               }}
-                              className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-1 w-full"
+                              className="p-0 border-0 bg-transparent cursor-pointer rounded-[16px] overflow-hidden w-full block"
                               data-testid={`button-img-message-${msg.id}`}
                             >
                               <img
                                 src={msg.imageUrl}
                                 alt="Shared image"
-                                className="w-full h-auto max-h-40 object-cover rounded-lg"
+                                className="w-full h-auto max-h-48 object-cover rounded-[16px]"
                               />
                             </button>
                           )}

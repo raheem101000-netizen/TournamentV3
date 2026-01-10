@@ -425,7 +425,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                           )}
 
                           {/* Message Bubble */}
-                          <div className={`relative px-4 py-3 shadow-sm min-w-[60px]
+                          <div className={`relative shadow-sm min-w-[60px]
+                            ${(message as any).imageUrl && !message.message ? 'p-0' : 'px-4 py-3'}
                             ${isOwnMessage
                               ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
                               : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
@@ -437,13 +438,13 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                                   e.stopPropagation();
                                   setEnlargedImageUrl((message as any).imageUrl);
                                 }}
-                                className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-1 w-full"
+                                className="p-0 border-0 bg-transparent cursor-pointer rounded-[16px] overflow-hidden w-full block"
                                 data-testid={`button-img-message-${message.id}`}
                               >
                                 <OptimizedImage
                                   src={(message as any).imageUrl}
                                   alt="Shared image"
-                                  className="w-full h-auto max-h-40 object-cover rounded-lg"
+                                  className="w-full h-auto max-h-48 object-cover rounded-[16px]"
                                   thumbnailSize="lg"
                                 />
                               </button>
