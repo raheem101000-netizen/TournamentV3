@@ -64,8 +64,8 @@ export default function TournamentPublicView() {
               Tournament Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Format</p>
                 <p className="font-semibold capitalize">{tournament.format.replace('_', ' ')}</p>
@@ -82,7 +82,52 @@ export default function TournamentPublicView() {
                 <p className="text-sm text-muted-foreground">Prize Pool</p>
                 <p className="font-semibold">{tournament.prizeReward || "No prize"}</p>
               </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Entry Fee</p>
+                <p className="font-semibold">{tournament.entryFee || "Free"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Platform</p>
+                <p className="font-semibold">{tournament.platform || "Any"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Region</p>
+                <p className="font-semibold">{tournament.region || "Global"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Organizer</p>
+                <p className="font-semibold">{tournament.organizerName || "System"}</p>
+              </div>
             </div>
+
+            {tournament.paymentInstructions && (
+              <div>
+                <h3 className="font-semibold mb-2">Payment Instructions</h3>
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-4 rounded-md max-h-[200px] overflow-y-auto">
+                  {tournament.paymentInstructions}
+                </div>
+              </div>
+            )}
+
+            {(tournament.startDate || tournament.endDate) && (
+              <div>
+                <h3 className="font-semibold mb-2">Schedule</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {tournament.startDate && (
+                    <div>
+                      <span className="text-muted-foreground">Start: </span>
+                      <span className="font-medium">{new Date(tournament.startDate).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {tournament.endDate && (
+                    <div>
+                      <span className="text-muted-foreground">End: </span>
+                      <span className="font-medium">{new Date(tournament.endDate).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

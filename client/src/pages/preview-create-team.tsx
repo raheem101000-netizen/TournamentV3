@@ -58,7 +58,7 @@ export default function PreviewCreateTeam() {
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: any) => {
       const response = await apiRequest("POST", "/api/team-profiles", teamData);
-      return response.json();
+      return response;
     },
     onSuccess: async (createdTeam: any) => {
       // Add owner as a team member
@@ -401,7 +401,7 @@ export default function PreviewCreateTeam() {
         particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
         alphaParticles={false}
         particleBaseSize={200}
-                    cameraDistance={10}
+        cameraDistance={10}
         sizeRandomness={0.5}
         disableRotation={false}
         className="fixed inset-0 z-50 pointer-events-none"
