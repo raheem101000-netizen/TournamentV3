@@ -61,12 +61,9 @@ export default function PreviewCreateTeam() {
       return response;
     },
     onSuccess: async (createdTeam: any) => {
-      // Add owner as a team member
+      // Add all players as team members
       try {
-        await apiRequest("POST", `/api/team-profiles/${createdTeam.id}/members`, {
-          userId: user?.id,
-          role: "Owner",
-        });
+        // Owner is added automatically by backend
 
         // Add all players as team members
         for (const player of players) {

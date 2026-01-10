@@ -3,11 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, Trophy } from "lucide-react";
+import { ChevronLeft, Trophy, X, Clock, Users, Laptop, MapPin } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
-import type { Tournament, Team, Match } from "@shared/schema";
+import type { Tournament as SchemaTournament, Team, Match } from "@shared/schema";
+
+type Tournament = SchemaTournament & {
+  description?: string;
+  memberCount?: number;
+  rules?: string;
+};
 
 export default function TournamentPublicView() {
   const [match, params] = useRoute("/tournament/:id/view");
@@ -37,167 +44,114 @@ export default function TournamentPublicView() {
     );
   }
 
-  const getTeamById = (id: string | undefined) => teams.find(t => t.id === id);
-
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setLocation("/")}
-            data-testid="button-back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold flex-1">{tournament.name}</h1>
-        </div>
-      </div>
+    <div className="min-h-screen bg-black/95 flex items-center justify-center p-4">
+      {/* Main Tournament Card */}
+      <div className="w-full max-w-md bg-[#1a1b1e] rounded-3xl border border-white/10 overflow-hidden shadow-2xl relative">
+        {/* Close/Back Button */}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          onClick={() => setLocation("/")}
+        >
+          <X className="w-5 h-5" />
+        </Button>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Tournament Info */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              Tournament Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Format</p>
-                <p className="font-semibold capitalize">{tournament.format.replace('_', ' ')}</p>
+        <div className="p-8 space-y-8">
+          {/* Header */}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-white tracking-tight">{tournament.name}</h1>
+            <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">{tournament.game || "UNSPECIFIED GAME"}</p>
+          </div>
+
+          {/* Host Info */}
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10 border border-white/10">
+              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${tournament.organizerName || 'host'}`} />
+              <AvatarFallback>TH</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-white font-bold text-sm">{tournament.organizerName || "System Host"}</p>
+              <p className="text-xs text-gray-500">Tournament Host</p>
+            </div>
+          </div>
+
+          {/* Key Stats */}
+          <div className="grid grid-cols-2 gap-8 py-2">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Prize Pool</p>
+              <p className="text-2xl font-black text-[#4ade80]">{tournament.prizeReward || "$0"}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Entry Fee</p>
+              <p className="text-2xl font-black text-[#4ade80]">{tournament.entryFee || "Free"}</p>
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 w-full" />
+
+          {/* Details List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3 text-gray-400">
+                <Clock className="w-4 h-4" />
+                <span>Start Time</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-semibold capitalize">{tournament.status}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Game</p>
-                <p className="font-semibold">{tournament.game || "Not specified"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Prize Pool</p>
-                <p className="font-semibold">{tournament.prizeReward || "No prize"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Entry Fee</p>
-                <p className="font-semibold">{tournament.entryFee || "Free"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Platform</p>
-                <p className="font-semibold">{tournament.platform || "Any"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Region</p>
-                <p className="font-semibold">{tournament.region || "Global"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Organizer</p>
-                <p className="font-semibold">{tournament.organizerName || "System"}</p>
-              </div>
+              <span className="text-white font-medium">
+                {tournament.startDate ? new Date(tournament.startDate).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "TBA"}
+              </span>
             </div>
 
-            {tournament.paymentInstructions && (
-              <div>
-                <h3 className="font-semibold mb-2">Payment Instructions</h3>
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-4 rounded-md max-h-[200px] overflow-y-auto">
-                  {tournament.paymentInstructions}
-                </div>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3 text-gray-400">
+                <Users className="w-4 h-4" />
+                <span>Players</span>
               </div>
-            )}
+              <span className="text-white font-medium">{tournament.memberCount || 0} / {tournament.totalTeams || "Unlimited"}</span>
+            </div>
 
-            {(tournament.startDate || tournament.endDate) && (
-              <div>
-                <h3 className="font-semibold mb-2">Schedule</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {tournament.startDate && (
-                    <div>
-                      <span className="text-muted-foreground">Start: </span>
-                      <span className="font-medium">{new Date(tournament.startDate).toLocaleString()}</span>
-                    </div>
-                  )}
-                  {tournament.endDate && (
-                    <div>
-                      <span className="text-muted-foreground">End: </span>
-                      <span className="font-medium">{new Date(tournament.endDate).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3 text-gray-400">
+                <Trophy className="w-4 h-4" />
+                <span>Format</span>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <span className="text-white font-medium capitalize">{tournament.format.replace('_', ' ')}</span>
+            </div>
 
-        {/* Progression Tabs */}
-        <Tabs defaultValue="fixtures" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
-            <TabsTrigger value="standings">Standings</TabsTrigger>
-            <TabsTrigger value="bracket">Bracket</TabsTrigger>
-          </TabsList>
-
-          {/* Fixtures Tab */}
-          <TabsContent value="fixtures">
-            {matches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {matches.map((match) => {
-                  const team1 = getTeamById(match.team1Id || undefined);
-                  const team2 = getTeamById(match.team2Id || undefined);
-                  return (
-                    <div key={match.id}>
-                      <MatchCard
-                        match={match}
-                        team1={team1}
-                        team2={team2}
-                      />
-                    </div>
-                  );
-                })}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3 text-gray-400">
+                <Laptop className="w-4 h-4" />
+                <span>Platform</span>
               </div>
-            ) : (
-              <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No matches scheduled yet
-                </p>
-              </Card>
-            )}
-          </TabsContent>
+              <span className="text-white font-medium">{tournament.platform || "Any"}</span>
+            </div>
 
-          {/* Standings Tab */}
-          <TabsContent value="standings">
-            {teams.length > 0 ? (
-              <StandingsTable teams={teams.filter(t => !t.isRemoved)} />
-            ) : (
-              <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No teams registered yet
-                </p>
-              </Card>
-            )}
-          </TabsContent>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3 text-gray-400">
+                <MapPin className="w-4 h-4" />
+                <span>Region</span>
+              </div>
+              <span className="text-white font-medium">{tournament.region || "Global"}</span>
+            </div>
+          </div>
 
-          {/* Bracket Tab */}
-          <TabsContent value="bracket">
-            {tournament.format === "single_elimination" && matches.length > 0 ? (
-              <BracketView
-                matches={matches}
-                teams={teams}
-                format={tournament.format}
-              />
-            ) : (
-              <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  {tournament.format === "single_elimination"
-                    ? "Bracket will appear when matches are scheduled"
-                    : "Bracket view is only available for single elimination tournaments"}
-                </p>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+          {/* Join Button */}
+          <Button
+            className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-black font-bold h-12 rounded-xl text-lg mt-4"
+          >
+            Join Tournament
+          </Button>
+
+          {/* Show more details link if description exists */}
+          {tournament.description && (
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mt-2 cursor-pointer hover:text-white transition-colors">
+                View full rules and details
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
