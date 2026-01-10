@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import UserProfileModal from "@/components/UserProfileModal";
+import { ImageGrid } from "@/components/chat/ImageGrid";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { isToday, isYesterday, format, isSameDay } from "date-fns";
@@ -42,6 +43,53 @@ interface ChatChannelProps {
   channelId?: string;
   threadId?: string;
   isPreview?: boolean;
+}
+
+// Group consecutive image messages from same user
+function groupImageMessages(messages: any[]) {
+  const groups: Array<{
+    type: 'image-group' | 'regular';
+    userId: string;
+    timestamp: number;
+    messages: any[];
+  }> = [];
+
+  let currentGroup: typeof groups[0] | null = null;
+
+  for (const msg of messages) {
+    const isImageOnly = msg.imageUrl && !msg.message;
+    const sameUser = currentGroup?.userId === msg.userId;
+    const within5Min = currentGroup ?
+      Math.abs(new Date(currentGroup.timestamp).getTime() - new Date(msg.createdAt).getTime()) < 300000 :
+      false;
+
+    if (isImageOnly && currentGroup?.type === 'image-group' && sameUser && within5Min) {
+      // Add to existing group
+      currentGroup.messages.push(msg);
+    } else {
+      // Start new group or add as regular message
+      if (currentGroup) groups.push(currentGroup);
+
+      if (isImageOnly) {
+        currentGroup = {
+          type: 'image-group',
+          userId: msg.userId,
+          timestamp: new Date(msg.createdAt).getTime(),
+          messages: [msg]
+        };
+      } else {
+        currentGroup = {
+          type: 'regular',
+          userId: msg.userId,
+          timestamp: new Date(msg.createdAt).getTime(),
+          messages: [msg]
+        };
+      }
+    }
+  }
+
+  if (currentGroup) groups.push(currentGroup);
+  return groups;
 }
 
 function renderMessageWithLinks(text: string): JSX.Element {
@@ -345,153 +393,220 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No messages yet. Start the conversation!</p>
                 </div>
-              ) : (
-                messages.map((message, index) => {
-                  const prevMsg = messages[index - 1];
-                  const isNewDay = !prevMsg || !isSameDay(new Date(message.createdAt || Date.now()), new Date(prevMsg.createdAt || Date.now()));
+              ) : (() => {
+                const messageGroups = groupImageMessages(messages);
 
-                  const initials = message.username?.substring(0, 2).toUpperCase() || 'U';
-                  const isOwnMessage = message.userId === user?.id;
-                  const isEditing = editingMessage?.id === message.id;
-                  const senderName = message.username || 'Unknown User';
-                  const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                  });
+                return messageGroups.map((group, groupIndex) => {
+                  const firstMsg = group.messages[0];
+                  const isOwnMessage = firstMsg.userId === user?.id;
 
-                  return (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="flex flex-col"
-                    >
-                      {/* Date Separator */}
-                      {isNewDay && (
-                        <div className="flex justify-center my-6">
-                          <span className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">
-                            {formatMessageDate(new Date(message.createdAt || Date.now()))}
-                          </span>
-                        </div>
-                      )}
+                  // Check if this is a new day
+                  const prevGroup = groupIndex > 0 ? messageGroups[groupIndex - 1] : null;
+                  const isNewDay = !prevGroup || !isSameDay(
+                    new Date(firstMsg.createdAt || Date.now()),
+                    new Date(prevGroup.messages[0].createdAt || Date.now())
+                  );
 
-                      <div
-                        className={`group relative flex gap-3 max-w-[85%] ${isOwnMessage ? 'ml-auto flex-row-reverse' : ''}`}
-                        data-testid={`message-${message.id}`}
-                        onClick={() => {
-                          if (isPreview || isEditing) return;
-                          setLongPressMessageId(longPressMessageId === message.id ? null : message.id);
-                        }}
+                  if (group.type === 'image-group') {
+                    // Render image group with WhatsApp-style grid
+                    const senderName = firstMsg.username || 'Unknown User';
+                    const timestamp = new Date(firstMsg.createdAt || Date.now()).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    });
+
+                    return (
+                      <motion.div
+                        key={`group-${groupIndex}`}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="flex flex-col"
                       >
-                        {/* Avatar - Only for others */}
-                        {!isOwnMessage && (
-                          <div className="flex-shrink-0 self-end mb-5">
-                            {message.userId ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProfileId(message.userId);
-                                  setProfileModalOpen(true);
-                                }}
-                                className="p-0 border-0 bg-transparent cursor-pointer transition-transform active:scale-95"
-                                data-testid={`button-avatar-${message.id}`}
-                              >
-                                <Avatar className="h-8 w-8 hover-elevate shadow-sm">
-                                  <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
-                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-[10px] font-bold">
-                                    {initials}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </button>
-                            ) : (
-                              <Avatar className="h-8 w-8 shadow-sm">
-                                <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
-                                <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
-                                  {initials}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
+                        {isNewDay && (
+                          <div className="flex justify-center my-6">
+                            <span className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">
+                              {formatMessageDate(new Date(firstMsg.createdAt || Date.now()))}
+                            </span>
                           </div>
                         )}
 
-                        <div className="flex flex-col gap-1 min-w-0">
-                          {/* Sender Name (for others) */}
+                        <div className={`flex gap-3 px-4 mb-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
                           {!isOwnMessage && (
-                            <span className="text-[11px] text-muted-foreground ml-1 font-medium">
-                              {senderName}
-                            </span>
+                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                              <AvatarImage src={firstMsg.avatarUrl || undefined} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {firstMsg.username?.substring(0, 2).toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
                           )}
 
-                          {/* Message Bubble */}
-                          <div className={`relative shadow-sm min-w-[60px]
-                            ${(message as any).imageUrl && !message.message ? 'p-0' : 'px-4 py-3'}
-                            ${isOwnMessage
-                              ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
-                              : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
-                          `}>
-
-                            {(message as any).imageUrl && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEnlargedImageUrl((message as any).imageUrl);
-                                }}
-                                className="p-0 border-0 bg-transparent cursor-pointer rounded-[16px] overflow-hidden w-full block"
-                                data-testid={`button-img-message-${message.id}`}
-                              >
-                                <OptimizedImage
-                                  src={(message as any).imageUrl}
-                                  alt="Shared image"
-                                  className="w-full h-auto max-h-48 object-cover rounded-[16px]"
-                                  thumbnailSize="lg"
-                                />
-                              </button>
+                          <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                            {!isOwnMessage && (
+                              <span className="text-[11px] text-muted-foreground ml-1 font-medium mb-0.5">
+                                {senderName}
+                              </span>
                             )}
 
-                            {isEditing ? (
-                              <div className="flex gap-2 w-full min-w-[200px]">
-                                <Input
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                  className="flex-1 bg-white/10 text-white border-0 h-8 text-sm focus-visible:ring-1 focus-visible:ring-white/50"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveEdit();
-                                    if (e.key === 'Escape') handleCancelEdit();
-                                  }}
-                                  autoFocus
-                                  data-testid="input-edit-message"
-                                />
-                                <Button size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={handleSaveEdit} disabled={editMessageMutation.isPending}>
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={handleCancelEdit}>
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : message.message ? (
-                              <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{renderMessageWithLinks(message.message)}</p>
-                            ) : null}
-                          </div>
+                            <ImageGrid
+                              images={group.messages.map(msg => ({ id: msg.id, url: msg.imageUrl }))}
+                              onImageClick={(index) => setEnlargedImageUrl(group.messages[index].imageUrl)}
+                              isOwnMessage={isOwnMessage}
+                            />
 
-                          {/* Timestamp - Outside Bubble */}
-                          <div className={`text-[10px] text-muted-foreground/60 flex items-center gap-2 px-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                            {timestamp}
-                            {/* Message Actions (Edit/Delete) - Only shown on long press */}
-                            {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
-                              <div className="flex items-center gap-2 ml-2">
-                                <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(message); }} className="text-primary hover:underline">Edit</button>
-                                <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(message); }} className="text-destructive hover:underline">Delete</button>
-                              </div>
-                            )}
+                            <span className={`text-[10px] text-muted-foreground mt-1 ${isOwnMessage ? 'mr-1' : 'ml-1'}`}>
+                              {timestamp}
+                            </span>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              )}
+                      </motion.div>
+                    );
+                  } else {
+                    // Regular message - use existing rendering
+                    const message = firstMsg;
+                    const prevMsg = groupIndex > 0 ? messageGroups[groupIndex - 1].messages[0] : null;
+                    const initials = message.username?.substring(0, 2).toUpperCase() || 'U';
+                    const isEditing = editingMessage?.id === message.id;
+                    const senderName = message.username || 'Unknown User';
+                    const timestamp = new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    });
+
+                    return (
+                      <motion.div
+                        key={message.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="flex flex-col"
+                      >
+                        {isNewDay && (
+                          <div className="flex justify-center my-6">
+                            <span className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">
+                              {formatMessageDate(new Date(message.createdAt || Date.now()))}
+                            </span>
+                          </div>
+                        )}
+
+                        <div
+                          className={`group relative flex gap-3 max-w-[85%] ${isOwnMessage ? 'ml-auto flex-row-reverse' : ''}`}
+                          data-testid={`message-${message.id}`}
+                          onClick={() => {
+                            if (isPreview || isEditing) return;
+                            setLongPressMessageId(longPressMessageId === message.id ? null : message.id);
+                          }}
+                        >
+                          {/* Avatar - Only for others */}
+                          {!isOwnMessage && (
+                            <div className="flex-shrink-0 self-end mb-5">
+                              {message.userId ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedProfileId(message.userId);
+                                    setProfileModalOpen(true);
+                                  }}
+                                  className="p-0 border-0 bg-transparent cursor-pointer transition-transform active:scale-95"
+                                  data-testid={`button-avatar-${message.id}`}
+                                >
+                                  <Avatar className="h-8 w-8 hover-elevate shadow-sm">
+                                    <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-[10px] font-bold">
+                                      {initials}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </button>
+                              ) : (
+                                <Avatar className="h-8 w-8 shadow-sm">
+                                  <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
+                                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                                    {initials}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-1 min-w-0">
+                            {/* Sender Name (for others) */}
+                            {!isOwnMessage && (
+                              <span className="text-[11px] text-muted-foreground ml-1 font-medium">
+                                {senderName}
+                              </span>
+                            )}
+
+                            {/* Message Bubble */}
+                            <div className={`relative shadow-sm min-w-[60px]
+                            ${(message as any).imageUrl && !message.message ? 'p-0' : 'px-4 py-3'}
+                            ${isOwnMessage
+                                ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
+                                : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
+                          `}>
+
+                              {(message as any).imageUrl && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEnlargedImageUrl((message as any).imageUrl);
+                                  }}
+                                  className="p-0 border-0 bg-transparent cursor-pointer rounded-[16px] overflow-hidden w-full block"
+                                  data-testid={`button-img-message-${message.id}`}
+                                >
+                                  <OptimizedImage
+                                    src={(message as any).imageUrl}
+                                    alt="Shared image"
+                                    className="w-full h-auto max-h-48 object-cover rounded-[16px]"
+                                    thumbnailSize="lg"
+                                  />
+                                </button>
+                              )}
+
+                              {isEditing ? (
+                                <div className="flex gap-2 w-full min-w-[200px]">
+                                  <Input
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    className="flex-1 bg-white/10 text-white border-0 h-8 text-sm focus-visible:ring-1 focus-visible:ring-white/50"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveEdit();
+                                      if (e.key === 'Escape') handleCancelEdit();
+                                    }}
+                                    autoFocus
+                                    data-testid="input-edit-message"
+                                  />
+                                  <Button size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={handleSaveEdit} disabled={editMessageMutation.isPending}>
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={handleCancelEdit}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : message.message ? (
+                                <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{renderMessageWithLinks(message.message)}</p>
+                              ) : null}
+                            </div>
+
+                            {/* Timestamp - Outside Bubble */}
+                            <div className={`text-[10px] text-muted-foreground/60 flex items-center gap-2 px-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                              {timestamp}
+                              {/* Message Actions (Edit/Delete) - Only shown on long press */}
+                              {!isPreview && !isEditing && isOwnMessage && longPressMessageId === message.id && (
+                                <div className="flex items-center gap-2 ml-2">
+                                  <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleEditMessage(message); }} className="text-primary hover:underline">Edit</button>
+                                  <button onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(message); }} className="text-destructive hover:underline">Delete</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+                });
+              })()}
             </AnimatePresence>
             <div ref={messagesEndRef} className="h-32" />
           </div>
