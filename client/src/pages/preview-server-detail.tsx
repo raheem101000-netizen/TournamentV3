@@ -32,6 +32,7 @@ export default function PreviewServerDetail() {
   const [, setLocation] = useLocation();
   const serverId = params?.serverId;
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [fullScreenChannelId, setFullScreenChannelId] = useState<string | null>(null);
   const [showWelcomePage, setShowWelcomePage] = useState(false); // Users see channel list first
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
@@ -162,6 +163,49 @@ export default function PreviewServerDetail() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Server not found</p>
+      </div>
+    );
+  }
+
+  // Full-screen channel view (iOS Messages style)
+  if (fullScreenChannelId) {
+    const fullScreenChannel = channels.find(c => c.id === fullScreenChannelId);
+
+    return (
+      <div className="fixed inset-0 z-40 flex flex-col bg-black text-white overflow-hidden supports-[height:100dvh]:h-[100dvh]">
+        {/* Header - iOS Messages Style */}
+        <div className="flex-none flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-black z-10">
+          <button
+            onClick={() => setFullScreenChannelId(null)}
+            className="text-blue-500 flex items-center gap-1 min-w-[60px]"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-6 w-6" />
+            <span className="text-lg">Back</span>
+          </button>
+
+          <span className="font-semibold text-lg">{fullScreenChannel?.name || 'Chat'}</span>
+
+          <button
+            className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
+            onClick={() => {
+              alert("Channel settings coming soon!");
+            }}
+          >
+            Edit
+          </button>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 min-h-0">
+          {fullScreenChannel?.type === "announcement" ? (
+            <AnnouncementsChannel channelId={fullScreenChannelId} />
+          ) : fullScreenChannel?.type === "tournament_dashboard" ? (
+            <TournamentDashboardChannel serverId={serverId!} />
+          ) : (
+            <ChatChannel channelId={fullScreenChannelId} isPreview={false} />
+          )}
+        </div>
       </div>
     );
   }
@@ -446,8 +490,8 @@ export default function PreviewServerDetail() {
           <div className="space-y-1">
             <Card
               className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-              onClick={() => { setSelectedChannelId(tournamentDashboard.id); onSelect?.(); }}
-              data-testid={`channel-${tournamentDashboard.slug}`}
+              onClick={() => { setFullScreenChannelId(tournamentDashboard.id); onSelect?.(); }}
+              data-testid={` channel-${tournamentDashboard.slug}`}
             >
               <div className="flex items-center gap-3">
                 <span className="text-xl">{tournamentDashboard.icon}</span>
@@ -525,7 +569,7 @@ export default function PreviewServerDetail() {
                   <Card
                     key={channel.id}
                     className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                    onClick={() => { setSelectedChannelId(channel.id); onSelect?.(); }}
+                    onClick={() => { setFullScreenChannelId(channel.id); onSelect?.(); }}
                     data-testid={`channel-${channel.slug}`}
                   >
                     <div className="flex items-center gap-3">
@@ -552,7 +596,7 @@ export default function PreviewServerDetail() {
                 <Card
                   key={channel.id}
                   className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                  onClick={() => { setSelectedChannelId(channel.id); onSelect?.(); }}
+                  onClick={() => { setFullScreenChannelId(channel.id); onSelect?.(); }}
                   data-testid={`channel-${channel.slug}`}
                 >
                   <div className="flex items-center gap-3">
@@ -582,7 +626,7 @@ export default function PreviewServerDetail() {
               <Card
                 key={channel.id}
                 className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                onClick={() => { setSelectedChannelId(channel.id); onSelect?.(); }}
+                onClick={() => { setFullScreenChannelId(channel.id); onSelect?.(); }}
                 data-testid={`channel-${channel.slug}`}
               >
                 <div className="flex items-center gap-3">
