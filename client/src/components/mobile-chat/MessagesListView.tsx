@@ -47,6 +47,11 @@ interface UserResult {
 function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageThread; onSelect: () => void; onDelete: () => void }) {
     const controls = useAnimation();
     const x = useMotionValue(0);
+    const [isSwiping, setIsSwiping] = useState(false);
+
+    const handleDragStart = () => {
+        setIsSwiping(true);
+    };
 
     const handleDragEnd = async (event: any, info: PanInfo) => {
         const offset = info.offset.x;
@@ -55,8 +60,10 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
         // Snap to -80 if dragged past -60 or fast swipe left
         if (offset < -60 || velocity < -500) {
             await controls.start({ x: -80 });
+            // Keep delete visible when snapped
         } else {
             await controls.start({ x: 0 });
+            setIsSwiping(false); // Hide when returned
         }
     };
 
@@ -68,12 +75,14 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
             exit={{ opacity: 0, height: 0 }}
             className="relative w-full overflow-hidden bg-black border-b border-zinc-900/50"
         >
-            {/* Delete Action Background */}
-            <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 flex items-center justify-center z-0">
-                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="h-full w-full flex items-center justify-center">
-                    <X className="h-6 w-6 text-white" />
-                </button>
-            </div>
+            {/* Delete Action Background - Only visible when swiping */}
+            {isSwiping && (
+                <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 flex items-center justify-center z-0">
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(); setIsSwiping(false); }} className="h-full w-full flex items-center justify-center">
+                        <X className="h-6 w-6 text-white" />
+                    </button>
+                </div>
+            )}
 
             {/* Draggable Thread Content */}
             <motion.button
@@ -81,6 +90,7 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
                 drag="x"
                 dragConstraints={{ left: -80, right: 0 }}
                 dragElastic={0.1}
+                onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 animate={controls}
                 onClick={onSelect}
