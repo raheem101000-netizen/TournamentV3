@@ -24,7 +24,59 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { ChatMessage } from "@shared/schema";
-import { format } from "date-fns";
+import { format, isToday, isYesterday, isSameDay } from "date-fns";
+import { ImageGrid } from "@/components/chat/ImageGrid";
+
+const formatMessageDate = (date: Date) => {
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "MMM d, yyyy");
+};
+
+// Group consecutive image messages from same user
+function groupImageMessages(messages: any[]) {
+  const groups: Array<{
+    type: 'image-group' | 'regular';
+    userId: string;
+    timestamp: number;
+    messages: any[];
+  }> = [];
+
+  let currentGroup: typeof groups[0] | null = null;
+
+  for (const msg of messages) {
+    const isImageOnly = msg.imageUrl && !msg.message;
+    const sameUser = currentGroup?.userId === msg.userId;
+    const within5Min = currentGroup ?
+      Math.abs(new Date(currentGroup.timestamp).getTime() - new Date(msg.createdAt).getTime()) < 300000 :
+      false;
+
+    if (isImageOnly && currentGroup?.type === 'image-group' && sameUser && within5Min) {
+      currentGroup.messages.push(msg);
+    } else {
+      if (currentGroup) groups.push(currentGroup);
+
+      if (isImageOnly) {
+        currentGroup = {
+          type: 'image-group',
+          userId: msg.userId,
+          timestamp: new Date(msg.createdAt).getTime(),
+          messages: [msg]
+        };
+      } else {
+        currentGroup = {
+          type: 'regular',
+          userId: msg.userId,
+          timestamp: new Date(msg.createdAt).getTime(),
+          messages: [msg]
+        };
+      }
+    }
+  }
+
+  if (currentGroup) groups.push(currentGroup);
+  return groups;
+}
 
 interface RichMatchChatProps {
   matchId: string;
