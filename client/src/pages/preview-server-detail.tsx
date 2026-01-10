@@ -988,9 +988,6 @@ export default function PreviewServerDetail() {
         open={manageCategoriesOpen}
         onOpenChange={setManageCategoriesOpen}
       />
-
-      {/* Only show bottom navbar when no channel is selected */}
-      {!selectedChannelId && <BottomNavigation />}
     </div>
   );
 }
