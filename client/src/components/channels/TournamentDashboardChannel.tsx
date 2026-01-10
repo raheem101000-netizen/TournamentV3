@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
