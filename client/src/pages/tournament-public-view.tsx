@@ -45,112 +45,114 @@ export default function TournamentPublicView() {
   }
 
   return (
-    <div className="min-h-screen bg-black/95 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black/95 flex items-center justify-center p-4 font-sans">
       {/* Main Tournament Card */}
-      <div className="w-full max-w-md bg-[#1a1b1e] rounded-3xl border border-white/10 overflow-hidden shadow-2xl relative">
+      <div className="w-full max-w-md bg-[#09090b] rounded-3xl border border-white/10 overflow-hidden shadow-2xl relative">
         {/* Close/Back Button */}
         <Button
           size="icon"
           variant="ghost"
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
           onClick={() => setLocation("/")}
         >
           <X className="w-5 h-5" />
         </Button>
 
-        <div className="p-8 space-y-8">
+        <div className="p-6 space-y-6">
           {/* Header */}
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-white tracking-tight">{tournament.name}</h1>
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">{tournament.game || "UNSPECIFIED GAME"}</p>
-          </div>
-
-          {/* Host Info */}
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 border border-white/10">
-              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${tournament.organizerName || 'host'}`} />
-              <AvatarFallback>TH</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-white font-bold text-sm">{tournament.organizerName || "System Host"}</p>
-              <p className="text-xs text-gray-500">Tournament Host</p>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Laptop className="w-4 h-4" />
+              <span className="uppercase tracking-wider font-medium">{tournament.game || "UNSPECIFIED GAME"}</span>
             </div>
           </div>
 
-          {/* Key Stats */}
-          <div className="grid grid-cols-2 gap-8 py-2">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Prize Pool</p>
-              <p className="text-2xl font-black text-[#4ade80]">{tournament.prizeReward || "$0"}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Entry Fee</p>
-              <p className="text-2xl font-black text-[#4ade80]">{tournament.entryFee || "Free"}</p>
-            </div>
+          {/* Hero Image */}
+          <div className="w-full h-48 rounded-xl overflow-hidden bg-zinc-900 border border-white/5 relative group">
+            <img
+              src={tournament.imageUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${tournament.name}`}
+              alt={tournament.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
 
-          <div className="h-px bg-white/10 w-full" />
-
-          {/* Details List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 text-gray-400">
-                <Clock className="w-4 h-4" />
-                <span>Start Time</span>
-              </div>
-              <span className="text-white font-medium">
-                {tournament.startDate ? new Date(tournament.startDate).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "TBA"}
-              </span>
+          {/* Prize Pool Strip */}
+          <div className="flex items-center justify-between bg-zinc-900/50 rounded-xl p-4 border border-white/5">
+            <div className="flex items-center gap-2 text-blue-400">
+              <Trophy className="w-5 h-5" />
+              <span className="font-medium">Prize Pool</span>
             </div>
+            <span className="text-xl font-bold text-white">{tournament.prizeReward || "$0"}</span>
+          </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 text-gray-400">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Teams */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
                 <Users className="w-4 h-4" />
-                <span>Players</span>
+                <span>Teams</span>
               </div>
-              <span className="text-white font-medium">{tournament.memberCount || 0} / {tournament.totalTeams || "Unlimited"}</span>
+              <p className="text-lg font-bold text-white">{tournament.memberCount || 0} / {tournament.totalTeams || "∞"}</p>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 text-gray-400">
+            {/* Date */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
+                <Clock className="w-4 h-4" />
+                <span>Date</span>
+              </div>
+              <p className="text-lg font-bold text-white truncate">
+                {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "TBA"}
+              </p>
+            </div>
+
+            {/* Entry Fee */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
+                <span>$</span>
+                <span>Entry Fee</span>
+              </div>
+              <p className="text-lg font-bold text-white">{tournament.entryFee || "Free"}</p>
+            </div>
+
+            {/* Format */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
                 <Trophy className="w-4 h-4" />
                 <span>Format</span>
               </div>
-              <span className="text-white font-medium capitalize">{tournament.format.replace('_', ' ')}</span>
+              <p className="text-lg font-bold text-white capitalize truncate">{tournament.format.replace('_', ' ')}</p>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 text-gray-400">
+            {/* Platform */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
                 <Laptop className="w-4 h-4" />
                 <span>Platform</span>
               </div>
-              <span className="text-white font-medium">{tournament.platform || "Any"}</span>
+              <p className="text-lg font-bold text-white capitalize truncate">{tournament.platform || "Any"}</p>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 text-gray-400">
+            {/* Region */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
                 <MapPin className="w-4 h-4" />
                 <span>Region</span>
               </div>
-              <span className="text-white font-medium">{tournament.region || "Global"}</span>
+              <p className="text-lg font-bold text-white capitalize truncate">{tournament.region || "Global"}</p>
             </div>
           </div>
 
           {/* Join Button */}
           <Button
-            className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-black font-bold h-12 rounded-xl text-lg mt-4"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 rounded-xl text-lg shadow-lg shadow-blue-900/20"
           >
-            Join Tournament
+            Register Now
           </Button>
-
-          {/* Show more details link if description exists */}
-          {tournament.description && (
-            <div className="text-center">
-              <p className="text-xs text-gray-500 mt-2 cursor-pointer hover:text-white transition-colors">
-                View full rules and details
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
