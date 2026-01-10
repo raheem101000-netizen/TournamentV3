@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { ChatMessage } from "@shared/schema";
+import { format } from "date-fns";
 
 interface RichMatchChatProps {
   matchId: string;
@@ -530,62 +531,82 @@ export default function RichMatchChat({
                           </Button>
                         </div>
                       )}
-                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
-                        <div className="flex items-center gap-2">
-                          {msg.userId ? (
+                      <div className={`flex flex-col gap-1 min-w-0`}>
+                        {/* Sender Name (for others only) */}
+                        {!isOwn && (
+                          <span className="text-[11px] text-muted-foreground ml-1 font-medium">
+                            {senderName}
+                          </span>
+                        )}
+
+                        {/* Message Bubble - iOS Messages Style */}
+                        <div className={`relative px-4 py-3 shadow-sm min-w-[60px]
+                          ${isOwn
+                            ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]'
+                            : 'bg-[#262628] text-white rounded-[20px] rounded-bl-[4px]'}
+                        `}>
+
+                          {/* Image inside bubble - compact */}
+                          {msg.imageUrl && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedProfileId(msg.userId);
-                                setProfileModalOpen(true);
+                                setEnlargedImageUrl(msg.imageUrl);
                               }}
-                              className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
-                              data-testid={`user-link-${msg.id}`}
+                              className="p-0 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden mb-2 w-full max-w-[200px]"
+                              data-testid={`button-img-message-${msg.id}`}
                             >
-                              {senderName}
+                              <img
+                                src={msg.imageUrl}
+                                alt="Shared image"
+                                className="w-full h-auto max-h-32 object-cover rounded-lg"
+                              />
                             </button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {senderName}
-                            </span>
+                          )}
+
+                          {/* Message text or edit mode */}
+                          {isEditing ? (
+                            <div className="flex gap-2 w-full min-w-[200px]">
+                              <Input
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                className="flex-1 bg-white/10 text-white border-0 h-8 text-sm focus-visible:ring-1 focus-visible:ring-white/50"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveEdit();
+                                  if (e.key === 'Escape') handleCancelEdit();
+                                }}
+                                autoFocus
+                                data-testid="input-edit-message"
+                              />
+                              <Button size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={handleSaveEdit} disabled={editMessageMutation.isPending}>
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={handleCancelEdit}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : msg.message ? (
+                            <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{renderMessageWithMentions(msg.message)}</p>
+                          ) : null}
+                        </div>
+
+                        {/* Timestamp - Outside Bubble */}
+                        <div className={`text-[10px] text-muted-foreground/60 flex items-center gap-2 px-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                          {format(new Date(msg.createdAt), "h:mm a")}
+                          {/* Message Actions (Delete) - Only shown on long press */}
+                          {!isEditing && canDelete && longPressMessageId === msg.id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => { e.stopPropagation(); clearLongPressMenu(); handleDeleteMessage(msg); }}
+                              data-testid={`button-delete-message-${msg.id}`}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
                           )}
                         </div>
-                        {msg.imageUrl && (
-                          <button
-                            onClick={() => setEnlargedImageUrl(msg.imageUrl)}
-                            className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
-                            data-testid={`img-message-${msg.id}`}
-                          >
-                            <img
-                              src={msg.imageUrl}
-                              alt="Shared image"
-                              className="max-w-full h-auto max-h-60 object-contain rounded-md"
-                            />
-                          </button>
-                        )}
-                        {isEditing ? (
-                          <div className="flex gap-2 w-full">
-                            <Input
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              className="flex-1"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveEdit();
-                                if (e.key === 'Escape') handleCancelEdit();
-                              }}
-                              autoFocus
-                              data-testid="input-edit-message"
-                            />
-                            <Button size="icon" onClick={handleSaveEdit} disabled={editMessageMutation.isPending} data-testid="button-save-edit">
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={handleCancelEdit} data-testid="button-cancel-edit">
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : msg.message ? (
-                          <p className="text-sm text-foreground">{renderMessageWithMentions(msg.message)}</p>
-                        ) : null}
                       </div>
                     </div>
                   );
