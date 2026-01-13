@@ -61,8 +61,8 @@ export default function PreviewServerDetail() {
   const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
-    refetchInterval: 5000,
-    staleTime: 0,
+    refetchInterval: 15000, // Reduced from 5s to 15s - channels rarely change
+    staleTime: 10000, // Data is fresh for 10s
   });
 
   const { data: categories = [] } = useQuery<ChannelCategory[]>({

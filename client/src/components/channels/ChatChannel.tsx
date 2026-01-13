@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/image-compression";
 import type { ChannelMessage } from "@shared/schema";
 import {
   Dialog,
@@ -59,11 +60,11 @@ function groupImageMessages(messages: any[]) {
   for (const msg of messages) {
     const isImageOnly = msg.imageUrl && !msg.message;
     const sameUser = currentGroup?.userId === msg.userId;
-    const within5Min = currentGroup ?
-      Math.abs(new Date(currentGroup.timestamp).getTime() - new Date(msg.createdAt).getTime()) < 300000 :
+    const withinTimeWindow = currentGroup ?
+      Math.abs(new Date(currentGroup.timestamp).getTime() - new Date(msg.createdAt).getTime()) < 60000 : // 1 minute
       false;
 
-    if (isImageOnly && currentGroup?.type === 'image-group' && sameUser && within5Min) {
+    if (isImageOnly && currentGroup?.type === 'image-group' && sameUser && withinTimeWindow) {
       // Add to existing group
       currentGroup.messages.push(msg);
     } else {
@@ -292,8 +293,9 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
     if (stagedImage) {
       setIsUploadingImage(true);
       try {
+        const compressedFile = await compressImage(stagedImage.file);
         const formData = new FormData();
-        formData.append('file', stagedImage.file);
+        formData.append('file', compressedFile);
 
         const uploadResponse = await fetch('/api/objects/upload', {
           method: 'POST',

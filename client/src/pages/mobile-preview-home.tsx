@@ -10,6 +10,7 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { Tournament, Server } from "@shared/schema";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -68,13 +69,10 @@ export default function MobilePreviewHome() {
     setLocation(`/tournament/${tournamentId}/register`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" data-testid="loading-spinner" />
-      </div>
-    );
-  }
+  // Moved loading state handling inside the render to show layout frame immediately
+  const showSkeletons = isLoading && !tournaments;
+
+  // if (isLoading) { return ... }  <-- Removed full page blocker
 
   return (
     <MobileLayout>
@@ -128,129 +126,147 @@ export default function MobilePreviewHome() {
 
         {/* Responsive Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredTournaments.map((tournament, index) => (
-            <Card
-              key={tournament.id}
-              className="overflow-hidden hover-elevate group"
-              data-testid={`tournament-card-${tournament.id}`}
-            >
-              {/* Portrait Poster Image */}
-              <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
-                {/* Verified Badge */}
-                {isServerVerified(tournament.serverId) && (
-                  <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`tournament-verified-${tournament.id}`}>
-                    <Star className="w-3 h-3 fill-white" />
-                    Verified
+          {showSkeletons ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-3 space-y-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-3/4 mx-auto" />
+                    <Skeleton className="h-3 w-1/2 mx-auto" />
                   </div>
-                )}
-
-                {/* Game Badge - New visual element */}
-                {tournament.game && (
-                  <div className="absolute top-2 left-2 z-20">
-                    <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
-                      {tournament.game}
-                    </Badge>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 flex-1" />
+                    <Skeleton className="h-9 w-9" />
                   </div>
-                )}
+                </div>
+              </Card>
+            ))
+          ) : (
+            filteredTournaments.map((tournament, index) => (
+              <Card
+                key={tournament.id}
+                className="overflow-hidden hover-elevate group"
+                data-testid={`tournament-card-${tournament.id}`}
+              >
+                {/* Portrait Poster Image */}
+                <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
+                  {/* Verified Badge */}
+                  {isServerVerified(tournament.serverId) && (
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`tournament-verified-${tournament.id}`}>
+                      <Star className="w-3 h-3 fill-white" />
+                      Verified
+                    </div>
+                  )}
 
-                <OptimizedImage
-                  src={tournament.imageUrl}
-                  alt={tournament.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  thumbnailSize="lg"
-                  priority={index < 3} // Priority load first 3 images for LCP
-                  fallback={
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-                      <div className="relative">
-                        <Trophy className="h-20 w-20 text-primary opacity-60 mb-2 relative z-10" />
-                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                  {/* Game Badge - New visual element */}
+                  {tournament.game && (
+                    <div className="absolute top-2 left-2 z-20">
+                      <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
+                        {tournament.game}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <OptimizedImage
+                    src={tournament.imageUrl}
+                    alt={tournament.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    thumbnailSize="lg"
+                    priority={index < 3} // Priority load first 3 images for LCP
+                    fallback={
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                        <div className="relative">
+                          <Trophy className="h-20 w-20 text-primary opacity-60 mb-2 relative z-10" />
+                          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                        </div>
+                        <p className="text-xs text-muted-foreground font-medium">No Poster</p>
                       </div>
-                      <p className="text-xs text-muted-foreground font-medium">No Poster</p>
-                    </div>
-                  }
-                  data-testid={`tournament-poster-${tournament.id}`}
-                />
+                    }
+                    data-testid={`tournament-poster-${tournament.id}`}
+                  />
 
-                {/* Dark gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+                  {/* Dark gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
 
-                {/* Prize & Entry Fee */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center">
-                  {tournament.prizeReward && (
-                    <div
-                      className="text-white font-black text-5xl md:text-3xl mb-1 tracking-tight flex items-center justify-center gap-2"
-                      style={{ textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8)' }}
-                      data-testid={`tournament-prize-${tournament.id}`}
-                    >
-                      {tournament.prizeReward}
-                    </div>
-                  )}
+                  {/* Prize & Entry Fee */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center">
+                    {tournament.prizeReward && (
+                      <div
+                        className="text-white font-black text-5xl md:text-3xl mb-1 tracking-tight flex items-center justify-center gap-2"
+                        style={{ textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8)' }}
+                        data-testid={`tournament-prize-${tournament.id}`}
+                      >
+                        {tournament.prizeReward}
+                      </div>
+                    )}
 
-                  {tournament.entryFee && (
-                    <div
-                      className="text-white/90 font-semibold text-sm md:text-xs bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"
-                      data-testid={`tournament-entry-fee-${tournament.id}`}
-                    >
-                      Entry: {tournament.entryFee}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Card Content */}
-              <div className="p-3 space-y-3">
-                <div className="text-center">
-                  <h3 className="font-bold text-base leading-tight mb-1 truncate px-1" title={tournament.name} data-testid={`tournament-name-${tournament.id}`}>
-                    {tournament.name}
-                  </h3>
-
-                  {/* Date and Time Info */}
-                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>
-                        {tournament.startDate
-                          ? new Date(tournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                          : 'TBA'
-                        }
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground/30">•</span>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                      <span data-testid={`tournament-time-${tournament.id}`}>
-                        {tournament.startDate
-                          ? new Date(tournament.startDate).toLocaleTimeString(undefined, {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })
-                          : 'TBD'}
-                      </span>
-                    </div>
+                    {tournament.entryFee && (
+                      <div
+                        className="text-white/90 font-semibold text-sm md:text-xs bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"
+                        data-testid={`tournament-entry-fee-${tournament.id}`}
+                      >
+                        Entry: {tournament.entryFee}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-9 text-xs font-semibold shadow-sm"
-                    onClick={() => handleJoinTournament(tournament.id)}
-                    data-testid={`button-join-${tournament.id}`}
-                  >
-                    Join Now
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => setSelectedTournament(tournament)}
-                    data-testid={`button-details-${tournament.id}`}
-                  >
-                    <Info className="h-4 w-4" />
-                  </Button>
+                {/* Card Content */}
+                <div className="p-3 space-y-3">
+                  <div className="text-center">
+                    <h3 className="font-bold text-base leading-tight mb-1 truncate px-1" title={tournament.name} data-testid={`tournament-name-${tournament.id}`}>
+                      {tournament.name}
+                    </h3>
+
+                    {/* Date and Time Info */}
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                          {tournament.startDate
+                            ? new Date(tournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                            : 'TBA'
+                          }
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground/30">•</span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        <span data-testid={`tournament-time-${tournament.id}`}>
+                          {tournament.startDate
+                            ? new Date(tournament.startDate).toLocaleTimeString(undefined, {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })
+                            : 'TBD'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-9 text-xs font-semibold shadow-sm"
+                      onClick={() => handleJoinTournament(tournament.id)}
+                      data-testid={`button-join-${tournament.id}`}
+                    >
+                      Join Now
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => setSelectedTournament(tournament)}
+                      data-testid={`button-details-${tournament.id}`}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )))
+          }
         </div>
 
         {filteredTournaments.length === 0 && (

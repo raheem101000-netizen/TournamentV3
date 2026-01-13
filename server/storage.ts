@@ -609,6 +609,22 @@ export class DatabaseStorage implements IStorage {
     return member;
   }
 
+  async getServerMemberCounts(): Promise<Record<string, number>> {
+    const counts = await db
+      .select({
+        serverId: serverMembers.serverId,
+        count: sql<number>`count(*)`
+      })
+      .from(serverMembers)
+      .groupBy(serverMembers.serverId);
+
+    const result: Record<string, number> = {};
+    counts.forEach((row) => {
+      if (row.serverId) result[row.serverId] = Number(row.count);
+    });
+    return result;
+  }
+
   // Channel operations
   async createChannel(data: InsertChannel): Promise<Channel> {
     const [channel] = await db.insert(channels).values(data).returning();
@@ -634,106 +650,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
-    console.log("[MSG-THREADS] Starting getMessageThreadsForParticipant for user:", userId);
+    console.log("[MSG-THREADS] Starting getMessageThreadsForParticipant (Optimized) for user:", userId);
 
-    // Get all tournaments where user has approved registrations  
-    const userTournaments = await db
-      .select({ tournamentId: registrations.tournamentId })
-      .from(registrations)
-      .where(
-        and(
-          eq(registrations.userId, userId),
-          eq(registrations.status, "approved")
-        )
-      );
+    const [userTournaments, directThreads, matchThreads] = await Promise.all([
+      // 1. Get approved tournaments (Gatekeeper)
+      db.select({ tournamentId: registrations.tournamentId })
+        .from(registrations)
+        .where(and(eq(registrations.userId, userId), eq(registrations.status, "approved"))),
 
-    console.log("[MSG-THREADS] User tournaments found:", userTournaments.length, userTournaments);
-
-    // Get direct message threads for this user (where they are creator OR participant)
-    // Exclude match threads (matchId IS NOT NULL) as they are fetched separately
-    const directThreads = await db
-      .select()
-      .from(messageThreads)
-      .where(
-        and(
-          or(
-            eq(messageThreads.userId, userId),
-            eq(messageThreads.participantId, userId)
-          ),
-          isNull(messageThreads.matchId)
-        )
-      );
-
-    console.log("[MSG-THREADS] Direct threads query result:", directThreads.map(t => ({ id: t.id, userId: t.userId, participantId: t.participantId, matchId: t.matchId })));
-
-    console.log("[MSG-THREADS] Direct threads found:", directThreads.length);
-
-    if (userTournaments.length === 0) {
-      console.log("[MSG-THREADS] No tournaments, returning direct threads only");
-      return directThreads.sort(
-        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-      );
-    }
-
-    const tournamentIds = userTournaments.map(t => t.tournamentId);
-    console.log("[MSG-THREADS] Tournament IDs:", tournamentIds);
-
-    // Get all teams in those tournaments - simplified with a single batch query
-    const tournamentTeams = await db
-      .select({ id: teams.id })
-      .from(teams)
-      .where(inArray(teams.tournamentId, tournamentIds));
-
-    console.log("[MSG-THREADS] Total teams found in user tournaments:", tournamentTeams.length);
-    const teamIds = tournamentTeams.map(t => t.id);
-
-    console.log("[MSG-THREADS] Total team IDs:", teamIds);
-
-    if (teamIds.length === 0) {
-      console.log("[MSG-THREADS] No teams found, returning direct threads only");
-      return directThreads.sort(
-        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-      );
-    }
-
-    // Get all match threads for this user (where matchId IS NOT NULL)
-    // These include both shared threads (userId IS NULL) and per-user threads (userId = current user)
-    console.log("[MSG-THREADS] Querying for match threads");
-
-    try {
-      const matchThreads = await db
-        .select()
+      // 2. Get direct threads
+      db.select()
         .from(messageThreads)
-        .where(
-          and(
-            sql`${messageThreads.matchId} IS NOT NULL`,
-            or(
-              sql`${messageThreads.userId} IS NULL`,
-              eq(messageThreads.userId, userId)
-            )
-          )
-        );
+        .where(and(
+          or(eq(messageThreads.userId, userId), eq(messageThreads.participantId, userId)),
+          isNull(messageThreads.matchId)
+        )),
 
-      console.log("[MSG-THREADS] Match threads found:", matchThreads.length);
+      // 3. Get match threads (Optimistic fetch)
+      db.select()
+        .from(messageThreads)
+        .where(and(
+          sql`${messageThreads.matchId} IS NOT NULL`,
+          or(sql`${messageThreads.userId} IS NULL`, eq(messageThreads.userId, userId))
+        ))
+    ]);
 
-      // Combine direct threads + shared match threads
-      const allThreads = [...directThreads, ...matchThreads];
-      console.log("[MSG-THREADS] Combined threads:", allThreads.length);
-
-      // Sort by most recent last message
-      const finalThreads = allThreads.sort(
-        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-      );
-
-      console.log("[MSG-THREADS] Final threads to return:", finalThreads.length);
-      return finalThreads;
-    } catch (error) {
-      console.error("[MSG-THREADS] Error fetching match threads:", error);
-      console.log("[MSG-THREADS] Falling back to direct threads only");
+    // If user is not approved in any tournament, they only see direct messages
+    if (userTournaments.length === 0) {
+      console.log("[MSG-THREADS] No approved tournaments, returning direct threads only");
       return directThreads.sort(
         (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
       );
     }
+
+    // Combine all threads
+    const allThreads = [...directThreads, ...matchThreads];
+    console.log(`[MSG-THREADS] Returning ${allThreads.length} threads (${directThreads.length} direct, ${matchThreads.length} match)`);
+
+    return allThreads.sort(
+      (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+    );
   }
 
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {

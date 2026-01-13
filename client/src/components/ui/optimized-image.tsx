@@ -19,14 +19,31 @@ const THUMBNAIL_SIZES = {
 };
 
 const imageCache = new Map<string, string>();
+const pendingRequests = new Map<string, Promise<string>>(); // Track in-flight requests
+
 
 function getThumbnailUrl(src: string, size: "sm" | "md" | "lg"): string {
   if (!src) return "";
 
+  // Handle local uploads (legacy / API-based)
   if (src.startsWith("/api/uploads/")) {
     const parts = src.split("/");
     const fileId = parts[parts.length - 1];
     return `/api/uploads/${fileId}/thumbnail?size=${THUMBNAIL_SIZES[size]}`;
+  }
+
+  // Handle external URLs (Vercel Blob, etc) using wsrv.nl for on-the-fly optimization
+  if (src.startsWith("http")) {
+    try {
+      const url = new URL("https://wsrv.nl/");
+      url.searchParams.set("url", src);
+      url.searchParams.set("w", THUMBNAIL_SIZES[size].toString());
+      url.searchParams.set("q", "80"); // Quality 80%
+      url.searchParams.set("output", "webp"); // Convert to WebP
+      return url.toString();
+    } catch {
+      return src;
+    }
   }
 
   return src;
@@ -42,18 +59,23 @@ export function OptimizedImage({
   loadFullOnTap = true,
   priority = false,
 }: OptimizedImageProps) {
-  const [isVisible, setIsVisible] = useState(priority);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [showFull, setShowFull] = useState(false);
-  const [error, setError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
-  const imgRef = useRef<HTMLDivElement>(null);
-
   const thumbnailUrl = src ? getThumbnailUrl(src, thumbnailSize) : null;
   const fullUrl = src || null;
 
+  const [isVisible, setIsVisible] = useState(priority);
+  const [isLoaded, setIsLoaded] = useState(priority); // Assume loaded if priority (browser handles it)
+  const [showFull, setShowFull] = useState(false);
+  const [error, setError] = useState(false);
+
+  // CRITICAL FIX: Initialize state directly for priority images so <img> tag exists on first render
+  const [currentSrc, setCurrentSrc] = useState<string | null>(
+    priority && thumbnailUrl ? thumbnailUrl : null
+  );
+
+  const imgRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (!imgRef.current || priority) return;
+    if (!imgRef.current || priority) return; // Skip observer if priority (already visible)
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -79,7 +101,8 @@ export function OptimizedImage({
 
     const shouldAutoUpgrade = priority || !loadFullOnTap;
 
-    const loadThumbnail = () => {
+    const loadThumbnail = async () => {
+      // Check cache first
       if (imageCache.has(thumbnailUrl)) {
         setCurrentSrc(imageCache.get(thumbnailUrl)!);
         setIsLoaded(true);
@@ -87,28 +110,54 @@ export function OptimizedImage({
         return;
       }
 
-      const img = new Image();
-      img.onload = () => {
-        imageCache.set(thumbnailUrl, thumbnailUrl);
-        setCurrentSrc(thumbnailUrl);
-        setIsLoaded(true);
-        if (shouldAutoUpgrade) setShowFull(true);
-      };
-      img.onerror = () => {
-        if (fullUrl && fullUrl !== thumbnailUrl) {
-          const fallbackImg = new Image();
-          fallbackImg.onload = () => {
-            imageCache.set(thumbnailUrl, fullUrl);
-            setCurrentSrc(fullUrl);
-            setIsLoaded(true);
-          };
-          fallbackImg.onerror = () => setError(true);
-          fallbackImg.src = fullUrl;
-        } else {
+      // Check if request is already in-flight (deduplication)
+      if (pendingRequests.has(thumbnailUrl)) {
+        try {
+          const cachedUrl = await pendingRequests.get(thumbnailUrl);
+          setCurrentSrc(cachedUrl || thumbnailUrl);
+          setIsLoaded(true);
+          if (shouldAutoUpgrade) setShowFull(true);
+        } catch {
           setError(true);
         }
-      };
-      img.src = thumbnailUrl;
+        return;
+      }
+
+      // Create new request and track it
+      const loadPromise = new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          imageCache.set(thumbnailUrl, thumbnailUrl);
+          resolve(thumbnailUrl);
+        };
+        img.onerror = () => {
+          if (fullUrl && fullUrl !== thumbnailUrl) {
+            const fallbackImg = new Image();
+            fallbackImg.onload = () => {
+              imageCache.set(thumbnailUrl, fullUrl);
+              resolve(fullUrl);
+            };
+            fallbackImg.onerror = () => reject(new Error('Failed to load image'));
+            fallbackImg.src = fullUrl;
+          } else {
+            reject(new Error('Failed to load image'));
+          }
+        };
+        img.src = thumbnailUrl;
+      });
+
+      pendingRequests.set(thumbnailUrl, loadPromise);
+
+      try {
+        const loadedUrl = await loadPromise;
+        setCurrentSrc(loadedUrl);
+        setIsLoaded(true);
+        if (shouldAutoUpgrade) setShowFull(true);
+      } catch {
+        setError(true);
+      } finally {
+        pendingRequests.delete(thumbnailUrl);
+      }
     };
 
     loadThumbnail();
@@ -167,7 +216,8 @@ export function OptimizedImage({
           )}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={priority ? "high" : "auto"}
+          //@ts-ignore - React expects lowercase for custom attributes but types might lag
+          fetchpriority={priority ? "high" : "auto"}
         />
       )}
     </div>

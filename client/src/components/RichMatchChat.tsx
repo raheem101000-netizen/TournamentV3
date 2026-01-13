@@ -119,7 +119,8 @@ export default function RichMatchChat({
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
-    refetchInterval: 3000,
+    refetchInterval: 10000, // Reduced from 3s to 10s to prevent performance issues
+    staleTime: 5000, // Data is fresh for 5s
   });
 
   // Auto-scroll to latest message when messages load or change

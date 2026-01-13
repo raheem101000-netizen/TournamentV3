@@ -678,6 +678,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req, res) => {
     const startTime = Date.now();
+    const timings: { [key: string]: number } = {};
+
     try {
       const loginSchema = z.object({
         email: z.string().email(),
@@ -686,11 +688,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = loginSchema.parse(req.body);
       log('INFO', 'Login attempt', { email: validatedData.email });
 
-      // Find user by email
+      // Find user by email - timing DB lookup
+      const dbLookupStart = Date.now();
       const user = await storage.getUserByEmail(validatedData.email);
+      timings['db_lookup_ms'] = Date.now() - dbLookupStart;
 
       if (!user) {
-        log('WARN', 'Login failed - user not found', { email: validatedData.email });
+        log('WARN', 'Login failed - user not found', { email: validatedData.email, timings });
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
@@ -698,20 +702,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Verify password
+      // Verify password - timing bcrypt comparison (intentionally slow for security)
       const bcrypt = await import('bcrypt');
       if (!user.passwordHash) {
-        log('WARN', 'Login failed - no password hash', { email: validatedData.email });
+        log('WARN', 'Login failed - no password hash', { email: validatedData.email, timings });
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
         await flush();
         return res.status(401).json({ error: "Invalid email or password" });
       }
+
+      const bcryptStart = Date.now();
       const passwordValid = await bcrypt.compare(validatedData.password, user.passwordHash);
+      timings['bcrypt_compare_ms'] = Date.now() - bcryptStart;
 
       if (!passwordValid) {
-        log('WARN', 'Login failed - invalid password', { email: validatedData.email });
+        log('WARN', 'Login failed - invalid password', { email: validatedData.email, timings });
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
@@ -722,7 +729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if email is verified (skip if SKIP_EMAIL_VERIFICATION is true)
       const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true';
       if (user.emailVerified === 0 && !skipEmailVerification) {
-        log('WARN', 'Login failed - email not verified', { email: validatedData.email });
+        log('WARN', 'Login failed - email not verified', { email: validatedData.email, timings });
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
         await flush();
@@ -738,7 +745,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUser(user.id, { isDisabled: 0 });
       }
 
-      // Create session
+      // Create session - timing session persistence
+      const sessionStart = Date.now();
       req.session.userId = user.id;
 
       // Wait for session to be saved before responding
@@ -748,10 +756,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           else resolve();
         });
       });
+      timings['session_save_ms'] = Date.now() - sessionStart;
+      timings['total_ms'] = Date.now() - startTime;
 
-      log('INFO', 'Login successful', { userId: user.id, email: validatedData.email });
+      log('INFO', 'Login successful', { userId: user.id, email: validatedData.email, timings });
       metric('logins_total', 1);
-      metric('login_duration_ms', Date.now() - startTime);
+      metric('login_duration_ms', timings['total_ms']);
+      metric('login_db_lookup_ms', timings['db_lookup_ms']);
+      metric('login_bcrypt_ms', timings['bcrypt_compare_ms']);
+      metric('login_session_ms', timings['session_save_ms']);
       endTrace('OK');
       await flush();
 
@@ -931,7 +944,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       const tournaments = await storage.getAllTournaments();
-      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, CACHE_TTL.MEDIUM);
+      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, 300 * 1000); // 5 minutes cache
       log('INFO', 'Tournaments fetched from DB', { count: tournaments.length });
       endTrace('OK');
       await flush();
@@ -2729,18 +2742,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cached) {
         return res.json(cached);
       }
-      const servers = await storage.getAllServers();
-      const serversWithMemberCount = await Promise.all(
-        servers.map(async (server) => {
-          const members = await storage.getMembersByServer(server.id);
-          const validMembers = members.filter(m => m.userId);
-          return {
-            ...server,
-            memberCount: validMembers.length,
-          };
-        })
-      );
-      cache.set(CACHE_KEYS.SERVERS_LIST, serversWithMemberCount, CACHE_TTL.MEDIUM);
+
+      // OPTIMIZED: Fetch servers and member counts in parallel batch queries
+      const [servers, memberCounts] = await Promise.all([
+        storage.getAllServers(),
+        storage.getServerMemberCounts()
+      ]);
+
+      const serversWithMemberCount = servers.map((server) => ({
+        ...server,
+        memberCount: memberCounts[server.id] || 0,
+      }));
+
+      // Increase cache TTL to 5 minutes (was 60s)
+      cache.set(CACHE_KEYS.SERVERS_LIST, serversWithMemberCount, 300 * 1000);
       res.json(serversWithMemberCount);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -3722,18 +3737,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Retrieve uploaded file thumbnails - REDIRECT to main image (Simplified for Quick Fix)
+  // In-memory file cache to prevent repeated DB reads (LRU-style, max 100 items)
+  const fileCache = new Map<string, { data: Buffer; mimeType: string; timestamp: number }>();
+  const MAX_FILE_CACHE_SIZE = 100;
+  const FILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  const getCachedFile = (fileId: string) => {
+    const cached = fileCache.get(fileId);
+    if (cached && Date.now() - cached.timestamp < FILE_CACHE_TTL) {
+      return cached;
+    }
+    if (cached) {
+      fileCache.delete(fileId); // Expired
+    }
+    return null;
+  };
+
+  const setCachedFile = (fileId: string, data: Buffer, mimeType: string) => {
+    // LRU eviction: remove oldest if cache is full
+    if (fileCache.size >= MAX_FILE_CACHE_SIZE) {
+      const oldestKey = fileCache.keys().next().value;
+      if (oldestKey) fileCache.delete(oldestKey);
+    }
+    fileCache.set(fileId, { data, mimeType, timestamp: Date.now() });
+  };
+
+  // Retrieve uploaded file thumbnails - REDIRECT with cache headers
   app.get("/api/uploads/:fileId/thumbnail", (req, res) => {
-    // Just redirect to the main image for now to avoid complexity
-    // The frontend will display the full image scaled down
-    // Strip any existing extension logic if needed, but usually fileId is just the UUID
-    res.redirect(`/api/uploads/${req.params.fileId}`);
+    // Set cache headers before redirect
+    res.set("Cache-Control", "public, max-age=31536000, immutable");
+    res.redirect(301, `/api/uploads/${req.params.fileId}`);
   });
 
-  // Retrieve uploaded files from disk with cache headers
-  // Retrieve uploaded files from DB
+  // Retrieve uploaded files from DB with in-memory caching
   app.get("/api/uploads/:fileId", async (req, res) => {
     try {
+      // Check in-memory cache first
+      const cached = getCachedFile(req.params.fileId);
+      if (cached) {
+        res.set("Content-Type", cached.mimeType);
+        res.set("Cache-Control", "public, max-age=31536000, immutable");
+        res.set("ETag", `"${req.params.fileId}"`);
+        res.set("X-Cache", "HIT");
+        return res.send(cached.data);
+      }
+
       const { uploadedFiles } = await import("../shared/schema.js");
       const { db } = await import("./db.js");
       const { eq } = await import("drizzle-orm");
@@ -3750,9 +3798,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const fileBuffer = Buffer.from(file.data, 'base64');
 
+      // Cache for future requests
+      setCachedFile(req.params.fileId, fileBuffer, file.mimeType);
+
       res.set("Content-Type", file.mimeType);
       res.set("Cache-Control", "public, max-age=31536000, immutable");
       res.set("ETag", `"${file.id}"`);
+      res.set("X-Cache", "MISS");
       res.send(fileBuffer);
     } catch (error: any) {
       console.error("Error retrieving file:", error);
@@ -5162,10 +5214,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search users for new chat
 
 
-  // Get all threads for current user
+  // Get all threads for current user (with caching)
   app.get("/api/threads", requireAuth, async (req, res) => {
     try {
-      const threads = await storage.getMessageThreadsForParticipant(req.session.userId!);
+      const userId = req.session.userId!;
+      const cacheKey = `threads:user:${userId}`;
+
+      // Check cache first
+      const cached = cache.get<any[]>(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
+      const threads = await storage.getMessageThreadsForParticipant(userId);
+
+      // Cache for 30 seconds (threads don't change that frequently)
+      cache.set(cacheKey, threads, 30);
+
       res.json(threads);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -5269,6 +5334,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastMessageSenderId: userId,
         lastMessageTime: new Date()
       });
+
+      // Invalidate threads cache for sender
+      cache.delete(`threads:user:${userId}`);
+
+      // Also invalidate for the thread participants (get thread to find participant)
+      const thread = await storage.getMessageThread(threadId);
+      if (thread?.participantId && thread.participantId !== userId) {
+        cache.delete(`threads:user:${thread.participantId}`);
+      }
+      if (thread?.userId && thread.userId !== userId) {
+        cache.delete(`threads:user:${thread.userId}`);
+      }
 
       res.status(201).json(newMessage);
     } catch (error: any) {
