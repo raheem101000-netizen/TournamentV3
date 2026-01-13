@@ -1,4 +1,4 @@
-import { eq, and, or, sql, ilike, isNull, desc, lt, inArray } from "drizzle-orm";
+import { eq, and, or, sql, ilike, isNull, isNotNull, desc, lt, inArray } from "drizzle-orm";
 import { db } from "./db.js";
 import bcrypt from "bcrypt";
 import {
@@ -265,6 +265,12 @@ export interface IStorage {
   updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined>;
   deleteMemberFromServer(serverId: string, userId: string): Promise<void>;
   getEffectivePermissions(serverId: string, userId: string): Promise<string[]>;
+  getServerMemberCount(serverId: string): Promise<number>;
+  getServerMemberCount(serverId: string): Promise<number>;
+  getServerMemberCounts(serverIds?: string[]): Promise<Record<string, number>>;
+  getMembersWithUsers(serverId: string): Promise<(ServerMember & { user: User | null })[]>;
+
+  // Admin operations
 
   // Admin operations
   getAllUsers(): Promise<User[]>;
@@ -579,16 +585,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServersByUser(userId: string): Promise<Server[]> {
-    const userServerIds = await db
-      .select({ serverId: serverMembers.serverId })
-      .from(serverMembers)
-      .where(eq(serverMembers.userId, userId));
-
-    if (userServerIds.length === 0) return [];
-
-    return await db.select()
+    return await db
+      .select({
+        id: servers.id,
+        name: servers.name,
+        description: servers.description,
+        welcomeMessage: servers.welcomeMessage,
+        memberCount: servers.memberCount,
+        iconUrl: servers.iconUrl,
+        backgroundUrl: servers.backgroundUrl,
+        category: servers.category,
+        gameTags: servers.gameTags,
+        isPublic: servers.isPublic,
+        isVerified: servers.isVerified,
+        ownerId: servers.ownerId,
+        createdAt: servers.createdAt
+      })
       .from(servers)
-      .where(sql`${servers.id} IN (${sql.join(userServerIds.map(s => sql`${s.serverId}`), sql`, `)})`);
+      .innerJoin(serverMembers, eq(servers.id, serverMembers.serverId))
+      .where(eq(serverMembers.userId, userId));
   }
 
   async isUserInServer(serverId: string, userId: string): Promise<boolean> {
@@ -609,14 +624,20 @@ export class DatabaseStorage implements IStorage {
     return member;
   }
 
-  async getServerMemberCounts(): Promise<Record<string, number>> {
-    const counts = await db
+  async getServerMemberCounts(serverIds?: string[]): Promise<Record<string, number>> {
+    let query = db
       .select({
         serverId: serverMembers.serverId,
         count: sql<number>`count(*)`
       })
       .from(serverMembers)
       .groupBy(serverMembers.serverId);
+
+    if (serverIds && serverIds.length > 0) {
+      query = query.where(inArray(serverMembers.serverId, serverIds)) as any;
+    }
+
+    const counts = await query;
 
     const result: Record<string, number> = {};
     counts.forEach((row) => {
@@ -649,45 +670,63 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(messageThreads).where(eq(messageThreads.userId, userId)).orderBy(messageThreads.lastMessageTime);
   }
 
+  /**
+   * optimized getMessageThreadsForParticipant
+   * 
+   * Previous implementation used 3 separate queries:
+   * 1. Check if user is in any tournament (Gatekeeper)
+   * 2. Fetch Direct Message threads
+   * 3. Fetch Match threads
+   * 
+   * The new implementation reduces this to effectively 1 heavy query + 1 lightweight check.
+   * It combines Direct and Match thread fetching into a single SQL query using OR logic:
+   * - Direct: (myId is sender OR participant) AND (matchId IS NULL)
+   * - Match: (matchId IS NOT NULL) AND (userId IS NULL [public] OR userId = me [private])
+   * 
+   * This significantly reduces database round-trips and latency.
+   */
   async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
     console.log("[MSG-THREADS] Starting getMessageThreadsForParticipant (Optimized) for user:", userId);
 
-    const [userTournaments, directThreads, matchThreads] = await Promise.all([
+    const [userTournaments, allThreads] = await Promise.all([
       // 1. Get approved tournaments (Gatekeeper)
       db.select({ tournamentId: registrations.tournamentId })
         .from(registrations)
         .where(and(eq(registrations.userId, userId), eq(registrations.status, "approved"))),
 
-      // 2. Get direct threads
+      // 2. Get ALL threads (Direct + Match) in one query
       db.select()
         .from(messageThreads)
-        .where(and(
-          or(eq(messageThreads.userId, userId), eq(messageThreads.participantId, userId)),
-          isNull(messageThreads.matchId)
-        )),
-
-      // 3. Get match threads (Optimistic fetch)
-      db.select()
-        .from(messageThreads)
-        .where(and(
-          sql`${messageThreads.matchId} IS NOT NULL`,
-          or(sql`${messageThreads.userId} IS NULL`, eq(messageThreads.userId, userId))
-        ))
+        .where(
+          or(
+            // Direct Threads: I am sender OR participant, and it's NOT a match thread
+            and(
+              or(eq(messageThreads.userId, userId), eq(messageThreads.participantId, userId)),
+              isNull(messageThreads.matchId)
+            ),
+            // Match Threads: MatchID exists, and (Public Match Thread OR I am explicit owner)
+            and(
+              isNotNull(messageThreads.matchId),
+              or(isNull(messageThreads.userId), eq(messageThreads.userId, userId))
+            )
+          )
+        )
     ]);
 
-    // If user is not approved in any tournament, they only see direct messages
-    if (userTournaments.length === 0) {
-      console.log("[MSG-THREADS] No approved tournaments, returning direct threads only");
-      return directThreads.sort(
-        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-      );
-    }
+    // If user is not approved in any tournament, filter out match threads
+    // (Only allow Direct Threads)
+    const canViewMatchThreads = userTournaments.length > 0;
 
-    // Combine all threads
-    const allThreads = [...directThreads, ...matchThreads];
-    console.log(`[MSG-THREADS] Returning ${allThreads.length} threads (${directThreads.length} direct, ${matchThreads.length} match)`);
+    const visibleThreads = allThreads.filter(thread => {
+      // If it's a direct thread, always visible
+      if (!thread.matchId) return true;
+      // If it's a match thread, only visible if user has tournament access
+      return canViewMatchThreads;
+    });
 
-    return allThreads.sort(
+    console.log(`[MSG-THREADS] Returning ${visibleThreads.length} threads (Optimized Single Query)`);
+
+    return visibleThreads.sort(
       (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
     );
   }
@@ -1120,6 +1159,26 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(serverMembers).where(eq(serverMembers.serverId, serverId));
   }
 
+  async getMembersWithUsers(serverId: string): Promise<(ServerMember & { user: User | null })[]> {
+    const rows = await db
+      .select({
+        member: serverMembers,
+        user: {
+          id: users.id,
+          username: users.username,
+          avatarUrl: users.avatarUrl,
+        },
+      })
+      .from(serverMembers)
+      .leftJoin(users, eq(serverMembers.userId, users.id))
+      .where(eq(serverMembers.serverId, serverId));
+
+    return rows.map((row) => ({
+      ...row.member,
+      user: row.user as User, // Cast partial user to User (safe for this usage)
+    }));
+  }
+
   async getServerMemberByUserId(serverId: string, userId: string): Promise<ServerMember | undefined> {
     const [member] = await db.select().from(serverMembers)
       .where(and(
@@ -1127,6 +1186,14 @@ export class DatabaseStorage implements IStorage {
         eq(serverMembers.userId, userId)
       ));
     return member || undefined;
+  }
+
+  async getServerMemberCount(serverId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(serverMembers)
+      .where(eq(serverMembers.serverId, serverId));
+    return Number(result?.count || 0);
   }
 
   async updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined> {

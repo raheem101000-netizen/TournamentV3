@@ -20,6 +20,7 @@ const generalRateLimiter = rateLimit({
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { ip: false },
 });
 
 const authRateLimiter = rateLimit({
@@ -28,6 +29,7 @@ const authRateLimiter = rateLimit({
   message: { error: "Too many authentication attempts, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { ip: false },
 });
 
 const writeRateLimiter = rateLimit({
@@ -36,6 +38,7 @@ const writeRateLimiter = rateLimit({
   message: { error: "Too many write operations, please slow down." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { ip: false },
 });
 import fs from "fs";
 import path from "path";
@@ -894,7 +897,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         log('WARN', 'Auth check - not authenticated');
         endTrace('ERROR');
-        await flush();
         return res.status(401).json({ error: "Not authenticated" });
       }
 
@@ -903,7 +905,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log('WARN', 'Auth check - user not found', { userId: req.session.userId });
         req.session.destroy(() => { });
         endTrace('ERROR');
-        await flush();
         return res.status(404).json({ error: "User not found" });
       }
 
@@ -914,7 +915,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent') || 'unknown'
       });
       endTrace('OK');
-      await flush();
       res.json({
         id: user.id,
         username: user.username,
@@ -940,14 +940,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cached) {
         log('INFO', 'Tournaments fetched from cache', { count: cached.length });
         endTrace('OK');
-        await flush();
         return res.json(cached);
       }
       const tournaments = await storage.getAllTournaments();
       cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, 300 * 1000); // 5 minutes cache
       log('INFO', 'Tournaments fetched from DB', { count: tournaments.length });
       endTrace('OK');
-      await flush();
       res.json(tournaments);
     } catch (error: any) {
       log('ERROR', 'Failed to fetch tournaments', { error: error.message });
@@ -963,12 +961,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!tournament) {
         log('WARN', 'Tournament not found', { tournamentId: req.params.id });
         endTrace('ERROR');
-        await flush();
         return res.status(404).json({ error: "Tournament not found" });
       }
       log('INFO', 'Tournament fetched', { tournamentId: req.params.id });
       endTrace('OK');
-      await flush();
       res.json(tournament);
     } catch (error: any) {
       log('ERROR', 'Tournament fetch failed', { tournamentId: req.params.id, error: error.message });
@@ -1184,7 +1180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!config) {
         log('INFO', 'No registration config found', { tournamentId });
         endTrace('OK');
-        await flush();
         return res.json(null);
       }
 
@@ -1202,7 +1197,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log('INFO', 'Registration config fetched', { tournamentId, stepsCount: steps.length });
       endTrace('OK');
-      await flush();
       res.json({
         ...config,
         steps: stepsWithFields.sort((a, b) => a.stepNumber - b.stepNumber)
@@ -2597,17 +2591,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/servers", async (req, res) => {
     try {
       // Return all public servers with actual member counts
-      const allServers = await storage.getAllServers();
-      const serversWithMemberCount = await Promise.all(
-        allServers.map(async (server) => {
-          const members = await storage.getMembersByServer(server.id);
-          const validMembers = members.filter(m => m.userId);
-          return {
-            ...server,
-            memberCount: validMembers.length,
-          };
-        })
-      );
+      const [allServers, memberCounts] = await Promise.all([
+        storage.getAllServers(),
+        storage.getServerMemberCounts()
+      ]);
+
+      const serversWithMemberCount = allServers.map((server) => {
+        return {
+          ...server,
+          memberCount: memberCounts[server.id] || 0,
+        };
+      });
       res.json(serversWithMemberCount);
     } catch (error: any) {
       console.error("Error fetching servers:", error);
@@ -2866,11 +2860,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Server not found" });
       }
       // Get actual member count
-      const members = await storage.getMembersByServer(server.id);
-      const validMembers = members.filter(m => m.userId);
+      const memberCount = await storage.getServerMemberCount(server.id);
       res.json({
         ...server,
-        memberCount: validMembers.length,
+        memberCount,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -3033,16 +3026,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/servers", async (req, res) => {
     try {
       const servers = await storage.getServersByUser(req.params.userId);
-      const serversWithMemberCount = await Promise.all(
-        servers.map(async (server) => {
-          const members = await storage.getMembersByServer(server.id);
-          const validMembers = members.filter(m => m.userId);
-          return {
-            ...server,
-            memberCount: validMembers.length,
-          };
-        })
-      );
+      const serverIds = servers.map(s => s.id);
+
+      const memberCounts = await storage.getServerMemberCounts(serverIds);
+
+      const serversWithMemberCount = servers.map((server) => {
+        return {
+          ...server,
+          memberCount: memberCounts[server.id] || 0,
+        };
+      });
       res.json(serversWithMemberCount);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -3526,25 +3519,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/servers/:serverId/members", async (req, res) => {
     try {
-      const members = await storage.getMembersByServer(req.params.serverId);
+      const membersWithUsers = await storage.getMembersWithUsers(req.params.serverId);
       const server = await storage.getServer(req.params.serverId);
       const roles = await storage.getRolesByServer(req.params.serverId);
 
-      // Enrich members with user information
-      const enrichedMembers = await Promise.all(
-        members.map(async (member) => {
-          const user = await storage.getUser(member.userId);
-          const role = member.roleId ? roles.find(r => r.id === member.roleId) : null;
-          return {
-            ...member,
-            username: user?.username || "Unknown",
-            avatarUrl: user?.avatarUrl || null,
-            isOwner: server?.ownerId === member.userId,
-            roleName: role?.name || member.role || "Member",
-            roleColor: role?.color || "#99AAB5",
-          };
-        })
-      );
+      // Enrich members with role information (no more N+1 user fetching)
+      const enrichedMembers = membersWithUsers.map((item) => {
+        const member = item;
+        const user = item.user;
+        const role = member.roleId ? roles.find(r => r.id === member.roleId) : null;
+
+        return {
+          ...member,
+          username: user?.username || "Unknown",
+          avatarUrl: user?.avatarUrl || null,
+          isOwner: server?.ownerId === member.userId,
+          roleName: role?.name || member.role || "Member",
+          roleColor: role?.color || "#99AAB5",
+        };
+      });
       res.json(enrichedMembers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

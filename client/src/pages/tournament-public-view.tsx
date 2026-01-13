@@ -99,6 +99,15 @@ export default function TournamentPublicView() {
               <p className="text-lg font-bold text-white">{tournament.memberCount || 0} / {tournament.totalTeams || "∞"}</p>
             </div>
 
+            {/* Teams */}
+            <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
+              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">
+                <Users className="w-4 h-4" />
+                <span>Teams</span>
+              </div>
+              <p className="text-lg font-bold text-white">{tournament.memberCount || 0} / {tournament.totalTeams || "∞"}</p>
+            </div>
+
             {/* Date */}
             <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/5 space-y-1">
               <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-medium">

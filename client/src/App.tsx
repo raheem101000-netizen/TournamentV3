@@ -39,26 +39,17 @@ const TournamentPublicView = lazy(() => import("@/pages/tournament-public-view")
 
 import { initializeApp } from "../../lib/initializeApp";
 
+import { AppShellLoader } from "@/components/loaders/AppShellLoader";
+
 function LazyLoadFallback() {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
+  return <AppShellLoader />;
 }
 
 function ProtectedRoute({ component: Component, ...rest }: { component: any }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse">Loading...</p>
-        </div>
-      </div>
-    );
+    return <AppShellLoader />;
   }
 
   if (!isAuthenticated) {
@@ -72,14 +63,7 @@ function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse">Loading...</p>
-        </div>
-      </div>
-    );
+    return <AppShellLoader />;
   }
 
   return (
@@ -180,11 +164,23 @@ function Router() {
 
 function App() {
   useEffect(() => {
-    // Temporarily skip initialization for testing
-    // initializeApp();
-
     // Enable dark mode by default for 10 on 10 theme
     document.documentElement.classList.add('dark');
+
+    // PREFETCHING: Start fetching public data immediately (parallel to Auth check)
+    // This removes the "Waterfall" effect where we wait for Auth -> Then fetch Data
+    const prefetchData = async () => {
+      try {
+        await Promise.all([
+          queryClient.prefetchQuery({ queryKey: ["/api/tournaments"] }),
+          queryClient.prefetchQuery({ queryKey: ["/api/mobile-preview/servers"] })
+        ]);
+      } catch (e) {
+        // Ignore prefetch errors - actual components will handle them/retry
+        console.log('Prefetch hint:', e);
+      }
+    };
+    prefetchData();
   }, []);
 
 

@@ -712,32 +712,41 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
       </div>
 
       {/* Image enlargement dialog */}
-      <Dialog open={!!enlargedImageUrl} onOpenChange={() => setEnlargedImageUrl(null)}>
-        <DialogContent className="max-w-4xl p-2 bg-black/90 border-0 relative" aria-describedby="chat-image-preview-desc">
-          {/* Explicit Close Button */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute top-2 right-2 z-50 bg-black/50 text-white hover:bg-black/70 rounded-full h-10 w-10"
+      {/* Image enlargement overlay - Full Screen Custom Implementation */}
+      <AnimatePresence>
+        {enlargedImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center backdrop-blur-sm"
             onClick={() => setEnlargedImageUrl(null)}
-            aria-label="Close image preview"
           >
-            <X className="h-6 w-6" />
-          </Button>
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-          <div id="chat-image-preview-desc" className="sr-only">
-            Enlarged preview of the shared image
-          </div>
-          {enlargedImageUrl && (
-            <img
+            {/* Close Button */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-6 right-6 z-[101] bg-red-600/90 hover:bg-red-600 text-white rounded-full h-12 w-12 shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEnlargedImageUrl(null);
+              }}
+            >
+              <X className="h-8 w-8" />
+            </Button>
+
+            {/* Image */}
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               src={enlargedImageUrl}
-              alt="Enlarged"
-              className="w-full h-auto max-h-[90vh] object-contain"
-              onClick={() => setEnlargedImageUrl(null)} // Click image to close
+              alt="Enlarged preview"
+              className="w-full h-full object-contain p-0 md:p-4 select-none touch-none"
+              onClick={(e) => e.stopPropagation()} // Allow zooming/panning actions later (prevent closing on image click if needed, but for now simple viewer)
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

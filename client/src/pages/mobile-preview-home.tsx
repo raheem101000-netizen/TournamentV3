@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Calendar, Users, Trophy, DollarSign, Star, Info, Search, Filter, Gamepad2 } from "lucide-react";
+import { Loader2, Calendar, Users, Trophy, DollarSign, Star, Info, Search, Filter, Gamepad2, Laptop, MapPin } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { Tournament, Server } from "@shared/schema";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
@@ -360,6 +360,26 @@ export default function MobilePreviewHome() {
                   </div>
                   <div className="font-semibold capitalize">
                     {selectedTournament?.format?.replace('_', ' ')}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-card border rounded-lg space-y-1">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                    <Laptop className="h-3.5 w-3.5" />
+                    Platform
+                  </div>
+                  <div className="font-semibold capitalize truncate">
+                    {selectedTournament?.platform || "Any"}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-card border rounded-lg space-y-1">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Region
+                  </div>
+                  <div className="font-semibold capitalize truncate">
+                    {selectedTournament?.region || "Global"}
                   </div>
                 </div>
               </div>
