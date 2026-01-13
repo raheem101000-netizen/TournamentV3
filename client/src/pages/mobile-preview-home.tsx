@@ -128,7 +128,7 @@ export default function MobilePreviewHome() {
 
         {/* Responsive Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredTournaments.map((tournament) => (
+          {filteredTournaments.map((tournament, index) => (
             <Card
               key={tournament.id}
               className="overflow-hidden hover-elevate group"
@@ -158,6 +158,7 @@ export default function MobilePreviewHome() {
                   alt={tournament.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   thumbnailSize="lg"
+                  priority={index < 3} // Priority load first 3 images for LCP
                   fallback={
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
                       <div className="relative">

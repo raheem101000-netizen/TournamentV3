@@ -141,7 +141,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const updateTournamentMutation = useMutation({
     mutationFn: async (data: Partial<Tournament>) => {
-      return apiRequest('PATCH', `/api/tournaments/${selectedTournamentId}`, data);
+      console.log('[UPDATE TOURNAMENT] Mutation called with data:', data);
+      console.log('[UPDATE TOURNAMENT] Tournament ID:', selectedTournamentId);
+      const result = await apiRequest('PATCH', `/api/tournaments/${selectedTournamentId}`, data);
+      console.log('[UPDATE TOURNAMENT] API response:', result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
@@ -168,7 +172,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const { data: selectedTournamentMatches = [] } = useQuery<Match[]>({
     queryKey: [`/api/tournaments/${selectedTournamentId}/matches`],
     enabled: !!selectedTournamentId,
-    refetchInterval: 2000,
+    refetchInterval: 10000, // Reduced from 2s to 10s to prevent performance issues
   });
 
   const { data: registrationConfig } = useQuery<RegistrationFormConfig>({
@@ -441,7 +445,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   // Show tournament detail view
   if (selectedTournamentId && selectedTournament) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 h-full overflow-y-auto pb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={handleBackToList} data-testid="button-back-to-list">
@@ -473,7 +477,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap bg-transparent p-0 gap-2">
+          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap overflow-x-auto bg-transparent p-0 gap-2">
             <TabsTrigger value="overview" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Overview</TabsTrigger>
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
@@ -483,7 +487,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-4 overflow-y-auto max-h-[60vh]">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -615,14 +619,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               showMatchChat && selectedMatch ? (
                 // Full match chat view with back button
                 <div className="space-y-3 min-h-[600px] flex flex-col">
-                  <div className="flex items-center gap-3 border-b pb-3">
+                  <div className="flex items-center gap-3 border-b pb-3 sticky top-0 bg-background z-20">
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => setShowMatchChat(false)}
                       data-testid="button-back-to-fixtures"
+                      className="flex items-center gap-2"
                     >
                       <ArrowLeft className="h-4 w-4" />
+                      <span>Back to Fixtures</span>
                     </Button>
                     {(() => {
                       const user1 = getUserInfoByTeamId(selectedMatch.team1Id);
@@ -1258,7 +1264,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   // Show tournament list view
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-y-auto pb-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-primary" />
@@ -1432,6 +1438,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
   }, [tournament, open]);
 
   const handleSubmit = () => {
+    console.log('[EDIT DIALOG] handleSubmit called with:', { name, game, imageUrl, prizeReward, entryFee, startDate, endDate, platform, region });
     const trimmedName = name.trim();
     if (!trimmedName) {
       toast({

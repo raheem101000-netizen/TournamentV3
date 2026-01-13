@@ -61,22 +61,24 @@ export default function PreviewCreateTeam() {
       return response;
     },
     onSuccess: async (createdTeam: any) => {
-      // Add all players as team members
+      // Add all players as team members (in parallel to avoid blocking)
       try {
         // Owner is added automatically by backend
 
-        // Add all players as team members
-        for (const player of players) {
-          // Find the friend's user ID by username
+        // Add all players as team members in parallel
+        const memberPromises = players.map((player) => {
           const friend = friends.find((f: any) => f.username === player.username);
           if (friend) {
-            await apiRequest("POST", `/api/team-profiles/${createdTeam.id}/members`, {
+            return apiRequest("POST", `/api/team-profiles/${createdTeam.id}/members`, {
               userId: friend.id,
               role: "Member",
               position: player.position || null,
             });
           }
-        }
+          return Promise.resolve(null); // Skip if friend not found
+        });
+
+        await Promise.all(memberPromises);
       } catch (err) {
         console.error("Failed to add team members:", err);
       }
@@ -91,6 +93,7 @@ export default function PreviewCreateTeam() {
         title: "Team created!",
         description: `${teamName} has been created successfully.`,
       });
+      setIsSubmitting(false); // Reset loading state
       setLocation("/account");
     },
     onError: (error: any) => {

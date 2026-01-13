@@ -22,13 +22,13 @@ const imageCache = new Map<string, string>();
 
 function getThumbnailUrl(src: string, size: "sm" | "md" | "lg"): string {
   if (!src) return "";
-  
+
   if (src.startsWith("/api/uploads/")) {
     const parts = src.split("/");
     const fileId = parts[parts.length - 1];
     return `/api/uploads/${fileId}/thumbnail?size=${THUMBNAIL_SIZES[size]}`;
   }
-  
+
   return src;
 }
 
@@ -78,7 +78,7 @@ export function OptimizedImage({
     if (!isVisible || !thumbnailUrl) return;
 
     const shouldAutoUpgrade = priority || !loadFullOnTap;
-    
+
     const loadThumbnail = () => {
       if (imageCache.has(thumbnailUrl)) {
         setCurrentSrc(imageCache.get(thumbnailUrl)!);
@@ -167,6 +167,7 @@ export function OptimizedImage({
           )}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
+          fetchPriority={priority ? "high" : "auto"}
         />
       )}
     </div>
@@ -180,7 +181,7 @@ export function clearImageCache(): void {
 export function preloadImage(src: string, size: "sm" | "md" | "lg" = "md"): void {
   const url = getThumbnailUrl(src, size);
   if (imageCache.has(url)) return;
-  
+
   const img = new Image();
   img.onload = () => imageCache.set(url, url);
   img.src = url;

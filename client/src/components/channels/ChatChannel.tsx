@@ -164,8 +164,8 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
       return response.json();
     },
     enabled: !!activeId,
-    refetchInterval: 3000,
-    staleTime: 0,
+    refetchInterval: 10000, // Reduced from 3s to 10s to prevent excessive re-renders
+    staleTime: 5000, // Data is fresh for 5s, reducing redundant fetches
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
@@ -711,7 +711,17 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
 
       {/* Image enlargement dialog */}
       <Dialog open={!!enlargedImageUrl} onOpenChange={() => setEnlargedImageUrl(null)}>
-        <DialogContent className="max-w-4xl p-2 bg-black/90 border-0" aria-describedby="chat-image-preview-desc">
+        <DialogContent className="max-w-4xl p-2 bg-black/90 border-0 relative" aria-describedby="chat-image-preview-desc">
+          {/* Explicit Close Button */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="absolute top-2 right-2 z-50 bg-black/50 text-white hover:bg-black/70 rounded-full h-10 w-10"
+            onClick={() => setEnlargedImageUrl(null)}
+            aria-label="Close image preview"
+          >
+            <X className="h-6 w-6" />
+          </Button>
           <DialogTitle className="sr-only">Image Preview</DialogTitle>
           <div id="chat-image-preview-desc" className="sr-only">
             Enlarged preview of the shared image
@@ -721,6 +731,7 @@ export default function ChatChannel({ channelId, threadId, isPreview = false }: 
               src={enlargedImageUrl}
               alt="Enlarged"
               className="w-full h-auto max-h-[90vh] object-contain"
+              onClick={() => setEnlargedImageUrl(null)} // Click image to close
             />
           )}
         </DialogContent>
