@@ -884,13 +884,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTotalUnreadCount(userId: string): Promise<number> {
-    const threads = await db.select().from(messageThreads).where(
-      or(
-        eq(messageThreads.userId, userId),
-        eq(messageThreads.participantId, userId)
-      )
-    );
-    return threads.reduce((sum, thread) => sum + (thread.unreadCount || 0), 0);
+    const [result] = await db
+      .select({ count: sql<number>`SUM(${messageThreads.unreadCount})` })
+      .from(messageThreads)
+      .where(
+        or(
+          eq(messageThreads.userId, userId),
+          eq(messageThreads.participantId, userId)
+        )
+      );
+    return Number(result?.count || 0);
   }
 
   async markThreadAsRead(threadId: string): Promise<void> {
