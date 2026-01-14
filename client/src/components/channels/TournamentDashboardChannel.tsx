@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,8 +77,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState("overview");
   const [showMatchChat, setShowMatchChat] = useState(false);
+  const [roundName, setRoundName] = useState("");
+  const [isEliminateTeamDialogOpen, setIsEliminateTeamDialogOpen] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [expandedRegistrationId, setExpandedRegistrationId] = useState<string | null>(null);
@@ -329,13 +332,9 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const awardAchievementMutation = useMutation({
     mutationFn: async (data: z.infer<typeof awardAchievementSchema>) => {
-      // Look up the achievement details
+      // Look up achievement details...
       const achievement = predefinedAchievements.find(a => a.id === data.achievementId);
-      if (!achievement) {
-        throw new Error("Invalid achievement selected");
-      }
-
-      // Use custom title if editable and provided, otherwise use default
+      if (!achievement) throw new Error("Invalid achievement");
       const finalTitle = achievement.isEditable && data.customTitle ? data.customTitle : achievement.title;
 
       return apiRequest("POST", "/api/achievements", {
@@ -353,21 +352,44 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Achievement Awarded!",
-        description: "The achievement has been awarded successfully.",
-      });
+      toast({ title: "Achievement Awarded!", description: "The achievement has been awarded successfully." });
       achievementForm.reset();
       setIsAwardAchievementDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedTournament?.organizerId}/achievements`] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to award achievement",
-        variant: "destructive",
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const generateFixturesMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', `/api/tournaments/${selectedTournamentId}/generate-fixtures`, {
+        roundName: roundName.trim() || undefined
       });
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+      toast({ title: "Matches Generated", description: "Tournament matches have been created successfully!" });
+      setRoundName("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const eliminateTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      return apiRequest('PATCH', `/api/teams/${teamId}/eliminate`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+      toast({ title: "Team Eliminated", description: "Team has been permanently removed from future rounds." });
+      setIsEliminateTeamDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   });
 
   const handleViewTournament = (id: string) => {
@@ -666,6 +688,17 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                         </div>
                       );
                     })()}
+
+                    {/* Elimination Button */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      title="Permanently remove eliminated player"
+                      onClick={() => setIsEliminateTeamDialogOpen(true)}
+                    >
+                      <Skull className="h-4 w-4 text-destructive" />
+                    </Button>
+
                     <Button
                       variant="destructive"
                       size="icon"
@@ -695,6 +728,40 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  {/* Elimination Dialog */}
+                  <Dialog open={isEliminateTeamDialogOpen} onOpenChange={setIsEliminateTeamDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Eliminate Player</DialogTitle>
+                        <DialogDescription>
+                          Permanently remove a player from the tournament. They will be excluded from future match generations.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-4 py-4">
+                        <Button
+                          variant="outline"
+                          className="h-auto py-4 flex flex-col gap-2"
+                          onClick={() => {
+                            if (selectedMatch.team1Id) eliminateTeamMutation.mutate(selectedMatch.team1Id);
+                          }}
+                        >
+                          <span className="font-bold">@{getUsernameByTeamId(selectedMatch.team1Id) || 'Player 1'}</span>
+                          <span className="text-xs text-muted-foreground">Eliminate</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-auto py-4 flex flex-col gap-2"
+                          onClick={() => {
+                            if (selectedMatch.team2Id) eliminateTeamMutation.mutate(selectedMatch.team2Id);
+                          }}
+                        >
+                          <span className="font-bold">@{getUsernameByTeamId(selectedMatch.team2Id) || 'Player 2'}</span>
+                          <span className="text-xs text-muted-foreground">Eliminate</span>
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <div className="flex-1 overflow-hidden min-h-0">
                     {selectedMatch && (
                       <RichMatchChat
@@ -746,7 +813,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                               <span className="font-semibold text-sm text-primary truncate">@{user2.username || 'Player 2'}</span>
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground text-center mt-3 pt-2 border-t">Round {match.round}</div>
+                          <div className="text-xs text-muted-foreground text-center mt-3 pt-2 border-t">{match.roundName || `Round ${match.round}`}</div>
                           <div className="text-xs text-center mt-1">
                             {match.winnerId ? (
                               <div className="font-semibold text-green-600 dark:text-green-400 flex items-center justify-center gap-1">
@@ -892,16 +959,42 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           <TabsContent value="participants">
             {registrations.filter(r => r.status === 'approved').length > 0 ? (
               <div className="space-y-4">
-                <Button
-                  onClick={() => setIsCreateMatchDialogOpen(true)}
-                  data-testid="button-create-custom-match"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Match
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  {registrations.filter(r => r.status === 'approved').length} participant{registrations.filter(r => r.status === 'approved').length !== 1 ? 's' : ''}
-                </p>
+                <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card/50">
+                  <h3 className="font-semibold text-sm">Match Generation</h3>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="roundName">Round Name (Optional)</Label>
+                      <Input
+                        id="roundName"
+                        placeholder="e.g. Quarterfinals"
+                        value={roundName}
+                        onChange={(e) => setRoundName(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      onClick={() => generateFixturesMutation.mutate()}
+                      disabled={generateFixturesMutation.isPending || registrations.filter(r => r.status === 'approved').length < 2}
+                      data-testid="button-generate-matches"
+                    >
+                      {generateFixturesMutation.isPending ? "Generating..." : "Generate Matches"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsCreateMatchDialogOpen(true)}
+                    data-testid="button-create-custom-match"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Manual Match
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    {registrations.filter(r => r.status === 'approved').length} participant{registrations.filter(r => r.status === 'approved').length !== 1 ? 's' : ''}
+                  </p>
+                </div>
                 <div className="space-y-2">
                   {registrations.filter(r => r.status === 'approved').map((reg) => {
                     const headerValue = reg.teamName || "Unknown Team";
@@ -1258,7 +1351,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           tournament={selectedTournament}
           onSubmit={(data) => updateTournamentMutation.mutate(data)}
         />
-      </div>
+      </div >
     );
   }
 

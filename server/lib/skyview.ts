@@ -175,3 +175,104 @@ export async function flush() {
 
   pendingSpans.length = 0; pendingLogs.length = 0; pendingMetrics.length = 0;
 }
+
+// --- GLOBAL ERROR TRACKING MIDDLEWARE ---
+
+/**
+ * Express middleware to automatically log all errors to SkyView
+ * Add this AFTER all routes: app.use(skyviewErrorHandler)
+ */
+export function skyviewErrorHandler(err: any, req: any, res: any, next: any) {
+  const routeName = `${req.method} ${req.originalUrl}`;
+
+  // Start a trace for this error if not already in one
+  startTrace(`ERROR: ${routeName}`);
+
+  log('ERROR', `Unhandled error: ${err.message}`, {
+    endpoint: routeName,
+    userId: req.session?.userId || 'anonymous',
+    errorName: err.name,
+    errorStack: err.stack?.substring(0, 500), // Truncate stack
+    statusCode: res.statusCode || 500,
+    requestBody: JSON.stringify(req.body || {}).substring(0, 200),
+    userAgent: req.headers?.['user-agent']?.substring(0, 100)
+  });
+
+  endTrace('ERROR');
+
+  // Flush async - don't block the response
+  flush().catch(console.error);
+
+  // Pass to next error handler
+  next(err);
+}
+
+/**
+ * Express middleware to track 4xx/5xx responses
+ * Add this BEFORE routes: app.use(skyviewResponseTracker)
+ */
+export function skyviewResponseTracker(req: any, res: any, next: any) {
+  const originalSend = res.send;
+
+  res.send = function (body: any) {
+    const routeName = `${req.method} ${req.originalUrl}`;
+
+    // Track 4xx and 5xx responses
+    if (res.statusCode >= 400) {
+      const level = res.statusCode >= 500 ? 'ERROR' : 'WARN';
+
+      log(level, `HTTP ${res.statusCode}: ${routeName}`, {
+        endpoint: routeName,
+        statusCode: res.statusCode,
+        userId: req.session?.userId || 'anonymous',
+        responseBody: typeof body === 'string' ? body.substring(0, 200) : JSON.stringify(body).substring(0, 200),
+        requestBody: JSON.stringify(req.body || {}).substring(0, 200)
+      });
+
+      // Flush for errors
+      flush().catch(console.error);
+    }
+
+    return originalSend.call(this, body);
+  };
+
+  next();
+}
+
+/**
+ * Log an error directly to SkyView (use for catch blocks)
+ */
+export function logError(error: Error, context?: Record<string, any>) {
+  log('ERROR', error.message, {
+    errorName: error.name,
+    errorStack: error.stack?.substring(0, 500),
+    ...context
+  });
+  flush().catch(console.error);
+}
+
+/**
+ * Initialize global error handlers (call in server startup)
+ */
+export function initGlobalErrorTracking() {
+  // Catch unhandled promise rejections
+  process.on('unhandledRejection', (reason: any) => {
+    log('ERROR', `Unhandled Promise Rejection: ${reason?.message || reason}`, {
+      type: 'unhandledRejection',
+      stack: reason?.stack?.substring(0, 500)
+    });
+    flush().catch(console.error);
+  });
+
+  // Catch uncaught exceptions
+  process.on('uncaughtException', (error: Error) => {
+    log('ERROR', `Uncaught Exception: ${error.message}`, {
+      type: 'uncaughtException',
+      errorName: error.name,
+      stack: error.stack?.substring(0, 500)
+    });
+    flush().catch(console.error);
+  });
+
+  console.log('🔭 SkyView Global Error Tracking: ENABLED');
+}

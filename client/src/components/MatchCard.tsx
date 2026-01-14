@@ -25,13 +25,13 @@ interface MatchCardProps {
   compact?: boolean;
 }
 
-export default function MatchCard({ 
-  match, 
-  team1, 
-  team2, 
-  onSubmitScore, 
+export default function MatchCard({
+  match,
+  team1,
+  team2,
+  onSubmitScore,
   onViewChat,
-  compact = false 
+  compact = false
 }: MatchCardProps) {
   const statusColors = {
     pending: "bg-muted text-muted-foreground",
@@ -138,7 +138,7 @@ export default function MatchCard({
               <StatusIcon className="w-3 h-3 mr-1" />
               {match.status.replace('_', ' ')}
             </Badge>
-            <span className="text-sm text-muted-foreground">Round {match.round}</span>
+            <span className="text-sm text-muted-foreground">{match.roundName || `Round ${match.round}`}</span>
           </div>
 
           <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center overflow-hidden">
@@ -181,16 +181,16 @@ export default function MatchCard({
 
           {match.status !== "completed" && onSubmitScore && (
             <div className="flex gap-2">
-              <Button 
-                className="flex-1" 
+              <Button
+                className="flex-1"
                 onClick={() => onSubmitScore(match.id)}
                 data-testid={`button-submit-score-${match.id}`}
               >
                 Submit Score
               </Button>
               {onViewChat && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="icon"
                   onClick={() => onViewChat(match.id)}
                   data-testid={`button-chat-${match.id}`}

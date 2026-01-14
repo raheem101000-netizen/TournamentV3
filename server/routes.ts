@@ -94,7 +94,8 @@ import {
 async function createMatchThreadsForAllMembers(
   matchId: string,
   team1Id: string | null,
-  team2Id: string | null
+  team2Id: string | null,
+  roundName?: string
 ): Promise<void> {
   try {
     // Get team info for match name
@@ -125,8 +126,9 @@ async function createMatchThreadsForAllMembers(
       }
     }
 
-    // Match name format: "Match Chat: @username1 vs @username2"
-    const matchName = `Match Chat: @${team1Username} vs @${team2Username}`;
+    // Match name format: "Round Name: @username1 vs @username2" or default "Match Chat: ..."
+    const prefix = roundName ? roundName : "Match Chat";
+    const matchName = `${prefix}: @${team1Username} vs @${team2Username}`;
 
     // Collect all members from both teams
     const allMembers: { userId: string }[] = [];
@@ -1830,12 +1832,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tournament not found" });
       }
 
-      // Check if user is organizer or admin
+      // Check if user is organizer, admin, or server owner
       const user = await storage.getUser(req.session.userId);
-      if (tournament.organizerId !== req.session.userId && !user?.isAdmin) {
+
+      // Also check if user owns the server (for backwards compatibility when organizerId is null)
+      let isServerOwner = false;
+      if (tournament.serverId) {
+        const server = await storage.getServer(tournament.serverId);
+        isServerOwner = server?.ownerId === req.session.userId;
+      }
+
+      // Debug logging for authorization issue
+      console.log('[GENERATE-FIXTURES] Auth check:', {
+        sessionUserId: req.session.userId,
+        tournamentOrganizerId: tournament.organizerId,
+        isMatch: tournament.organizerId === req.session.userId,
+        isAdmin: user?.isAdmin,
+        isServerOwner
+      });
+
+      const isAuthorized =
+        tournament.organizerId === req.session.userId ||
+        user?.isAdmin ||
+        isServerOwner;
+
+      if (!isAuthorized) {
         log('WARN', 'Generate fixtures - not authorized', {
           userId: req.session.userId,
-          tournamentId: tournament.id
+          tournamentId: tournament.id,
+          organizerId: tournament.organizerId
         });
         return res.status(403).json({ error: "Not authorized" });
       }
@@ -1929,9 +1954,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create all matches in database
       const createdMatches = [];
+      const roundName = req.body.roundName; // Get round name from request
+
       for (const matchData of matches) {
+        // Add roundName to match data if provided
+        if (roundName) {
+          matchData.roundName = roundName;
+        }
+
         const match = await storage.createMatch(matchData);
         createdMatches.push(match);
+      }
+
+      // Create match threads for all created matches
+      // This ensures organizers and participants can chat immediately
+      for (const match of createdMatches) {
+        await createMatchThreadsForAllMembers(match.id, match.team1Id, match.team2Id, roundName);
       }
 
       log('INFO', 'Fixtures generated successfully', {
@@ -1951,6 +1989,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Permanently eliminate a team
+  app.patch("/api/teams/:teamId/eliminate", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Verify admin, tournament organizer, or server owner
+      const user = await storage.getUser(req.session.userId);
+      const team = await storage.getTeam(req.params.teamId);
+      if (!team) return res.status(404).json({ error: "Team not found" });
+
+      const tournament = await storage.getTournament(team.tournamentId);
+      if (!tournament) return res.status(404).json({ error: "Tournament not found" });
+
+      // Check if user owns the server
+      let isServerOwner = false;
+      if (tournament.serverId) {
+        const server = await storage.getServer(tournament.serverId);
+        isServerOwner = server?.ownerId === req.session.userId;
+      }
+
+      const isAuthorized =
+        tournament.organizerId === req.session.userId ||
+        user?.isAdmin ||
+        isServerOwner;
+
+      if (!isAuthorized) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const updatedTeam = await storage.updateTeam(req.params.teamId, { isRemoved: 1 });
+
+      log('INFO', 'Team permanently eliminated', { teamId: req.params.teamId, removedBy: req.session.userId });
+
+      res.json(updatedTeam);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
 
   // Match details endpoint (for 1v1 tournament match screen)
   app.get("/api/tournaments/:tournamentId/matches/:matchId/details", async (req, res) => {
@@ -2422,35 +2503,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.session.userId,
         });
 
-        // Auto-generate fixtures when a team registers
-        try {
-          const allTeams = await storage.getTeamsByTournament(tournament.id);
-          const existingMatches = await storage.getMatchesByTournament(tournament.id);
-
-          // Only generate if no matches exist yet
-          if (existingMatches.length === 0 && allTeams.length > 0) {
-            let matches;
-            if (tournament.format === "round_robin") {
-              matches = generateRoundRobinBracket(tournament.id, allTeams).matches;
-            } else if (tournament.format === "single_elimination") {
-              matches = generateSingleEliminationBracket(tournament.id, allTeams).matches;
-            } else if (tournament.format === "swiss") {
-              matches = generateSwissSystemRound(tournament.id, allTeams, 1, []).matches;
-            }
-
-            if (matches && matches.length > 0) {
-              // Create all matches
-              const createdMatches = await Promise.all(matches.map((match) => storage.createMatch(match)));
-              // PERMANENT: Create match threads for all team members immediately
-              for (const createdMatch of createdMatches) {
-                await createMatchThreadsForAllMembers(createdMatch.id, createdMatch.team1Id, createdMatch.team2Id);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("[FIXTURES] Error auto-generating fixtures:", error);
-          // Don't fail registration if fixture generation fails
-        }
+        // Auto-generation removed per Prompt 6 requirements.
+        // Matches are now generated manually by organizers via "Generate Matches" button.
       }
 
       log('INFO', 'Registration successful', { tournamentId: req.params.tournamentId, registrationId: registration.id });

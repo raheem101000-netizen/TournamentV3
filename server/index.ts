@@ -2,12 +2,16 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import { createApp } from "./app.js";
+import { skyviewResponseTracker, skyviewErrorHandler, initGlobalErrorTracking } from "./lib/skyview.js";
 
 // Create the app using the shared factory function
 const app = createApp();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// SkyView: Track all 4xx/5xx responses automatically
+app.use(skyviewResponseTracker);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -49,6 +53,9 @@ app.use((req, res, next) => {
     const server = await registerRoutes(app);
     log('Routes registered successfully');
 
+    // SkyView: Global error handler (must be after routes)
+    app.use(skyviewErrorHandler);
+
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -74,6 +81,9 @@ app.use((req, res, next) => {
       console.log('🔭 SkyView Observability: ACTIVE');
       console.log('   Tenant ID: Tourni1010');
       console.log('   Service: tourni1010-backend');
+
+      // Initialize global error tracking
+      initGlobalErrorTracking();
     });
   } catch (error) {
     console.error('Failed to start server:', error);
