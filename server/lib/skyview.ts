@@ -119,7 +119,21 @@ export function metric(name: string, value: number) {
 }
 
 // 5. Flush Data (Send to SkyView)
+// 5. Flush Data (Send to SkyView)
 export async function flush() {
+  // Snapshot and clear immediately to prevent race conditions
+  const spansToSend = [...pendingSpans];
+  const logsToSend = [...pendingLogs];
+  const metricsToSend = [...pendingMetrics];
+
+  pendingSpans.length = 0;
+  pendingLogs.length = 0;
+  pendingMetrics.length = 0;
+
+  if (spansToSend.length === 0 && logsToSend.length === 0 && metricsToSend.length === 0) {
+    return;
+  }
+
   const headers = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
   const send = async (path: string, payload: any) => {
     try { await fetch(`${ENDPOINT}${path}`, { method: 'POST', headers, body: JSON.stringify(payload) }); }
@@ -127,11 +141,11 @@ export async function flush() {
   };
 
   // SEND TRACES
-  if (pendingSpans.length) {
+  if (spansToSend.length) {
     await send('/v1/traces', {
       resourceSpans: [{
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeSpans: [{
-          spans: pendingSpans.map(s => ({
+          spans: spansToSend.map(s => ({
             name: s.name, traceId: s.traceId, spanId: s.spanId,
             parentSpanId: s.parentSpanId,
             startTimeUnixNano: s.startTime + '000000', endTimeUnixNano: (s.endTime || Date.now()) + '000000',
@@ -143,11 +157,11 @@ export async function flush() {
   }
 
   // SEND LOGS
-  if (pendingLogs.length) {
+  if (logsToSend.length) {
     await send('/v1/logs', {
       resourceLogs: [{
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeLogs: [{
-          logRecords: pendingLogs.map(l => ({
+          logRecords: logsToSend.map(l => ({
             timeUnixNano: l.timestamp + '000000', severityText: l.level, severityNumber: l.level === 'ERROR' ? 17 : l.level === 'WARN' ? 13 : 9,
             body: { stringValue: l.message },
             attributes: Object.entries(l.attributes || {}).map(([key, value]) => ({
@@ -161,19 +175,17 @@ export async function flush() {
   }
 
   // SEND METRICS
-  if (pendingMetrics.length) {
+  if (metricsToSend.length) {
     await send('/v1/metrics', {
       resourceMetrics: [{
         resource: { attributes: [{ key: 'tenant_id', value: { stringValue: TENANT_ID } }] }, scopeMetrics: [{
-          metrics: pendingMetrics.map(m => ({
+          metrics: metricsToSend.map(m => ({
             name: m.name, gauge: { dataPoints: [{ timeUnixNano: m.timestamp + '000000', asDouble: m.value }] }
           }))
         }]
       }]
     });
   }
-
-  pendingSpans.length = 0; pendingLogs.length = 0; pendingMetrics.length = 0;
 }
 
 // --- GLOBAL ERROR TRACKING MIDDLEWARE ---
