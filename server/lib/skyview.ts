@@ -2,9 +2,9 @@
 import { AsyncLocalStorage } from 'async_hooks';
 
 // --- CONFIGURATION ---
-const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59:4318';
-const API_KEY = process.env.SKYVIEW_API_KEY || 'demo123';
-const SERVICE_NAME = 'tourni1010-backend';
+const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59:4319';
+const API_KEY = process.env.SKYVIEW_API_KEY || 'TIZmGdT-VDtRe60pckQTX5_NuMes9OhcMDyaOJhh0wA';
+const SERVICE_NAME = 'tourni-app';
 const TENANT_ID = 'Tourni1010'; // <--- 🔴 REQUIRED FOR SKYVIEW
 
 // --- IMPORTANT ROUTES TO TRACE ---
