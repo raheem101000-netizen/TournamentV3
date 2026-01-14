@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { BottomNavigation } from "@/components/BottomNavigation";
-import Particles from "@/components/ui/particles";
+import { useLocation } from "wouter";
+import { MobileLayout } from "@/components/layouts/MobileLayout";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useLocation } from "wouter";
+
 import { useAuth } from "@/contexts/AuthContext";
 import type { User, TeamMember } from "@shared/schema";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 import UserProfileModal from "@/components/UserProfileModal";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, AlertTriangle, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -281,290 +282,313 @@ export default function PreviewAccount() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
-          <div className="flex items-center gap-2">
-            {isOwnProfile && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setLocation("/account/settings")}
-                data-testid="button-settings"
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-            )}
-            {!isOwnProfile && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setViewingUser(null)}
-                data-testid="button-back-to-profile"
-              >
-                Back to My Profile
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {!authUser ? (
-                <div className="py-8">
-                  <p className="text-muted-foreground">Loading profile...</p>
-                </div>
-              ) : (
-                <>
-                  <Avatar className="w-24 h-24 border-4 border-primary/20">
-                    <AvatarImage src={currentUser.avatarUrl || undefined} />
-                    <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-
-                  <div className="space-y-2 w-full">
-                    <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
-                    <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
-
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span className="text-sm">{isOwnProfile ? friends.length : (currentUser.friendCount ?? 0)} friends</span>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground px-4">
-                      {currentUser.bio || "No bio yet"}
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {isOwnProfile ? (
+    <MobileLayout>
+      <div className="flex flex-col min-h-screen pb-20">
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
+            <div className="flex items-center gap-2">
+              {isOwnProfile && (
                 <Button
-                  variant="outline"
-                  className="w-full"
+                  size="icon"
+                  variant="ghost"
                   onClick={() => setLocation("/account/settings")}
-                  data-testid="button-edit-profile"
+                  data-testid="button-settings"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  <Settings className="w-5 h-5" />
                 </Button>
-              ) : (
-                <div className="flex gap-2 w-full">
-                  <Button variant="default" className="flex-1" data-testid="button-add-friend">
-                    <Users className="w-4 h-4 mr-2" />
-                    Add Friend
-                  </Button>
-                  <Button variant="outline" className="flex-1" data-testid="button-message">
-                    Message
-                  </Button>
-                </div>
+              )}
+              {!isOwnProfile && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setViewingUser(null)}
+                  data-testid="button-back-to-profile"
+                >
+                  Back to My Profile
+                </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
 
-        {/* Friends Section - only show on own profile */}
-        {isOwnProfile && friends.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Friends</h3>
-              <span className="text-sm text-muted-foreground">{friends.length}</span>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              {friends.slice(0, 5).map((friend: any) => (
-                <div
-                  key={friend.id}
-                  className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
-                  onClick={() => setSelectedFriendId(friend.id)}
-                  data-testid={`friend-${friend.id}`}
-                >
-                  <Avatar className="w-12 h-12 mb-1">
-                    <AvatarImage src={friend.avatarUrl} />
-                    <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                  </Avatar>
-                  <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
-                </div>
-              ))}
-              {friends.length > 5 && (
-                <div
-                  className="flex flex-col items-center justify-center text-center cursor-pointer hover-elevate p-2 rounded-lg bg-muted/50"
-                  onClick={() => setShowAllFriends(true)}
-                  data-testid="button-show-more-friends"
-                >
-                  <div className="w-12 h-12 mb-1 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">+{friends.length - 5}</span>
+        <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                {!authUser ? (
+                  <div className="py-8">
+                    <p className="text-muted-foreground">Loading profile...</p>
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground">more</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                ) : (
+                  <>
+                    <Avatar className="w-24 h-24 border-4 border-primary/20">
+                      <AvatarImage src={currentUser.avatarUrl || undefined} />
+                      <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
 
-        {/* All Friends Dialog */}
-        <Dialog open={showAllFriends} onOpenChange={setShowAllFriends}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>All Friends ({friends.length})</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-4 gap-3 pt-4">
-              {friends.map((friend: any) => (
-                <div
-                  key={friend.id}
-                  className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
-                  onClick={() => {
-                    setShowAllFriends(false);
-                    setSelectedFriendId(friend.id);
-                  }}
-                  data-testid={`friend-all-${friend.id}`}
-                >
-                  <Avatar className="w-12 h-12 mb-1">
-                    <AvatarImage src={friend.avatarUrl} />
-                    <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                  </Avatar>
-                  <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+                    <div className="space-y-2 w-full">
+                      <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
+                      <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Teams</h3>
-            {isOwnProfile && (
-              <Button
-                size="sm"
-                onClick={() => setLocation("/create-team")}
-                data-testid="button-create-team"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Team
-              </Button>
-            )}
-          </div>
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span className="text-sm">{isOwnProfile ? friends.length : (currentUser.friendCount ?? 0)} friends</span>
+                      </div>
 
-          {userTeams.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-center text-muted-foreground">
-                  No teams yet. {isOwnProfile ? "Create your first team!" : ""}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {userTeams.map((team) => (
-                <Card
-                  key={team.id}
-                  className="hover-elevate cursor-pointer"
-                  onClick={() => setSelectedTeam(team)}
-                  data-testid={`team-card-${team.id}`}
-                >
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex flex-col items-center text-center">
-                      {team.logoUrl ? (
-                        <Avatar className="w-12 h-12 mb-2">
-                          <AvatarImage src={team.logoUrl} alt={team.name} />
-                          <AvatarFallback>{team.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="w-12 h-12 mb-2 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="w-6 h-6 text-primary" />
-                        </div>
-                      )}
-                      <h4 className="font-semibold text-sm line-clamp-1">{team.name}</h4>
+                      <p className="text-sm text-muted-foreground px-4">
+                        {currentUser.bio || "No bio yet"}
+                      </p>
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                      <Users className="w-3 h-3" />
-                      <span>{team.totalMembers || 1} members</span>
+                  </>
+                )}
+
+                {isOwnProfile ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setLocation("/account/settings")}
+                    data-testid="button-edit-profile"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex gap-2 w-full">
+                    <Button variant="default" className="flex-1" data-testid="button-add-friend">
+                      <Users className="w-4 h-4 mr-2" />
+                      Add Friend
+                    </Button>
+                    <Button variant="outline" className="flex-1" data-testid="button-message">
+                      Message
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Friends Section - only show on own profile */}
+          {isOwnProfile && friends.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Friends</h3>
+                <span className="text-sm text-muted-foreground">{friends.length}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {friends.slice(0, 5).map((friend: any) => (
+                  <div
+                    key={friend.id}
+                    className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
+                    onClick={() => setSelectedFriendId(friend.id)}
+                    data-testid={`friend-${friend.id}`}
+                  >
+                    <Avatar className="w-12 h-12 mb-1">
+                      <AvatarImage src={friend.avatarUrl} />
+                      <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                    </Avatar>
+                    <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
+                  </div>
+                ))}
+                {friends.length > 5 && (
+                  <div
+                    className="flex flex-col items-center justify-center text-center cursor-pointer hover-elevate p-2 rounded-lg bg-muted/50"
+                    onClick={() => setShowAllFriends(true)}
+                    data-testid="button-show-more-friends"
+                  >
+                    <div className="w-12 h-12 mb-1 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">+{friends.length - 5}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <p className="text-xs font-medium text-muted-foreground">more</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
 
-        {userAchievements && userAchievements.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Achievements</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {userAchievements.map((achievement: any) => {
-                const IconComponent = getAchievementIcon(achievement.iconUrl);
-                const colorClass = getAchievementColor(achievement.iconUrl);
-                const getMedalNumber = () => {
-                  if (achievement.iconUrl === "runner-up") return "2";
-                  if (achievement.iconUrl === "third-place") return "3";
-                  return null;
-                };
-                const medalNumber = getMedalNumber();
-
-                return (
-                  <Card
-                    key={achievement.id}
-                    className="hover-elevate cursor-pointer overflow-hidden"
-                    onClick={() => setSelectedAchievement(achievement)}
-                    data-testid={`achievement-card-${achievement.id}`}
+          {/* All Friends Dialog */}
+          <Dialog open={showAllFriends} onOpenChange={setShowAllFriends}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>All Friends ({friends.length})</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-4 gap-3 pt-4">
+                {friends.map((friend: any) => (
+                  <div
+                    key={friend.id}
+                    className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
+                    onClick={() => {
+                      setShowAllFriends(false);
+                      setSelectedFriendId(friend.id);
+                    }}
+                    data-testid={`friend-all-${friend.id}`}
                   >
-                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2 overflow-hidden">
-                      <div className="relative inline-flex items-center justify-center">
-                        <IconComponent className={`w-8 h-8 ${colorClass}`} />
-                        {medalNumber && (
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                            {medalNumber}
-                          </span>
-                        )}
-                      </div>
-                      <div className="w-full min-w-0 flex flex-col items-center gap-1.5">
-                        <p className="font-semibold text-sm line-clamp-2 text-center">{achievement.title}</p>
-                        {achievement.game && <p className="text-xs text-muted-foreground text-center">{achievement.game}</p>}
-                        {achievement.serverName ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground text-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (achievement.serverId) {
-                                setLocation(`/server/${achievement.serverId}`);
-                              }
-                            }}
-                            data-testid={`button-server-link-${achievement.id}`}
-                          >
-                            <span className="block truncate">{achievement.serverName}</span>
-                          </Button>
+                    <Avatar className="w-12 h-12 mb-1">
+                      <AvatarImage src={friend.avatarUrl} />
+                      <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                    </Avatar>
+                    <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Teams</h3>
+              {isOwnProfile && (
+                <Button
+                  size="sm"
+                  onClick={() => setLocation("/create-team")}
+                  data-testid="button-create-team"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Team
+                </Button>
+              )}
+            </div>
+
+            {userTeams.length === 0 ? (
+              <Card>
+                <CardContent className="py-8">
+                  <p className="text-center text-muted-foreground">
+                    No teams yet. {isOwnProfile ? "Create your first team!" : ""}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {userTeams.map((team) => (
+                  <Card
+                    key={team.id}
+                    className="hover-elevate cursor-pointer"
+                    onClick={() => setSelectedTeam(team)}
+                    data-testid={`team-card-${team.id}`}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex flex-col items-center text-center">
+                        {team.logoUrl ? (
+                          <Avatar className="w-12 h-12 mb-2">
+                            <AvatarImage src={team.logoUrl} alt={team.name} />
+                            <AvatarFallback>{team.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
                         ) : (
-                          <p className="text-xs text-destructive text-center">Server no longer exists</p>
+                          <div className="w-12 h-12 mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="w-6 h-6 text-primary" />
+                          </div>
                         )}
+                        <h4 className="font-semibold text-sm line-clamp-1">{team.name}</h4>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        <span>{team.totalMembers || 1} members</span>
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
 
-      </main>
+          {userAchievements && userAchievements.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Achievements</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {userAchievements.map((achievement: any) => {
+                  const IconComponent = getAchievementIcon(achievement.iconUrl);
+                  const colorClass = getAchievementColor(achievement.iconUrl);
+                  const getMedalNumber = () => {
+                    if (achievement.iconUrl === "runner-up") return "2";
+                    if (achievement.iconUrl === "third-place") return "3";
+                    return null;
+                  };
+                  const medalNumber = getMedalNumber();
 
-      <BottomNavigation />
+                  return (
+                    <Card
+                      key={achievement.id}
+                      className="hover-elevate cursor-pointer overflow-hidden"
+                      onClick={() => setSelectedAchievement(achievement)}
+                      data-testid={`achievement-card-${achievement.id}`}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2 overflow-hidden">
+                        <div className="relative inline-flex items-center justify-center">
+                          <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                          {medalNumber && (
+                            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                              {medalNumber}
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-full min-w-0 flex flex-col items-center gap-1.5">
+                          <p className="font-semibold text-sm line-clamp-2 text-center">{achievement.title}</p>
+                          {achievement.game && <p className="text-xs text-muted-foreground text-center">{achievement.game}</p>}
+                          {achievement.serverName ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground text-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (achievement.serverId) {
+                                  setLocation(`/server/${achievement.serverId}`);
+                                }
+                              }}
+                              data-testid={`button-server-link-${achievement.id}`}
+                            >
+                              <span className="block truncate">{achievement.serverName}</span>
+                            </Button>
+                          ) : (
+                            <p className="text-xs text-destructive text-center">Server no longer exists</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-      <Particles
-        particleCount={150}
-        particleSpread={15}
-        speed={0.05}
-        particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
-        alphaParticles={false}
-        particleBaseSize={200}
-        cameraDistance={10}
-        sizeRandomness={0.5}
-        disableRotation={false}
-        className="fixed inset-0 z-50 pointer-events-none"
-      />
+          {/* Debug Tools for SkyView */}
+          <div className="space-y-4 pt-4 border-t border-border mt-8">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Debug Tools
+            </h3>
+            <Card className="border-yellow-500/20 bg-yellow-500/5">
+              <CardContent className="p-4 space-y-3">
+                <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={() => fetch("/api/debug/error").catch(console.error)}
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Trigger Backend 500 Error
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full justify-start"
+                  onClick={() => fetch("/api/debug/slow").catch(console.error)}
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  Trigger Slow Response (3s)
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-red-500 hover:text-red-600 border-red-500/50 hover:bg-red-500/10"
+                  onClick={() => { throw new Error("Frontend Crash Test: SkyView Verification"); }}
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Trigger Frontend Crash
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+        </main>
+      </div>
 
       {/* Achievement Details Modal */}
       <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
@@ -1009,6 +1033,6 @@ export default function PreviewAccount() {
         open={!!selectedFriendId}
         onOpenChange={(open) => !open && setSelectedFriendId(null)}
       />
-    </div>
+    </MobileLayout>
   );
 }

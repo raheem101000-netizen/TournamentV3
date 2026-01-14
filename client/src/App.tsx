@@ -36,6 +36,7 @@ const AdminPanel = lazy(() => import("@/pages/admin-panel"));
 const Profile = lazy(() => import("@/pages/profile"));
 const ServerPreview = lazy(() => import("@/pages/server-preview"));
 const TournamentPublicView = lazy(() => import("@/pages/tournament-public-view"));
+const Particles = lazy(() => import("@/components/ui/particles"));
 
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -189,6 +190,23 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <Suspense fallback={null}>
+            <div className="fixed inset-0 z-50 pointer-events-none">
+              <Particles
+                particleColors={['#ffffff', '#ffffff', '#ffffff']}
+                particleCount={60}
+                particleSpread={15}
+                speed={0.05}
+                particleBaseSize={100}
+                cameraDistance={20}
+                sizeRandomness={0.3}
+                moveParticlesOnHover={false}
+                alphaParticles={false}
+                disableRotation={false}
+                className="w-full h-full"
+              />
+            </div>
+          </Suspense>
           <div className="flex flex-col min-h-screen w-full bg-background text-foreground">
             {/* Desktop Header / Mobile Header handled per page */}
             <div className="flex-1 flex flex-col min-h-0 bg-background">

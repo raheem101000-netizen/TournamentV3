@@ -26,6 +26,7 @@ import { Menu } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ChannelSettingsDialog } from "@/components/ChannelSettingsDialog";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -43,6 +44,7 @@ export default function PreviewServerDetail() {
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [leaveServerDialogOpen, setLeaveServerDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -188,9 +190,7 @@ export default function PreviewServerDetail() {
 
           <button
             className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
-            onClick={() => {
-              alert("Channel settings coming soon!");
-            }}
+            onClick={() => setChannelSettingsOpen(true)}
           >
             Edit
           </button>
@@ -206,6 +206,15 @@ export default function PreviewServerDetail() {
             <ChatChannel channelId={fullScreenChannelId} isPreview={false} />
           )}
         </div>
+
+        {/* Channel Settings Dialog */}
+        <ChannelSettingsDialog
+          channelId={fullScreenChannelId!}
+          serverId={serverId!}
+          open={channelSettingsOpen}
+          onOpenChange={setChannelSettingsOpen}
+          onDeleted={() => setFullScreenChannelId(null)}
+        />
       </div>
     );
   }

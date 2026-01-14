@@ -2,11 +2,27 @@ import { useState } from "react";
 import { MessagesListView } from "@/components/mobile-chat/MessagesListView";
 import ChatChannel from "@/components/channels/ChatChannel";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, User, BellOff, Trash2, Ban, Flag, Info } from "lucide-react";
 import { useLocation } from "wouter";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PreviewMessages() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isMuted, setIsMuted] = useState(false);
 
   // Parse query params manually since wouter's useSearch isn't always available/consistent in all versions
   const getThreadIdFromUrl = () => {
@@ -37,16 +53,118 @@ export default function PreviewMessages() {
 
             <span className="font-semibold text-lg">Chat</span>
 
-            <button
-              className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
-              onClick={() => {
-                // Placeholder for rename or group settings
-                // toast({ title: "Coming Soon", description: "Custom group names coming soon!" });
-                alert("Custom group names coming soon!");
-              }}
-            >
-              Edit
-            </button>
+            <Drawer>
+              <DrawerTrigger asChild>
+                <button
+                  className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
+                >
+                  Details
+                </button>
+              </DrawerTrigger>
+              <DrawerContent className="bg-zinc-900 border-zinc-800 text-white pb-6">
+                <div className="mx-auto w-full max-w-sm">
+                  <DrawerHeader>
+                    <DrawerTitle className="text-center text-xl font-bold">Details</DrawerTitle>
+                  </DrawerHeader>
+
+                  <div className="px-4 space-y-6 mt-4">
+                    {/* User Profile Section */}
+                    <div className="flex flex-col items-center gap-2">
+                      <Avatar className="h-20 w-20 border-2 border-zinc-700">
+                        <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
+                        <AvatarFallback>JD</AvatarFallback>
+                      </Avatar>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg">John Doe</h3>
+                        <p className="text-zinc-400">@johndoe</p>
+                      </div>
+
+                      <div className="flex gap-4 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full border-zinc-700 text-white bg-transparent hover:bg-zinc-800"
+                          onClick={() => {
+                            toast({ title: "Opening Profile", description: "Navigating to user profile..." });
+                          }}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Profile
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full border-zinc-700 text-white bg-transparent hover:bg-zinc-800"
+                          onClick={() => {
+                            toast({ title: "Coming Soon", description: "Search in chat coming soon" });
+                          }}
+                        >
+                          <Info className="w-4 h-4 mr-2" />
+                          Search
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-zinc-800" />
+
+                    {/* Actions List */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-purple-500/20 text-purple-400">
+                            <BellOff className="w-5 h-5" />
+                          </div>
+                          <span className="font-medium">Mute Notifications</span>
+                        </div>
+                        <Switch
+                          checked={isMuted}
+                          onCheckedChange={(checked) => {
+                            setIsMuted(checked);
+                            toast({
+                              title: checked ? "Notifications Muted" : "Notifications On",
+                              description: checked ? "You won't receive alerts for this chat." : "Alerts enabled."
+                            });
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 h-12 text-base font-normal px-3"
+                          onClick={() => {
+                            toast({ title: "Blocked", description: "User has been blocked.", variant: "destructive" });
+                          }}
+                        >
+                          <Ban className="w-5 h-5 mr-3" />
+                          Block User
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10 h-12 text-base font-normal px-3"
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this conversation?")) {
+                              toast({ title: "Conversation Deleted", variant: "destructive" });
+                              setSelectedChatId(null);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-5 h-5 mr-3" />
+                          Delete Conversation
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline" className="w-full border-zinc-700 bg-transparent text-white hover:bg-zinc-800">Cancel</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </div>
+              </DrawerContent>
+            </Drawer>
           </div>
 
           {/* Chat Area */}

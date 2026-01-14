@@ -47,12 +47,15 @@ export default function MobilePreviewHome() {
       // 1. Visibility Check
       if (t.visibility === "private") return false;
 
-      // 2. Search Query Check
+      // 2. Date Check - Hide past tournaments
+      if (t.startDate && new Date(t.startDate) < new Date()) return false;
+
+      // 3. Search Query Check
       const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.game?.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      // 3. Game Filter Check
+      // 4. Game Filter Check
       if (gameFilter !== "all" && t.game !== gameFilter) return false;
 
       return true;
@@ -287,118 +290,104 @@ export default function MobilePreviewHome() {
 
         {/* Tournament Details Modal */}
         <Dialog open={!!selectedTournament} onOpenChange={(open) => !open && setSelectedTournament(null)}>
-          <DialogContent className="max-w-md rounded-xl" data-testid="tournament-details-modal">
-            <DialogHeader className="text-left">
-              <DialogTitle className="text-xl" data-testid="modal-tournament-name">
-                {selectedTournament?.name}
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2" data-testid="modal-tournament-game">
-                <Gamepad2 className="h-4 w-4" />
-                {selectedTournament?.game}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
+          <DialogContent className="max-w-md p-0 rounded-2xl overflow-hidden border-white/10 bg-zinc-900/95 backdrop-blur-xl" data-testid="tournament-details-modal">
+            {/* Hero Image with overlays */}
+            <div className="relative h-44 overflow-hidden">
               <OptimizedImage
                 src={selectedTournament?.imageUrl}
                 alt={selectedTournament?.name || "Tournament"}
-                className="w-full rounded-lg aspect-video object-cover shadow-sm"
+                className="w-full h-full object-cover"
                 thumbnailSize="lg"
                 priority={true}
                 fallback={
-                  <div className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <Trophy className="h-16 w-16 text-muted-foreground/30" />
+                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                    <Trophy className="h-12 w-12 text-muted-foreground/30" />
                   </div>
                 }
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              {/* Game Badge */}
+              <div className="absolute bottom-2 left-3 flex items-center gap-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-full text-xs font-medium text-white/90">
+                <Gamepad2 className="w-3 h-3" />
+                <span className="uppercase tracking-wider">{selectedTournament?.game}</span>
+              </div>
+
+              {/* Status Badge */}
+              <div className="absolute top-2 left-3 px-2 py-0.5 bg-emerald-500/90 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
+                {selectedTournament?.status || "Open"}
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Title & Prize */}
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-white leading-tight" data-testid="modal-tournament-name">
+                  {selectedTournament?.name}
+                </h2>
+
                 {selectedTournament?.prizeReward && (
-                  <div className="col-span-2 flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-primary">Prize Pool</span>
-                    </div>
-                    <span className="font-bold text-lg">{selectedTournament.prizeReward}</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/30 rounded-lg">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span className="text-base font-bold text-amber-400">{selectedTournament.prizeReward}</span>
                   </div>
                 )}
+              </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Users className="h-3.5 w-3.5" />
-                    Teams
-                  </div>
-                  <div className="font-semibold">
-                    {selectedTournament?.totalTeams === -1 ? "Unlimited" : selectedTournament?.totalTeams}
-                  </div>
+              {/* Stats Grid - 3x2 */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <Users className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
+                  <p className="text-xs text-white/50">Teams</p>
+                  <p className="text-sm font-semibold text-white">{selectedTournament?.totalTeams === -1 ? "∞" : selectedTournament?.totalTeams}</p>
                 </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Date
-                  </div>
-                  <div className="font-semibold truncate">
-                    {selectedTournament?.startDate ? new Date(selectedTournament.startDate).toLocaleDateString() : 'TBA'}
-                  </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <Calendar className="w-4 h-4 mx-auto mb-1 text-blue-400" />
+                  <p className="text-xs text-white/50">Date</p>
+                  <p className="text-sm font-semibold text-white truncate">
+                    {selectedTournament?.startDate ? new Date(selectedTournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA'}
+                  </p>
                 </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <DollarSign className="h-3.5 w-3.5" />
-                    Entry Fee
-                  </div>
-                  <div className="font-semibold">
-                    {selectedTournament?.entryFee || "Free"}
-                  </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <DollarSign className="w-4 h-4 mx-auto mb-1 text-amber-400" />
+                  <p className="text-xs text-white/50">Entry</p>
+                  <p className="text-sm font-semibold text-white">{selectedTournament?.entryFee || "Free"}</p>
                 </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Star className="h-3.5 w-3.5" />
-                    Format
-                  </div>
-                  <div className="font-semibold capitalize">
-                    {selectedTournament?.format?.replace('_', ' ')}
-                  </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <Star className="w-4 h-4 mx-auto mb-1 text-purple-400" />
+                  <p className="text-xs text-white/50">Format</p>
+                  <p className="text-sm font-semibold text-white truncate capitalize">{selectedTournament?.format?.replace('_', ' ')}</p>
                 </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Laptop className="h-3.5 w-3.5" />
-                    Platform
-                  </div>
-                  <div className="font-semibold capitalize truncate">
-                    {selectedTournament?.platform || "Any"}
-                  </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <Laptop className="w-4 h-4 mx-auto mb-1 text-cyan-400" />
+                  <p className="text-xs text-white/50">Platform</p>
+                  <p className="text-sm font-semibold text-white truncate capitalize">{selectedTournament?.platform || "Any"}</p>
                 </div>
 
-                <div className="p-3 bg-card border rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <MapPin className="h-3.5 w-3.5" />
-                    Region
-                  </div>
-                  <div className="font-semibold capitalize truncate">
-                    {selectedTournament?.region || "Global"}
-                  </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                  <MapPin className="w-4 h-4 mx-auto mb-1 text-rose-400" />
+                  <p className="text-xs text-white/50">Region</p>
+                  <p className="text-sm font-semibold text-white truncate capitalize">{selectedTournament?.region || "Global"}</p>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <Button
-                  className="flex-1 font-semibold"
-                  size="lg"
-                  data-testid="modal-button-join"
-                  onClick={() => {
-                    if (selectedTournament) {
-                      setLocation(`/tournament/${selectedTournament.id}/register`);
-                      setSelectedTournament(null);
-                    }
-                  }}
-                >
-                  Register Now
-                </Button>
-              </div>
+              {/* Register Button */}
+              <Button
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold h-11 rounded-xl shadow-lg shadow-blue-900/30"
+                data-testid="modal-button-join"
+                onClick={() => {
+                  if (selectedTournament) {
+                    setLocation(`/tournament/${selectedTournament.id}/register`);
+                    setSelectedTournament(null);
+                  }
+                }}
+              >
+                Register Now
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

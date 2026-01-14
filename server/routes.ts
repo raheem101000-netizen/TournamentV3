@@ -217,6 +217,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // DEBUG ROUTES FOR SKYVIEW
+  app.get("/api/debug/error", (req, res, next) => {
+    startTrace("debug_error_trigger");
+    log("INFO", "Triggering manual 500 error for SkyView test");
+    try {
+      throw new Error("Manual Test Error: 500 Internal Server Error");
+    } catch (e) {
+      log("ERROR", (e as Error).message);
+      endTrace("ERROR");
+      next(e); // Pass to error handler
+    }
+  });
+
+  app.get("/api/debug/slow", async (req, res) => {
+    startTrace("debug_slow_trigger");
+    log("INFO", "Triggering slow response for SkyView test");
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    log("INFO", "Slow response completed");
+    endTrace("OK");
+    res.json({ message: "Slow response completed in 3000ms" });
+  });
+
   // Search users for new chat - Defined early to avoid 404s
   app.get("/api/users/search", async (req, res) => {
     try {
