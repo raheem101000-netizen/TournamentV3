@@ -22,6 +22,7 @@ import { queryClient } from "@/lib/queryClient";
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -36,6 +37,7 @@ export default function Login() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -44,6 +46,7 @@ export default function Login() {
       const res = await apiRequest('POST', '/api/auth/login', {
         email: data.email,
         password: data.password,
+        rememberMe: data.rememberMe,
       });
       return res;
     },
@@ -147,6 +150,32 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
+
+                {/* Remember Me and Forgot Password */}
+                <div className="flex items-center justify-between w-[280px] mx-auto animate-slide-up [animation-delay:250ms]">
+                  <FormField
+                    control={form.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <label className="flex items-center gap-2 cursor-pointer text-white/70 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="w-4 h-4 rounded border-white/30 bg-white/10 text-primary focus:ring-primary/50"
+                        />
+                        Remember me
+                      </label>
+                    )}
+                  />
+                  <button
+                    type="button"
+                    className="text-white/70 text-xs hover:text-white hover:underline transition-colors"
+                    onClick={() => setLocation("/forgot-password")}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
 
                 <div className="flex justify-center pt-4 animate-slide-up [animation-delay:300ms]">
                   <Button

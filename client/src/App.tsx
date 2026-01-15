@@ -26,6 +26,8 @@ const AccountSettings = lazy(() => import("@/pages/account-settings"));
 const ServerSettings = lazy(() => import("@/pages/server-settings"));
 const VerifyEmail = lazy(() => import("@/pages/verify"));
 const CheckEmail = lazy(() => import("@/pages/check-email"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const CreateServer = lazy(() => import("@/pages/create-server"));
 const CreateTournament = lazy(() => import("@/pages/create-tournament"));
 const ChatRoom = lazy(() => import("@/pages/chat-room"));
@@ -76,12 +78,19 @@ function Router() {
         <Route path="/login">
           {() => isAuthenticated ? <Redirect to="/" /> : <Login />}
         </Route>
+        <Route path="/forgot-password">
+          <ForgotPassword />
+        </Route>
+        <Route path="/reset-password">
+          <ResetPassword />
+        </Route>
         <Route path="/verify">
           <VerifyEmail />
         </Route>
         <Route path="/check-email">
           <CheckEmail />
         </Route>
+
 
         <Route path="/create-server">
           {() => <ProtectedRoute component={CreateServer} />}

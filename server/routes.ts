@@ -715,9 +715,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const loginSchema = z.object({
         email: z.string().email(),
         password: z.string(),
+        rememberMe: z.boolean().optional().default(false),
       });
       const validatedData = loginSchema.parse(req.body);
-      log('INFO', 'Login attempt', { email: validatedData.email });
+      log('INFO', 'Login attempt', { email: validatedData.email, rememberMe: validatedData.rememberMe });
 
       // Find user by email - timing DB lookup
       const dbLookupStart = Date.now();
@@ -775,6 +776,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.isDisabled === 1) {
         await storage.updateUser(user.id, { isDisabled: 0 });
       }
+
+      // Set session duration based on rememberMe flag
+      // Default: 2 hours, Remember Me: 30 days
+      const TWO_HOURS = 2 * 60 * 60 * 1000;
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+      req.session.cookie.maxAge = validatedData.rememberMe ? THIRTY_DAYS : TWO_HOURS;
 
       // Create session - timing session persistence
       const sessionStart = Date.now();
@@ -910,6 +917,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Forgot password - Request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const forgotSchema = z.object({
+        email: z.string().email(),
+      });
+      const { email } = forgotSchema.parse(req.body);
+      log('INFO', 'Password reset requested', { email });
+
+      const user = await storage.getUserByEmail(email);
+
+      // Always return success to prevent email enumeration
+      if (!user) {
+        log('WARN', 'Password reset requested for non-existent email', { email });
+        return res.json({ message: "If this email exists, you will receive a password reset link." });
+      }
+
+      // Generate reset token (64 chars)
+      const resetToken = randomBytes(32).toString('hex');
+      const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Store token in database
+      await storage.updateUser(user.id, {
+        passwordResetToken: resetToken,
+        passwordResetExpiry: tokenExpiry,
+      });
+
+      // Build reset link
+      const domain = req.get('host') || 'localhost:5000';
+      const protocol = req.protocol === 'http' ? 'http' : 'https';
+      const resetLink = `${protocol}://${domain}/reset-password?token=${resetToken}`;
+
+      // Log the reset link (for development/testing)
+      console.log(`\n🔐 PASSWORD RESET LINK for ${email}:\n${resetLink}\n`);
+
+      // TODO: Send email with reset link when email service is configured
+      // await sendPasswordResetEmail(email, resetLink, user.displayName || user.username);
+
+      log('INFO', 'Password reset token generated', { userId: user.id });
+      res.json({ message: "If this email exists, you will receive a password reset link." });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password - Set new password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const resetSchema = z.object({
+        token: z.string().min(1, "Token is required"),
+        newPassword: z.string().min(6, "Password must be at least 6 characters"),
+      });
+      const { token, newPassword } = resetSchema.parse(req.body);
+      log('INFO', 'Password reset attempt');
+
+      // Find user by reset token
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user) {
+        log('WARN', 'Password reset failed - invalid token');
+        return res.status(400).json({ error: "Invalid or expired reset link" });
+      }
+
+      // Check if token is expired
+      if (user.passwordResetExpiry && new Date() > new Date(user.passwordResetExpiry)) {
+        log('WARN', 'Password reset failed - expired token', { userId: user.id });
+        return res.status(400).json({ error: "Reset link has expired. Please request a new one." });
+      }
+
+      // Hash new password
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear reset token
+      await storage.updateUser(user.id, {
+        passwordHash: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+      });
+
+      log('INFO', 'Password reset successful', { userId: user.id });
+      res.json({ message: "Password has been reset successfully. You can now log in." });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid input data" });
+      }
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
 
