@@ -2955,7 +2955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mobile preview API routes
-  app.get("/api/mobile-preview/servers", async (_req, res) => {
+  app.get("/api/mobile-preview/servers", async (req, res) => {
     try {
       const cached = cache.get<any[]>(CACHE_KEYS.SERVERS_LIST);
       if (cached) {
@@ -2982,7 +2982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/mobile-preview/messages", async (_req, res) => {
+  app.get("/api/mobile-preview/messages", async (req, res) => {
     try {
       const messages = await storage.getAllMessageThreads();
       res.json(messages);
