@@ -167,7 +167,7 @@ async function createMatchThreadsForAllMembers(
 export async function registerRoutes(app: Express): Promise<Server> {
   // SkyView Tracing Middleware
   // Must be first to capture all requests
-  const { startTrace, endTrace, log, metric, flush } = await import("./lib/skyview.js");
+  const { startTrace, endTrace, log, metric, flush, logError } = await import("./lib/skyview.js");
 
   app.use(async (req, res, next) => {
     // Parse W3C Trace Context header for distributed tracing
@@ -284,6 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(enrichedUsers);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -448,6 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           broadcastToChannel(channelId, broadcastPayload);
         } catch (error: any) {
+          log('ERROR', `WebSocket channel message error: ${error.message}`, { channelId, userId: userInfo?.userId });
           console.error("Error handling channel WebSocket message:", error);
           ws.send(JSON.stringify({ error: "Failed to process message", details: error.message }));
         }
@@ -545,6 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           broadcastToMatch(matchId, broadcastPayload);
         } catch (error: any) {
+          log('ERROR', `WebSocket match message error: ${error.message}`, { matchId, userId: userInfo?.userId });
           console.error("Error handling WebSocket message:", error);
           console.error("Error details:", error.message);
           ws.send(JSON.stringify({ error: "Failed to process message", details: error.message }));
@@ -693,6 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Registration failed', { error: error.message });
       endTrace('ERROR');
       await flush();
@@ -809,6 +813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: "session-based-auth",
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Login error', { error: error.message });
       metric('login_failures_total', 1);
       metric('login_duration_ms', Date.now() - startTime);
@@ -854,6 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verified: true
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -902,6 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Verification email resent. Please check your inbox."
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -950,6 +957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         language: user.language,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Auth check failed', { error: error.message });
       endTrace('ERROR');
       await flush();
@@ -972,6 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       endTrace('OK');
       res.json(tournaments);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Failed to fetch tournaments', { error: error.message });
       endTrace('ERROR');
       await flush();
@@ -991,6 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       endTrace('OK');
       res.json(tournament);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Tournament fetch failed', { tournamentId: req.params.id, error: error.message });
       endTrace('ERROR');
       await flush();
@@ -1016,6 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.json(tournament);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error('[TOURNAMENT-UPDATE] Error:', error);
       res.status(500).json({ error: error.message });
     }
@@ -1053,6 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1182,6 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await flush();
       res.status(201).json(tournament);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Tournament creation failed', { error: error.message });
       endTrace('ERROR');
       await flush();
@@ -1226,6 +1239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         steps: stepsWithFields.sort((a, b) => a.stepNumber - b.stepNumber)
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Registration config fetch failed', { tournamentId: req.params.id, error: error.message });
       endTrace('ERROR');
       await flush();
@@ -1312,6 +1326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         steps: stepsWithFields.sort((a, b) => a.stepNumber - b.stepNumber)
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1345,6 +1360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(enrichedTeams);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1355,6 +1371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const team = await storage.createTeam(validatedData);
       res.status(201).json(team);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -1368,6 +1385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedTeam = await storage.updateTeam(req.params.id, req.body);
       res.json(updatedTeam);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -1382,6 +1400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMember = await storage.updateTeamMember(req.params.memberId, req.body);
       res.json(updatedMember);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1395,6 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.createTeamMember(req.body);
       res.status(201).json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1412,6 +1432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteTeamMember(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1422,6 +1443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matches = await storage.getMatchesByTournament(req.params.tournamentId);
       res.json(matches);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1443,6 +1465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         team2Name: team2?.name || "Team 2",
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1549,6 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await flush();
       res.json(match);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Match update failed', { matchId: req.params.id, error: error.message });
       endTrace('ERROR');
       await flush();
@@ -1565,6 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMatch(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1630,6 +1655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Participant removed from match" });
 
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Remove participant failed', { error: error.message });
       res.status(500).json({ error: error.message });
     }
@@ -1696,6 +1722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await flush();
       res.json(updatedMatch);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Match winner selection failed', { matchId: req.params.matchId, error: error.message });
       endTrace('ERROR');
       await flush();
@@ -1722,6 +1749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1815,6 +1843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(matchToReturn);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -1985,6 +2014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Generate fixtures failed', { error: error.message });
       res.status(500).json({ error: error.message });
     }
@@ -2027,6 +2057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedTeam);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2058,6 +2089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         team2Players: [],
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2091,6 +2123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: sender not found`);
               }
             } catch (e) {
+              logError(e as Error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
               console.error("[DASHBOARD-MATCH-CHAT-ENRICH] Failed to get user:", msg.userId, e);
             }
           } else {
@@ -2129,6 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[DASHBOARD-MATCH-CHAT-GET] Returning ${enrichedMessages.length} enriched messages`);
       res.json(enrichedMessages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("[DASHBOARD-MATCH-CHAT-GET] Error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -2271,6 +2305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[DASHBOARD-MATCH-CHAT-POST] Final enriched message:`, JSON.stringify(enrichedMessage));
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("[DASHBOARD-MATCH-CHAT-POST] Error:", error);
       res.status(400).json({ error: error.message });
     }
@@ -2285,6 +2320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMessage = await storage.updateChatMessage(req.params.id, { message: req.body.message });
       res.json(updatedMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating match chat message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -2299,6 +2335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteChatMessage(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting match chat message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -2337,6 +2374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(config);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -2358,6 +2396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ ...config, steps: stepsWithFields });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2476,6 +2515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           parsedResponses = JSON.parse(responses);
         } catch (e) {
+          logError(e as Error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
           console.error("Failed to parse responses JSON:", e);
         }
       }
@@ -2513,6 +2553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await flush();
       res.status(201).json(registration);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Registration failed', { tournamentId: req.params.tournamentId, error: error.message });
 
       // Rollback: if registration was created but subsequent steps failed, delete it
@@ -2559,6 +2600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(registrationsWithUsers);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2581,6 +2623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAvatar: user?.avatarUrl || null,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2634,6 +2677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         } catch (error) {
+          logError(error as Error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
           console.error("[FIXTURES] Error auto-generating fixtures:", error);
           // Don't fail registration if fixture generation fails
         }
@@ -2641,6 +2685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(registration);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2658,6 +2703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json([]);
       }
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching channels:", error);
       res.status(500).json({ error: error.message });
     }
@@ -2680,6 +2726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(serversWithMemberCount);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching servers:", error);
       res.status(500).json({ error: error.message });
     }
@@ -2713,6 +2760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedMessage = await storage.createChannelMessage(validatedData);
       res.status(201).json(savedMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating channel message:", error);
       res.status(400).json({ error: error.message });
     }
@@ -2757,6 +2805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updated);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Announcement edit failed', { error: error.message });
       res.status(500).json({ error: error.message });
     }
@@ -2800,6 +2849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Announcement delete failed', { error: error.message });
       res.status(500).json({ error: error.message });
     }
@@ -2828,6 +2878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.set(CACHE_KEYS.SERVERS_LIST, serversWithMemberCount, 300 * 1000);
       res.json(serversWithMemberCount);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2837,6 +2888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getAllMessageThreads();
       res.json(messages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2867,6 +2919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(notifications);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2922,6 +2975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await flush();
       res.status(201).json(server);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Server creation failed', { error: error.message });
       endTrace('ERROR');
       await flush();
@@ -2942,6 +2996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         memberCount,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -2980,6 +3035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedServer = await storage.updateServer(req.params.id, updates);
       res.json(updatedServer);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3004,11 +3060,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteServer(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
 
-  // DELETE /api/servers/:serverId/members/:userId - Kick member
+  // DELETE /api/servers/:serverId/members/:userId - Kick member or Leave server
   app.delete("/api/servers/:serverId/members/:userId", async (req, res) => {
     try {
       if (!req.session.userId) {
@@ -3022,7 +3079,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Server not found" });
       }
 
-      // Only owner can kick members (for now)
+      // Check if user is leaving themselves (allowed for anyone)
+      const isLeavingSelf = userId === req.session.userId;
+
+      if (isLeavingSelf) {
+        // User is leaving the server (not kicking someone else)
+        if (userId === server.ownerId) {
+          return res.status(400).json({ error: "Server owner cannot leave. Transfer ownership or delete the server." });
+        }
+        await storage.deleteMemberFromServer(serverId, userId);
+        return res.status(204).send();
+      }
+
+      // User is trying to kick someone else - only owner can do this
       if (server.ownerId !== req.session.userId) {
         return res.status(403).json({ error: "Only the server owner can kick members" });
       }
@@ -3035,6 +3104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMemberFromServer(serverId, userId);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3092,6 +3162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         serverId: req.params.serverId
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Server join failed', { serverId: req.params.serverId, error: error.message });
       endTrace('ERROR');
       await flush();
@@ -3114,6 +3185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(serversWithMemberCount);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3124,6 +3196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const channels = await storage.getChannelsByServer(req.params.serverId);
       res.json(channels);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3137,6 +3210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const channel = await storage.createChannel(validatedData);
       res.status(201).json(channel);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3149,6 +3223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(channel);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3161,6 +3236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : await storage.getAllPosterTemplates();
       res.json(templates);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3173,6 +3249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(template);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3193,6 +3270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(template);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3218,6 +3296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(template);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3227,6 +3306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deletePosterTemplate(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3236,6 +3316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tags = await storage.getTagsByTemplate(req.params.id);
       res.json(tags);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3247,6 +3328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3259,6 +3341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(user);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3271,6 +3354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(user);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3297,6 +3381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[PATCH-USER] Returning user:', JSON.stringify(user));
       res.json(user);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error('[PATCH-USER] Error:', error.message);
       res.status(400).json({ error: error.message });
     }
@@ -3322,6 +3407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3334,6 +3420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3343,6 +3430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteUser(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3388,6 +3476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(achievement);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("[ACHIEVEMENT] Error:", error.message);
       res.status(400).json({ error: error.message });
     }
@@ -3398,6 +3487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const achievements = await storage.getAchievementsByUser(req.params.userId);
       res.json(achievements);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3414,6 +3504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json([]);
       }
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3439,6 +3530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(teamProfile);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3451,6 +3543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(teamProfile);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3467,6 +3560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json(profilesWithCounts);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3490,6 +3584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamProfile = await storage.updateTeamProfile(req.params.id, req.body);
       res.json(teamProfile);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3513,6 +3608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteTeamProfile(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3527,6 +3623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.createTeamMember(validatedData);
       res.status(201).json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3536,6 +3633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const members = await storage.getTeamMembersWithUsers(req.params.teamId);
       res.json(members);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3566,6 +3664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.updateTeamMember(req.params.memberId, { position, role, game });
       res.json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3575,6 +3674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMemberFromTeam(req.params.teamId, req.params.userId);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3589,6 +3689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.createServerMember(validatedData);
       res.status(201).json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3616,6 +3717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(enrichedMembers);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3628,6 +3730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3671,6 +3774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(member);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -3683,6 +3787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json({ permissions: effectivePermissions });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3692,6 +3797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMemberFromServer(req.params.serverId, req.params.userId);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -3717,6 +3823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
+      logError(error as Error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error checking object access:", error);
       if (error instanceof ObjectNotFoundError) {
         return res.sendStatus(404);
@@ -3742,6 +3849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error generating upload URL:", error);
       res.status(500).json({ error: "Failed to generate upload URL" });
     }
@@ -3801,6 +3909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileUrl = `/api/uploads/${filename}`;
       res.json({ url: fileUrl, fileUrl });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error uploading file:", error);
       res.status(500).json({ error: error.message });
     }
@@ -3876,6 +3985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set("X-Cache", "MISS");
       res.send(fileBuffer);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error retrieving file:", error);
       res.status(500).json({ error: error.message });
     }
@@ -3912,6 +4022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         objectPath: normalizedPath,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error normalizing uploaded object:", error);
       res.status(500).json({ error: error.message });
     }
@@ -3938,6 +4049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         objectPath: objectPath,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error setting tournament poster:", error);
       res.status(500).json({ error: error.message });
     }
@@ -3963,6 +4075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         objectPath: objectPath,
       });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error setting avatar:", error);
       res.status(500).json({ error: error.message });
     }
@@ -3979,6 +4092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.createChannelCategory(validatedData);
       res.status(201).json(category);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating category:", error);
       res.status(400).json({ error: error.message });
     }
@@ -3989,6 +4103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await storage.getCategoriesByServer(req.params.serverId);
       res.status(200).json(categories);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching categories:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4007,6 +4122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(200).json(category);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating category:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4017,6 +4133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteChannelCategory(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting category:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4038,6 +4155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(200).json(channel);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating channel:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4048,6 +4166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteChannel(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting channel:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4074,6 +4193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(200).json(enrichedMessages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching messages:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4088,6 +4208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.searchChannelMessages(req.params.channelId, query);
       res.status(200).json(messages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error searching messages:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4098,6 +4219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMessage = await storage.updateChannelMessage(req.params.id, { message: req.body.message });
       res.json(updatedMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4108,6 +4230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteChannelMessage(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4184,6 +4307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(enrichedThreads);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching message threads:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4223,6 +4347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const thread = await storage.createMessageThread(validatedData);
       res.status(201).json({ ...thread, lastMessageSenderName: null });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating message thread:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4236,6 +4361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const count = await storage.getTotalUnreadCount(req.session.userId);
       res.json({ count });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching unread count:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4249,6 +4375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.markThreadAsRead(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error marking thread as read:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4271,6 +4398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error marking match thread as read:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4284,6 +4412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(thread);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching message thread:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4327,6 +4456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(message);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating thread message:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4357,6 +4487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[THREAD-MSG-ENRICHMENT] Enriched messages:", JSON.stringify(enrichedMessages.slice(0, 2), null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching thread messages:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4371,6 +4502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMessage = await storage.updateThreadMessage(req.params.id, { message: req.body.message });
       res.json(updatedMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating thread message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4385,6 +4517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteThreadMessage(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting thread message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4403,6 +4536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting thread message:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4436,6 +4570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(newThread);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error getting/creating match thread:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4463,6 +4598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(thread);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating message thread:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4481,6 +4617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const role = await storage.createServerRole(validatedData);
       res.status(201).json(role);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating role:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4491,6 +4628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const roles = await storage.getRolesByServer(req.params.serverId);
       res.status(200).json(roles);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching roles:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4511,6 +4649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(200).json(role);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating role:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4521,6 +4660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteServerRole(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting role:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4538,6 +4678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ban = await storage.createServerBan(validatedData);
       res.status(201).json(ban);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating ban:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4548,6 +4689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bans = await storage.getBansByServer(req.params.serverId);
       res.status(200).json(bans);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching bans:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4558,6 +4700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteBan(req.params.serverId, req.params.userId);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting ban:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4577,6 +4720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invite = await storage.createServerInvite(validatedData);
       res.status(201).json(invite);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error creating invite:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4587,6 +4731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invites = await storage.getInvitesByServer(req.params.serverId);
       res.status(200).json(invites);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching invites:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4600,6 +4745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(200).json(invite);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching invite:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4624,6 +4770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.joinServer(invite.serverId, req.body.userId);
       res.status(200).json({ success: true, serverId: invite.serverId });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error using invite:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4634,6 +4781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteInvite(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error deleting invite:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4660,6 +4808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.SERVERS_LIST);
       res.status(200).json(server);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating server:", error);
       res.status(400).json({ error: error.message });
     }
@@ -4730,6 +4879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, friendRequest, notification });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4759,6 +4909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[FRIEND-STATUS] Returning:', response);
       res.json(response);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4786,6 +4937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(enrichedRequests);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4811,6 +4963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, friendRequest: request });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4847,6 +5000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, friendRequest: updated });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4877,6 +5031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, friendRequest: updated });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4899,6 +5054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, friendRequest: request });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4948,6 +5104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(friends);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error fetching friends:", error);
       res.status(500).json({ error: error.message });
     }
@@ -4975,6 +5132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getAllUsers();
       res.json(users);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -4988,6 +5146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, user });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5001,6 +5160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, user });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5015,6 +5175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, user });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5029,6 +5190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, user });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5039,6 +5201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournaments = await storage.getAllTournaments();
       res.json(tournaments);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5050,6 +5213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5060,6 +5224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const servers = await storage.getAllServers();
       res.json(servers);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5072,6 +5237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5085,6 +5251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.json(server);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5095,6 +5262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const achievements = await storage.getAllAchievements();
       res.json(achievements);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5105,6 +5273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteAchievement(req.params.achievementId);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5119,6 +5288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteAnyMessage(messageId, messageType as 'chat' | 'channel' | 'thread');
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5131,6 +5301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache.delete(CACHE_KEYS.TOURNAMENTS_PUBLIC);
       res.json(tournament);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5148,6 +5319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.status(201).json(achievement);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(400).json({ error: error.message });
     }
   });
@@ -5158,6 +5330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reports = await storage.getAllReports();
       res.json(reports || []);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5173,6 +5346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(report);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5183,6 +5357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getAllCustomerServiceMessages();
       res.json(messages || []);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5199,6 +5374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(message);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5209,6 +5385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const organizers = await storage.getOrganizerUsers();
       res.json(organizers || []);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5223,6 +5400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.updateUser(req.params.userId, { role });
       res.json(user);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5233,6 +5411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteUser(req.params.userId);
       res.json({ success: true });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5246,6 +5425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(req.session.userId);
       res.json({ isAdmin: !!user?.isAdmin });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5274,6 +5454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, user });
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5302,6 +5483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(threads);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5341,6 +5523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(thread);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5364,6 +5547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteThread(threadId);
       res.sendStatus(204);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5374,6 +5558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getThreadMessages(req.params.threadId);
       res.json(messages);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5418,6 +5603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(newMessage);
     } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });
     }
   });

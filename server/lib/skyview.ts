@@ -136,8 +136,14 @@ export async function flush() {
 
   const headers = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
   const send = async (path: string, payload: any) => {
-    try { await fetch(`${ENDPOINT}${path}`, { method: 'POST', headers, body: JSON.stringify(payload) }); }
-    catch (e) { console.error('[SkyView] Error:', e); }
+    try {
+      const res = await fetch(`${ENDPOINT}${path}`, { method: 'POST', headers, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`[SkyView] API Error ${res.status}: ${text}`);
+      }
+    }
+    catch (e) { console.error('[SkyView] Network Error:', e); }
   };
 
   // SEND TRACES
