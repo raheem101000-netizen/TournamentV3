@@ -125,3 +125,73 @@ export async function sendVerificationEmail(
     return false;
   }
 }
+
+export async function sendPasswordResetEmail(
+  recipientEmail: string,
+  resetLink: string,
+  recipientName: string
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: recipientEmail,
+      subject: "Reset Your Password",
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+              .content { padding: 20px; background: #f9f9f9; border-radius: 8px; margin: 20px 0; }
+              .button { display: inline-block; padding: 12px 30px; background: #333; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
+              .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; }
+              .link-box { word-break: break-all; background: white; padding: 10px; border-radius: 4px; font-size: 12px; border: 1px solid #ddd; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Password Reset</h1>
+              </div>
+              <div class="content">
+                <p>Hi ${recipientName},</p>
+                <p>We received a request to reset your password. Click the button below to choose a new password:</p>
+                <p style="text-align: center; margin: 30px 0;">
+                  <a href="${resetLink}" class="button">Reset Password</a>
+                </p>
+                <p><strong>Or copy this link:</strong></p>
+                <p class="link-box">
+                  ${resetLink}
+                </p>
+                <p style="color: #999; font-size: 12px; margin-top: 20px;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+              </div>
+              <div class="footer">
+                <p>© 2025 Tournament Platform. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+
+    console.log('[EMAIL] Password reset email sent successfully:', {
+      to: recipientEmail,
+      from: fromEmail,
+      messageId: result.data?.id
+    });
+
+    return true;
+  } catch (error: any) {
+    console.error('[EMAIL] Failed to send password reset email:', {
+      error: error.message,
+      recipientEmail,
+      stack: error.stack
+    });
+    return false;
+  }
+}

@@ -10,7 +10,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage.js";
 import { pool } from "./db.js";
 import { SESSION_SECRET } from "./app.js";
-import { sendVerificationEmail } from "./email.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache.js";
 import { startTrace, endTrace, log, metric, flush } from "./lib/skyview.js";
 
@@ -955,8 +955,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the reset link (for development/testing)
       console.log(`\n🔐 PASSWORD RESET LINK for ${email}:\n${resetLink}\n`);
 
-      // TODO: Send email with reset link when email service is configured
-      // await sendPasswordResetEmail(email, resetLink, user.displayName || user.username);
+      // Send email
+      await sendPasswordResetEmail(email, resetLink, user.displayName || user.username);
 
       log('INFO', 'Password reset token generated', { userId: user.id });
       res.json({ message: "If this email exists, you will receive a password reset link." });
