@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 
 // --- CONFIGURATION ---
 const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59:4319';
-const API_KEY = process.env.SKYVIEW_API_KEY || 'pjDYo7sDwWF26nacUaPvfYQd4xTNGQHb-H633H04he0';
+const API_KEY = process.env.SKYVIEW_API_KEY || 'sk_live_Gu_Zs_rpwYdRXl-WB1fTg62RF5k99HzR';
 const SERVICE_NAME = 'tourni-app';
 const TENANT_ID = 'Tourni1010'; // <--- 🔴 REQUIRED FOR SKYVIEW
 
