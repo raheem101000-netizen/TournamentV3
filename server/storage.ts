@@ -89,6 +89,12 @@ import {
   friendRequests,
   type FriendRequest,
   type InsertFriendRequest,
+  savedTournaments,
+  type SavedTournament,
+  type InsertSavedTournament,
+  groupParticipants,
+  type GroupParticipant,
+  type InsertGroupParticipant,
 } from "../shared/schema.js";
 
 export interface IStorage {
@@ -300,6 +306,19 @@ export interface IStorage {
   getPendingFriendRequests(userId: string): Promise<FriendRequest[]>;
   updateFriendRequest(id: string, data: Partial<FriendRequest>): Promise<FriendRequest | undefined>;
   getBulkFriendRequests(userId: string, targetUserIds: string[]): Promise<FriendRequest[]>;
+
+  // Saved tournament operations
+  saveTournament(userId: string, tournamentId: string): Promise<SavedTournament>;
+  unsaveTournament(userId: string, tournamentId: string): Promise<void>;
+  getSavedTournamentsByUser(userId: string): Promise<SavedTournament[]>;
+  isTournamentSavedByUser(userId: string, tournamentId: string): Promise<boolean>;
+
+  // Group chat operations
+  createGroupThread(data: { groupName: string; createdBy: string; participantIds: string[] }): Promise<MessageThread>;
+  addGroupParticipant(threadId: string, userId: string, role?: "admin" | "member"): Promise<GroupParticipant>;
+  removeGroupParticipant(threadId: string, userId: string): Promise<void>;
+  getGroupParticipants(threadId: string): Promise<GroupParticipant[]>;
+  getGroupThreadsForUser(userId: string): Promise<MessageThread[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1665,6 +1684,126 @@ export class DatabaseStorage implements IStorage {
 
   async deleteThread(threadId: string): Promise<void> {
     await db.delete(messageThreads).where(eq(messageThreads.id, threadId));
+  }
+
+  // Saved tournament operations
+  async saveTournament(userId: string, tournamentId: string): Promise<SavedTournament> {
+    // Check if already saved
+    const existing = await db.select().from(savedTournaments).where(
+      and(
+        eq(savedTournaments.userId, userId),
+        eq(savedTournaments.tournamentId, tournamentId)
+      )
+    ).limit(1);
+
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const [saved] = await db.insert(savedTournaments).values({
+      userId,
+      tournamentId,
+    }).returning();
+    return saved;
+  }
+
+  async unsaveTournament(userId: string, tournamentId: string): Promise<void> {
+    await db.delete(savedTournaments).where(
+      and(
+        eq(savedTournaments.userId, userId),
+        eq(savedTournaments.tournamentId, tournamentId)
+      )
+    );
+  }
+
+  async getSavedTournamentsByUser(userId: string): Promise<SavedTournament[]> {
+    return await db.select().from(savedTournaments).where(
+      eq(savedTournaments.userId, userId)
+    );
+  }
+
+  async isTournamentSavedByUser(userId: string, tournamentId: string): Promise<boolean> {
+    const result = await db.select().from(savedTournaments).where(
+      and(
+        eq(savedTournaments.userId, userId),
+        eq(savedTournaments.tournamentId, tournamentId)
+      )
+    ).limit(1);
+    return result.length > 0;
+  }
+
+  // Group chat operations
+  async createGroupThread(data: { groupName: string; createdBy: string; participantIds: string[] }): Promise<MessageThread> {
+    // Create the group thread
+    const [thread] = await db.insert(messageThreads).values({
+      isGroup: 1,
+      groupName: data.groupName,
+      createdBy: data.createdBy,
+      participantName: data.groupName, // For display purposes
+      lastMessage: "Group created",
+      lastMessageSenderId: data.createdBy,
+    }).returning();
+
+    // Add creator as admin
+    await db.insert(groupParticipants).values({
+      threadId: thread.id,
+      userId: data.createdBy,
+      role: "admin",
+    });
+
+    // Add other participants as members
+    for (const participantId of data.participantIds) {
+      if (participantId !== data.createdBy) {
+        await db.insert(groupParticipants).values({
+          threadId: thread.id,
+          userId: participantId,
+          role: "member",
+        });
+      }
+    }
+
+    return thread;
+  }
+
+  async addGroupParticipant(threadId: string, userId: string, role: "admin" | "member" = "member"): Promise<GroupParticipant> {
+    const [participant] = await db.insert(groupParticipants).values({
+      threadId,
+      userId,
+      role,
+    }).returning();
+    return participant;
+  }
+
+  async removeGroupParticipant(threadId: string, userId: string): Promise<void> {
+    await db.delete(groupParticipants).where(
+      and(
+        eq(groupParticipants.threadId, threadId),
+        eq(groupParticipants.userId, userId)
+      )
+    );
+  }
+
+  async getGroupParticipants(threadId: string): Promise<GroupParticipant[]> {
+    return await db.select().from(groupParticipants).where(
+      eq(groupParticipants.threadId, threadId)
+    );
+  }
+
+  async getGroupThreadsForUser(userId: string): Promise<MessageThread[]> {
+    // Get all group thread IDs where user is a participant
+    const participations = await db.select().from(groupParticipants).where(
+      eq(groupParticipants.userId, userId)
+    );
+
+    if (participations.length === 0) return [];
+
+    const threadIds = participations.map(p => p.threadId);
+    return await db.select().from(messageThreads).where(
+      and(
+        eq(messageThreads.isGroup, 1),
+        inArray(messageThreads.id, threadIds)
+      )
+    );
   }
 }
 

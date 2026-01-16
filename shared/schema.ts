@@ -299,7 +299,23 @@ export const messageThreads = pgTable("message_threads", {
   lastMessageSenderId: varchar("last_message_sender_id"),
   lastMessageTime: timestamp("last_message_time").defaultNow().notNull(),
   unreadCount: integer("unread_count").default(0),
+  // Group chat fields
+  isGroup: integer("is_group").default(0),
+  groupName: text("group_name"),
+  groupIconUrl: text("group_icon_url"),
+  createdBy: varchar("created_by"),
 });
+
+export const groupParticipants = pgTable("group_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  threadId: varchar("thread_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  role: text("role", { enum: ["admin", "member"] }).default("member"),
+}, (table) => [
+  index("idx_group_participants_thread_id").on(table.threadId),
+  index("idx_group_participants_user_id").on(table.userId),
+]);
 
 export const threadMessages = pgTable("thread_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -387,6 +403,11 @@ export const insertFriendRequestSchema = createInsertSchema(friendRequests).omit
   respondedAt: true,
 });
 
+export const insertGroupParticipantSchema = createInsertSchema(groupParticipants).omit({
+  id: true,
+  joinedAt: true,
+});
+
 export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Server = typeof servers.$inferSelect;
 export type InsertChannel = z.infer<typeof insertChannelSchema>;
@@ -401,6 +422,8 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
 export type FriendRequest = typeof friendRequests.$inferSelect;
+export type InsertGroupParticipant = z.infer<typeof insertGroupParticipantSchema>;
+export type GroupParticipant = typeof groupParticipants.$inferSelect;
 
 export const posterTemplates = pgTable("poster_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -689,3 +712,22 @@ export const uploadedFiles = pgTable("uploaded_files", {
 });
 
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
+
+// Saved Tournaments - for users to bookmark tournaments they want to follow
+export const savedTournaments = pgTable("saved_tournaments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  tournamentId: varchar("tournament_id").notNull(),
+  savedAt: timestamp("saved_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_saved_tournaments_user_id").on(table.userId),
+  index("idx_saved_tournaments_tournament_id").on(table.tournamentId),
+]);
+
+export const insertSavedTournamentSchema = createInsertSchema(savedTournaments).omit({
+  id: true,
+  savedAt: true,
+});
+
+export type InsertSavedTournament = z.infer<typeof insertSavedTournamentSchema>;
+export type SavedTournament = typeof savedTournaments.$inferSelect;

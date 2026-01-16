@@ -1168,6 +1168,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save tournament (bookmark)
+  app.post("/api/tournaments/:id/save", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "You must be logged in to save tournaments" });
+      }
+
+      const tournament = await storage.getTournament(req.params.id);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const saved = await storage.saveTournament(userId, req.params.id);
+      res.status(201).json(saved);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Unsave tournament
+  app.delete("/api/tournaments/:id/save", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "You must be logged in" });
+      }
+
+      await storage.unsaveTournament(userId, req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get saved tournaments for current user
+  app.get("/api/users/me/saved-tournaments", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "You must be logged in" });
+      }
+
+      const savedTournaments = await storage.getSavedTournamentsByUser(userId);
+
+      // Fetch full tournament details for saved tournaments
+      const tournamentIds = savedTournaments.map(st => st.tournamentId);
+      const tournaments = await Promise.all(
+        tournamentIds.map(id => storage.getTournament(id))
+      );
+
+      // Filter out any deleted tournaments and enrich with saved info
+      const enrichedTournaments = tournaments
+        .filter((t): t is NonNullable<typeof t> => t !== undefined)
+        .map(tournament => {
+          const savedInfo = savedTournaments.find(st => st.tournamentId === tournament.id);
+          return {
+            ...tournament,
+            savedAt: savedInfo?.savedAt,
+          };
+        });
+
+      res.json(enrichedTournaments);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Check if tournament is saved by current user
+  app.get("/api/tournaments/:id/saved", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.json({ saved: false });
+      }
+
+      const isSaved = await storage.isTournamentSavedByUser(userId, req.params.id);
+      res.json({ saved: isSaved });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/tournaments", async (req, res) => {
     try {
       log('INFO', 'Tournament creation attempt', { userId: req.session?.userId });
@@ -1825,6 +1912,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log('ERROR', 'Match winner selection failed', { matchId: req.params.matchId, error: error.message });
       endTrace('ERROR');
       await flush();
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reverse winner endpoint (clears winner and reverts stats)
+  app.delete("/api/matches/:matchId/winner", async (req, res) => {
+    try {
+      log('INFO', 'Reversing match winner', { matchId: req.params.matchId });
+      const match = await storage.getMatch(req.params.matchId);
+
+      if (!match) {
+        log('WARN', 'Match not found', { matchId: req.params.matchId });
+        return res.status(404).json({ error: "Match not found" });
+      }
+
+      if (!match.winnerId) {
+        log('WARN', 'Match has no winner to reverse', { matchId: req.params.matchId });
+        return res.status(400).json({ error: "Match has no winner to reverse" });
+      }
+
+      const winnerId = match.winnerId;
+      const validTeams = [match.team1Id, match.team2Id].filter(Boolean);
+      const loserId = validTeams.find((id) => id !== winnerId);
+
+      // Revert winner stats
+      const winnerTeam = await storage.getTeam(winnerId);
+      if (winnerTeam) {
+        await storage.updateTeam(winnerId, {
+          wins: Math.max(0, (winnerTeam.wins ?? 0) - 1),
+          points: Math.max(0, (winnerTeam.points ?? 0) - 3),
+        });
+      }
+
+      // Revert loser stats
+      if (loserId) {
+        const loserTeam = await storage.getTeam(loserId);
+        if (loserTeam) {
+          await storage.updateTeam(loserId, {
+            losses: Math.max(0, (loserTeam.losses ?? 0) - 1),
+          });
+        }
+      }
+
+      // Clear winner and reset match status
+      const updatedMatch = await storage.updateMatch(req.params.matchId, {
+        winnerId: null,
+        status: "pending",
+      });
+
+      log('INFO', 'Match winner reversed', { matchId: req.params.matchId, previousWinner: winnerId });
+      res.json(updatedMatch);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      log('ERROR', 'Reverse match winner failed', { matchId: req.params.matchId, error: error.message });
       res.status(500).json({ error: error.message });
     }
   });
@@ -5576,11 +5717,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const threads = await storage.getMessageThreadsForParticipant(userId);
+      const groupThreads = await storage.getGroupThreadsForUser(userId);
+
+      const allThreads = [...threads, ...groupThreads].sort((a, b) =>
+        new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+      );
 
       // Cache for 30 seconds (threads don't change that frequently)
-      cache.set(cacheKey, threads, 30);
+      cache.set(cacheKey, allThreads, 30);
 
-      res.json(threads);
+      res.json(allThreads);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create a group thread
+  app.post("/api/threads/group", requireAuth, async (req, res) => {
+    try {
+      const { groupName, participantIds } = req.body;
+      const userId = req.session.userId!;
+
+      if (!groupName || !groupName.trim()) {
+        return res.status(400).json({ error: "Group name is required" });
+      }
+
+      if (!participantIds || !Array.isArray(participantIds) || participantIds.length < 1) {
+        return res.status(400).json({ error: "At least one participant is required" });
+      }
+
+      // Include the creator in the participant list
+      const allParticipantIds = Array.from(new Set([userId, ...participantIds]));
+
+      const thread = await storage.createGroupThread({
+        groupName: groupName.trim(),
+        createdBy: userId,
+        participantIds: allParticipantIds,
+      });
+
+      // Invalidate cache for all participants
+      for (const participantId of allParticipantIds) {
+        cache.delete(`threads:user:${participantId}`);
+      }
+
+      res.status(201).json(thread);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });

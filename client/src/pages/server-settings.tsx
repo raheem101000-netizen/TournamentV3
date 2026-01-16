@@ -12,6 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -838,14 +845,66 @@ export default function ServerSettings() {
                         name="userId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>User ID</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Enter user ID"
-                                data-testid="input-member-user-id"
-                              />
-                            </FormControl>
+                            <FormLabel>Select Member</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-member-user">
+                                  {field.value ? (
+                                    (() => {
+                                      const selectedMember = members.find(m => m.userId === field.value);
+                                      return selectedMember ? (
+                                        <div className="flex items-center gap-2">
+                                          {(selectedMember as any).avatarUrl && (
+                                            <img
+                                              src={(selectedMember as any).avatarUrl}
+                                              alt=""
+                                              className="w-5 h-5 rounded-full object-cover"
+                                            />
+                                          )}
+                                          <span className="text-primary">@{(selectedMember as any).username || 'Unknown'}</span>
+                                        </div>
+                                      ) : <SelectValue placeholder="Select a member" />;
+                                    })()
+                                  ) : (
+                                    <SelectValue placeholder="Select a member to add permissions" />
+                                  )}
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {members.length === 0 ? (
+                                  <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                                    No members found
+                                  </div>
+                                ) : (
+                                  members.map((member) => (
+                                    <SelectItem key={member.userId} value={member.userId}>
+                                      <div className="flex items-center gap-3">
+                                        {(member as any).avatarUrl ? (
+                                          <img
+                                            src={(member as any).avatarUrl}
+                                            alt=""
+                                            className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                          />
+                                        ) : (
+                                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                            <span className="text-xs font-medium">
+                                              {((member as any).username || 'U').slice(0, 2).toUpperCase()}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{(member as any).displayName || (member as any).username || 'Unknown'}</span>
+                                          <span className="text-xs text-muted-foreground">@{(member as any).username}</span>
+                                        </div>
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Select a member to grant permissions
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}

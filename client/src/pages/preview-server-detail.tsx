@@ -198,7 +198,7 @@ export default function PreviewServerDetail() {
 
         {/* Chat Area */}
         <div className="flex-1 min-h-0">
-          {fullScreenChannel?.type === "announcement" ? (
+          {fullScreenChannel?.type === "announcements" ? (
             <AnnouncementsChannel channelId={fullScreenChannelId} />
           ) : fullScreenChannel?.type === "tournament_dashboard" ? (
             <TournamentDashboardChannel serverId={serverId!} />

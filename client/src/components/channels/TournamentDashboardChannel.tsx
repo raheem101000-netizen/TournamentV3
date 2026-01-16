@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil, Skull } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil, Skull, RotateCcw, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,10 +143,13 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   });
 
   const updateTournamentMutation = useMutation({
-    mutationFn: async (data: Partial<Tournament>) => {
+    mutationFn: async ({ tournamentId, data }: { tournamentId: string; data: Partial<Tournament> }) => {
       console.log('[UPDATE TOURNAMENT] Mutation called with data:', data);
-      console.log('[UPDATE TOURNAMENT] Tournament ID:', selectedTournamentId);
-      const result = await apiRequest('PATCH', `/api/tournaments/${selectedTournamentId}`, data);
+      console.log('[UPDATE TOURNAMENT] Tournament ID:', tournamentId);
+      if (!tournamentId) {
+        throw new Error('Tournament ID is required');
+      }
+      const result = await apiRequest('PATCH', `/api/tournaments/${tournamentId}`, data);
       console.log('[UPDATE TOURNAMENT] API response:', result);
       return result;
     },
@@ -186,6 +189,52 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const { data: registrations = [] } = useQuery<any[]>({
     queryKey: [`/api/tournaments/${selectedTournamentId}/registrations`],
     enabled: !!selectedTournamentId,
+  });
+
+  // Check if current user has saved this tournament
+  const { data: savedStatus } = useQuery<{ saved: boolean }>({
+    queryKey: [`/api/tournaments/${selectedTournamentId}/saved`],
+    enabled: !!selectedTournamentId && !!user,
+  });
+
+  const saveTournamentMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      return apiRequest('POST', `/api/tournaments/${tournamentId}/save`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/saved`] });
+      toast({
+        title: "Tournament saved",
+        description: "This tournament has been added to your saved list.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unsaveTournamentMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      return apiRequest('DELETE', `/api/tournaments/${tournamentId}/save`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/saved`] });
+      toast({
+        title: "Tournament removed",
+        description: "This tournament has been removed from your saved list.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const updateRegistrationConfigMutation = useMutation({
@@ -317,9 +366,30 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
       toast({
         title: "Winner recorded",
-        description: "Match result has been saved. Use the Participants tab to manually eliminate teams.",
+        description: "Match result has been saved. Use the Create Match tab to manually eliminate teams.",
       });
       setSelectedMatchId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const reverseWinnerMutation = useMutation({
+    mutationFn: async (matchId: string) => {
+      return apiRequest('DELETE', `/api/matches/${matchId}/winner`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+      toast({
+        title: "Win reversed",
+        description: "The match result has been cleared and team stats have been updated.",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -483,19 +553,45 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               </div>
             </div>
           </div>
-          {user?.id === selectedTournament.organizerId && (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
-                Edit
+          <div className="flex items-center gap-2">
+            {/* Save for Later button - visible to all logged in users */}
+            {user && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (savedStatus?.saved) {
+                    unsaveTournamentMutation.mutate(selectedTournamentId!);
+                  } else {
+                    saveTournamentMutation.mutate(selectedTournamentId!);
+                  }
+                }}
+                disabled={saveTournamentMutation.isPending || unsaveTournamentMutation.isPending}
+                title={savedStatus?.saved ? "Remove from saved" : "Save for later"}
+                data-testid="button-save-tournament"
+              >
+                {savedStatus?.saved ? (
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
               </Button>
-              <Button variant="destructive" size="icon" onClick={() => {
-                console.log('[DELETE] Trash button clicked, opening dialog');
-                setIsDeleteDialogOpen(true);
-              }} data-testid="button-delete-tournament">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+            )}
+            {/* Organizer controls */}
+            {user?.id === selectedTournament.organizerId && (
+              <>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
+                  Edit
+                </Button>
+                <Button variant="destructive" size="icon" onClick={() => {
+                  console.log('[DELETE] Trash button clicked, opening dialog');
+                  setIsDeleteDialogOpen(true);
+                }} data-testid="button-delete-tournament">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -504,8 +600,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
             <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
+            <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Create Match</TabsTrigger>
             <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
-            <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Participants</TabsTrigger>
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
 
@@ -698,6 +794,25 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     >
                       <Skull className="h-4 w-4 text-destructive" />
                     </Button>
+
+                    {/* Reverse Win Button - only show if match has a winner */}
+                    {selectedMatch.winnerId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Reverse this win and restore team stats"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to reverse this win? This will clear the winner and restore team standings.')) {
+                            reverseWinnerMutation.mutate(selectedMatch.id);
+                          }
+                        }}
+                        disabled={reverseWinnerMutation.isPending}
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Reverse Win
+                      </Button>
+                    )}
 
                     <Button
                       variant="destructive"
@@ -1349,7 +1464,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           tournament={selectedTournament}
-          onSubmit={(data) => updateTournamentMutation.mutate(data)}
+          onSubmit={(data) => updateTournamentMutation.mutate({ tournamentId: selectedTournamentId!, data })}
         />
       </div >
     );
@@ -1435,7 +1550,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         tournament={selectedTournament}
-        onSubmit={(data) => updateTournamentMutation.mutate(data)}
+        onSubmit={(data) => updateTournamentMutation.mutate({ tournamentId: selectedTournamentId!, data })}
       />
 
       <AwardAchievementDialog

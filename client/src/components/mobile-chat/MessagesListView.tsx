@@ -1,4 +1,4 @@
-import { Search, Plus, MessageCircle, Loader2, Trash2, X, Check, XCircle } from "lucide-react"
+import { Search, Plus, MessageCircle, Loader2, Trash2, X, Check, XCircle, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState, useRef } from "react"
@@ -16,7 +16,11 @@ interface MessageThread {
     lastMessage: string
     lastMessageTime: string
     unreadCount: number
-    matchId?: string | null // Added to optional
+    matchId?: string | null
+    // Group chat fields
+    isGroup?: number
+    groupName?: string | null
+    groupIconUrl?: string | null
 }
 
 interface FriendRequest {
@@ -121,8 +125,11 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
 }
 
 export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
-    const [activeTab, setActiveTab] = useState<"personal" | "match" | "requests">("personal")
+    const [activeTab, setActiveTab] = useState<"personal" | "groups" | "match" | "requests">("personal")
     const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+    const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
+    const [groupName, setGroupName] = useState("")
+    const [selectedGroupMembers, setSelectedGroupMembers] = useState<string[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const queryClient = useQueryClient()
 
@@ -181,6 +188,20 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         }
     })
 
+    const createGroupMutation = useMutation({
+        mutationFn: async ({ groupName, participantIds }: { groupName: string; participantIds: string[] }) => {
+            const res = await apiRequest("POST", "/api/threads/group", { groupName, participantIds })
+            return res
+        },
+        onSuccess: (thread) => {
+            setIsCreateGroupOpen(false)
+            setGroupName("")
+            setSelectedGroupMembers([])
+            refetchThreads()
+            onSelectChat(thread.id)
+        }
+    })
+
     // Friend Request Actions
     const acceptRequestMutation = useMutation({
         mutationFn: async (requestId: string) => {
@@ -212,16 +233,17 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
     })
 
 
-    // ... (deleteThreadMutation remains)
-
     // Filter threads based on active tab
     const displayThreads = (threads || []).filter(thread => {
         if (activeTab === "match") {
-            // Check if it's a match thread (has matchId or starts with "Match Chat:")
+            // Match threads have matchId or name starts with "Match Chat:"
             return !!thread.matchId || thread.participantName.startsWith("Match Chat:");
+        } else if (activeTab === "groups") {
+            // Group chats
+            return !!thread.isGroup;
         } else if (activeTab === "personal") {
-            // Personal strings should NOT be match threads
-            return !thread.matchId && !thread.participantName.startsWith("Match Chat:");
+            // Personal chats are not match, not group
+            return !thread.matchId && !thread.participantName.startsWith("Match Chat:") && !thread.isGroup;
         }
         return false;
     })
@@ -330,8 +352,16 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                             <button
                                 onClick={() => setIsNewChatOpen(true)}
                                 className="text-blue-500 hover:text-blue-400 transition-colors"
+                                title="New Message"
                             >
                                 <Plus className="h-6 w-6" />
+                            </button>
+                            <button
+                                onClick={() => setIsCreateGroupOpen(true)}
+                                className="text-blue-500 hover:text-blue-400 transition-colors"
+                                title="Create Group"
+                            >
+                                <Users className="h-6 w-6" />
                             </button>
                             <button className="text-blue-500 hover:text-blue-400 transition-colors">
                                 <Search className="h-6 w-6" />
@@ -348,22 +378,28 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                         />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 overflow-x-auto">
                         <button
                             onClick={() => setActiveTab("personal")}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "personal" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === "personal" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                         >
                             Personal
                         </button>
                         <button
-                            onClick={() => setActiveTab("match")}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "match" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
+                            onClick={() => setActiveTab("groups")}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === "groups" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                         >
-                            Match Chats
+                            Groups
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("match")}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === "match" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
+                        >
+                            Match
                         </button>
                         <button
                             onClick={() => setActiveTab("requests")}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "requests" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === "requests" ? "bg-zinc-800 text-white" : "bg-transparent text-zinc-500"}`}
                         >
                             Requests
                         </button>
@@ -440,6 +476,85 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
                                     <p className="text-center text-zinc-500 py-4">No users found</p>
                                 )}
                             </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Create Group Dialog */}
+                <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white w-[90%] max-w-md rounded-xl max-h-[85vh] overflow-y-auto top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] gap-0 p-0">
+                        <DialogHeader className="p-4 border-b border-zinc-800">
+                            <DialogTitle>Create Group</DialogTitle>
+                            <DialogDescription className="text-zinc-400">
+                                Name your group and add members.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 p-4">
+                            <Input
+                                placeholder="Group name"
+                                value={groupName}
+                                onChange={(e) => setGroupName(e.target.value)}
+                                className="bg-zinc-950 border-zinc-800 text-white focus-visible:ring-blue-600"
+                            />
+
+                            {/* Selected Members */}
+                            {selectedGroupMembers.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedGroupMembers.map(id => {
+                                        const user = searchResults?.find(u => u.id === id);
+                                        return (
+                                            <span key={id} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                                                {user?.displayName || user?.username || id}
+                                                <button onClick={() => setSelectedGroupMembers(prev => prev.filter(m => m !== id))}>
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            <Input
+                                placeholder="Search users to add..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-zinc-950 border-zinc-800 text-white focus-visible:ring-blue-600"
+                            />
+                            <div className="max-h-[200px] overflow-y-auto space-y-2">
+                                {isSearching ? (
+                                    <div className="flex justify-center py-4">
+                                        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+                                    </div>
+                                ) : searchResults?.filter(u => !selectedGroupMembers.includes(u.id)).map((user) => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => setSelectedGroupMembers(prev => [...prev, user.id])}
+                                        className="w-full flex items-center gap-3 p-3 hover:bg-zinc-800 rounded-lg transition-colors text-left"
+                                    >
+                                        <Avatar className="h-10 w-10 border border-zinc-700">
+                                            <AvatarImage src={user.avatarUrl} />
+                                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-white">{user.displayName || user.username}</div>
+                                            <div className="text-sm text-zinc-500">@{user.username}</div>
+                                        </div>
+                                        <Plus className="h-5 w-5 text-blue-500" />
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    if (groupName.trim() && selectedGroupMembers.length > 0) {
+                                        createGroupMutation.mutate({ groupName: groupName.trim(), participantIds: selectedGroupMembers });
+                                    }
+                                }}
+                                disabled={!groupName.trim() || selectedGroupMembers.length === 0 || createGroupMutation.isPending}
+                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                            >
+                                {createGroupMutation.isPending ? 'Creating...' : `Create Group (${selectedGroupMembers.length} members)`}
+                            </button>
                         </div>
                     </DialogContent>
                 </Dialog>
