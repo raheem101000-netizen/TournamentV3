@@ -3949,6 +3949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           ...member,
           username: user?.username || "Unknown",
+          displayName: user?.displayName || user?.username || "Unknown",
           avatarUrl: user?.avatarUrl || null,
           isOwner: server?.ownerId === member.userId,
           roleName: role?.name || member.role || "Member",

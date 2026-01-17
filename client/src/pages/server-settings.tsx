@@ -116,6 +116,16 @@ const AVAILABLE_PERMISSIONS = [
   "tournament_dashboard_access",
 ];
 
+// Extended type that includes the enriched fields from the backend
+interface EnrichedServerMember extends ServerMember {
+  username?: string;
+  avatarUrl?: string | null;
+  displayName?: string | null;
+  isOwner?: boolean;
+  roleName?: string;
+  roleColor?: string;
+}
+
 export default function ServerSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -205,7 +215,7 @@ export default function ServerSettings() {
     },
   });
 
-  const { data: members = [], isLoading: membersLoading } = useQuery<ServerMember[]>({
+  const { data: members = [], isLoading: membersLoading } = useQuery<EnrichedServerMember[]>({
     queryKey: [`/api/servers/${serverId}/members`],
     enabled: !!serverId,
   });
@@ -1002,10 +1012,27 @@ export default function ServerSettings() {
                         data-testid={`member-item-${member.id}`}
                       >
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium" data-testid={`text-member-id-${member.id}`}>
-                              User: {member.userId}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            {member.avatarUrl ? (
+                              <img
+                                src={member.avatarUrl}
+                                alt={member.username || "User"}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-zinc-700 flex items-center justify-center text-white font-medium">
+                                {(member.username || member.displayName || "U")[0].toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium" data-testid={`text-member-id-${member.id}`}>
+                                {member.displayName || member.username || member.userId}
+                              </p>
+                              {member.username && member.displayName && (
+                                <p className="text-sm text-muted-foreground">@{member.username}</p>
+                              )}
+                            </div>
                             {member.customTitle && (
                               <Badge variant="secondary" className="text-xs">
                                 {member.customTitle}
