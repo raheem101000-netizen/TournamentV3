@@ -17,8 +17,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import ImageUploadField from "@/components/ImageUploadField";
+import TournamentCard from "@/components/TournamentCard";
 
-type ServerFilter = "all" | "owned" | "member" | "roles";
+type ServerFilter = "all" | "owned" | "member" | "roles" | "saved_tournaments";
 
 interface ServerWithRoles extends Server {
   userRoles?: string[];
@@ -49,6 +50,12 @@ export default function PreviewMyServers() {
   const { data: userRolesData } = useQuery<ServerRole[]>({
     queryKey: [`/api/users/${user?.id}/roles`],
     enabled: !!user?.id,
+  });
+
+  // Fetch saved tournaments
+  const { data: savedTournaments } = useQuery<{ tournament: any, savedAt: string }[]>({
+    queryKey: ['/api/users/me/saved-tournaments'],
+    enabled: !!user,
   });
 
   const createServerMutation = useMutation({
@@ -163,13 +170,22 @@ export default function PreviewMyServers() {
                 Member ({memberServers.length})
               </Badge>
               <Badge
-                variant={filter === "roles" ? "default" : "outline"}
+                variant={filter === "saved_tournaments" ? "default" : "outline"}
                 className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
-                onClick={() => setFilter("roles")}
-                data-testid="filter-roles"
+                onClick={() => setFilter("saved_tournaments")}
+                data-testid="filter-saved-tournaments"
               >
-                <Shield className="w-3 h-3 mr-1" />
+                <Trophy className="w-3 h-3 mr-1" />
                 Roles ({roleServers.length})
+              </Badge>
+              <Badge
+                variant={filter === "saved_tournaments" ? "default" : "outline"}
+                className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
+                onClick={() => setFilter("saved_tournaments")}
+                data-testid="filter-saved-tournaments"
+              >
+                <Trophy className="w-3 h-3 mr-1" />
+                Saved Tournaments ({savedTournaments?.length || 0})
               </Badge>
             </div>
           </div>
@@ -178,8 +194,36 @@ export default function PreviewMyServers() {
         <main className="container max-w-lg mx-auto px-4 py-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">Loading servers...</p>
+              <p className="text-muted-foreground">Loading...</p>
             </div>
+          ) : filter === "saved_tournaments" ? (
+            savedTournaments && savedTournaments.length > 0 ? (
+              <div className="grid gap-4">
+                {savedTournaments.map((st: any) => (
+                  <TournamentCard
+                    key={st.tournament.id}
+                    tournament={st.tournament}
+                    onView={(id) => setLocation(`/tournament/${id}`)} // Redirect to tournament view
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Trophy className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No saved tournaments</h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                  Bookmark tournaments from the homepage to see them here!
+                </p>
+                <Link href="/discovery">
+                  <Button data-testid="button-go-to-discovery">
+                    <Search className="w-4 h-4 mr-2" />
+                    Discover Tournaments
+                  </Button>
+                </Link>
+              </div>
+            )
           ) : displayedServers.length > 0 ? (
             <div className="space-y-3">
               {displayedServers.map((server) => {

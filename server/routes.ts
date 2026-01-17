@@ -1584,6 +1584,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update team stats (restricted to organizer)
+  app.patch("/api/teams/:id/stats", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      const tournament = await storage.getTournament(team.tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      // Check permissions
+      if (tournament.organizerId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (!user?.isAdmin) {
+          return res.status(403).json({ error: "Not authorized to update stats" });
+        }
+      }
+
+      const { wins, losses, points } = req.body;
+      const updatedTeam = await storage.updateTeam(req.params.id, {
+        wins: wins !== undefined ? wins : team.wins,
+        losses: losses !== undefined ? losses : team.losses,
+        points: points !== undefined ? points : team.points,
+      });
+
+      log('INFO', 'Team stats updated manually', {
+        teamId: team.id,
+        userId: req.session.userId,
+        updates: { wins, losses, points }
+      });
+
+      res.json(updatedTeam);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Team Member routes
   app.patch("/api/teams/:id/members/:memberId", async (req, res) => {
     try {

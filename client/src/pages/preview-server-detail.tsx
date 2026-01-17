@@ -192,7 +192,7 @@ export default function PreviewServerDetail() {
             className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
             onClick={() => setChannelSettingsOpen(true)}
           >
-            Edit
+            Channel Settings
           </button>
         </div>
 

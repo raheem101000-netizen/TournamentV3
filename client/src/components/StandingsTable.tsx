@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -7,8 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Trophy, Medal } from "lucide-react";
 import type { Team } from "@shared/schema";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TeamMember {
   userId: string;
@@ -23,9 +28,82 @@ interface TeamWithMembers extends Team {
 
 interface StandingsTableProps {
   teams: TeamWithMembers[];
+  isEditable?: boolean;
 }
 
-export default function StandingsTable({ teams }: StandingsTableProps) {
+interface EditableCellProps {
+  value: number;
+  teamId: string;
+  field: 'wins' | 'losses' | 'points';
+  isEditable: boolean;
+}
+
+function EditableCell({ value, teamId, field, isEditable }: EditableCellProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setCurrentValue(value);
+  }, [value]);
+
+  const updateStatsMutation = useMutation({
+    mutationFn: async (newValue: number) => {
+      return apiRequest('PATCH', `/api/teams/${teamId}/stats`, {
+        [field]: newValue
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] }); // Invalidate tournament related queries
+      setIsEditing(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update stats",
+        description: error.message,
+        variant: "destructive",
+      });
+      setCurrentValue(value); // Revert on error
+      setIsEditing(false);
+    }
+  });
+
+  if (isEditing) {
+    return (
+      <Input
+        type="number"
+        value={currentValue}
+        className="w-16 h-8 text-center p-1 mx-auto"
+        onChange={(e) => setCurrentValue(parseInt(e.target.value) || 0)}
+        onBlur={() => {
+          if (currentValue !== value) {
+            updateStatsMutation.mutate(currentValue);
+          } else {
+            setIsEditing(false);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur();
+          }
+        }}
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`cursor-${isEditable ? 'pointer hover:bg-muted/50 rounded px-2 py-1' : 'default'}`}
+      onClick={() => isEditable && setIsEditing(true)}
+      title={isEditable ? "Click to edit" : undefined}
+    >
+      {value}
+    </div>
+  );
+}
+
+export default function StandingsTable({ teams, isEditable = false }: StandingsTableProps) {
   const sortedTeams = [...teams].sort((a, b) => {
     if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
     if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
@@ -99,13 +177,28 @@ export default function StandingsTable({ teams }: StandingsTableProps) {
                 </div>
               </TableCell>
               <TableCell className="text-center font-semibold text-chart-2">
-                {team.wins}
+                <EditableCell
+                  value={team.wins || 0}
+                  teamId={team.id}
+                  field="wins"
+                  isEditable={isEditable}
+                />
               </TableCell>
               <TableCell className="text-center font-semibold text-destructive">
-                {team.losses}
+                <EditableCell
+                  value={team.losses || 0}
+                  teamId={team.id}
+                  field="losses"
+                  isEditable={isEditable}
+                />
               </TableCell>
               <TableCell className="text-center font-bold text-lg">
-                {team.points}
+                <EditableCell
+                  value={team.points || 0}
+                  teamId={team.id}
+                  field="points"
+                  isEditable={isEditable}
+                />
               </TableCell>
             </TableRow>
           ))}

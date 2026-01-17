@@ -581,7 +581,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             {user?.id === selectedTournament.organizerId && (
               <>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
-                  Edit
+                  Edit Tournament
                 </Button>
                 <Button variant="destructive" size="icon" onClick={() => {
                   console.log('[DELETE] Trash button clicked, opening dialog');
@@ -959,7 +959,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
           <TabsContent value="standings">
             {selectedTournamentTeams.length > 0 ? (
-              <StandingsTable teams={selectedTournamentTeams} />
+              <StandingsTable
+                teams={selectedTournamentTeams}
+                isEditable={user?.id === selectedTournament.organizerId || user?.isAdmin}
+              />
             ) : (
               <Card className="p-8">
                 <p className="text-center text-muted-foreground">
