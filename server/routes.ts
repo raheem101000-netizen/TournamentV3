@@ -182,7 +182,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    const traceId = startTrace(`${req.method} ${req.url}`, parentContext);
+    // Get user context from session (if available)
+    const userContext = req.session?.userId ? {
+      userId: req.session.userId,
+      username: req.session.username || req.session.userId // Fall back to userId if no username in session
+    } : undefined;
+
+    const traceId = startTrace(`${req.method} ${req.url}`, parentContext, userContext);
     const startTime = Date.now();
 
     // Add traceId to response headers for debugging
@@ -668,6 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Auto-login: Create session immediately after registration
       req.session.userId = user.id;
+      req.session.username = user.username;
 
       // Wait for session to be saved before responding
       await new Promise<void>((resolve, reject) => {
@@ -786,6 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create session - timing session persistence
       const sessionStart = Date.now();
       req.session.userId = user.id;
+      req.session.username = user.username;
 
       // Wait for session to be saved before responding
       await new Promise<void>((resolve, reject) => {

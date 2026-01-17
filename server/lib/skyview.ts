@@ -82,7 +82,11 @@ const randomId = (len: number) => [...Array(len)].map(() => Math.floor(Math.rand
 // --- PUBLIC API ---
 
 // 1. Start a Trace (with optional parent context for distributed tracing)
-export function startTrace(name: string, parentContext?: { traceId: string; parentSpanId: string }): string {
+export function startTrace(
+  name: string,
+  parentContext?: { traceId: string; parentSpanId: string },
+  userContext?: { userId?: string; username?: string }
+): string {
   const traceId = parentContext?.traceId || randomId(32);
   const spanId = randomId(16);
   const parentSpanId = parentContext?.parentSpanId;
@@ -91,7 +95,12 @@ export function startTrace(name: string, parentContext?: { traceId: string; pare
 
   pendingSpans.push({
     name, traceId, spanId, parentSpanId, startTime: Date.now(),
-    attributes: { 'service.name': SERVICE_NAME, 'tenant_id': TENANT_ID }
+    attributes: {
+      'service.name': SERVICE_NAME,
+      'tenant_id': TENANT_ID,
+      'user.id': userContext?.userId || 'anonymous',
+      'user.name': userContext?.username || 'unknown'
+    }
   });
   return traceId;
 }
@@ -155,7 +164,12 @@ export async function flush() {
             name: s.name, traceId: s.traceId, spanId: s.spanId,
             parentSpanId: s.parentSpanId,
             startTimeUnixNano: s.startTime + '000000', endTimeUnixNano: (s.endTime || Date.now()) + '000000',
-            status: { code: s.status === 'ERROR' ? 2 : 1 }, attributes: []
+            status: { code: s.status === 'ERROR' ? 2 : 1 },
+            attributes: [
+              { key: 'user.id', value: { stringValue: s.attributes['user.id'] || 'anonymous' } },
+              { key: 'user.name', value: { stringValue: s.attributes['user.name'] || 'unknown' } },
+              { key: 'service.name', value: { stringValue: s.attributes['service.name'] || SERVICE_NAME } }
+            ]
           }))
         }]
       }]
