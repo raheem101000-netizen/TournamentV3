@@ -551,43 +551,7 @@ export default function PreviewAccount() {
             </div>
           )}
 
-          {/* Debug Tools for SkyView - Admins Only */}
-          {((authUser as any)?.isAdmin || authUser?.username === "admin") && (
-            <div className="space-y-4 pt-4 border-t border-border mt-8">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                Debug Tools
-              </h3>
-              <Card className="border-yellow-500/20 bg-yellow-500/5">
-                <CardContent className="p-4 space-y-3">
-                  <Button
-                    variant="destructive"
-                    className="w-full justify-start"
-                    onClick={() => fetch("/api/debug/error").catch(console.error)}
-                  >
-                    <AlertTriangle className="mr-2 h-4 w-4" />
-                    Trigger Backend 500 Error
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="w-full justify-start"
-                    onClick={() => fetch("/api/debug/slow").catch(console.error)}
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    Trigger Slow Response (3s)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-red-500 hover:text-red-600 border-red-500/50 hover:bg-red-500/10"
-                    onClick={() => { throw new Error("Frontend Crash Test: SkyView Verification"); }}
-                  >
-                    <AlertTriangle className="mr-2 h-4 w-4" />
-                    Trigger Frontend Crash
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+
 
         </main>
       </div>

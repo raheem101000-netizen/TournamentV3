@@ -12,7 +12,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, CheckCircle, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
-import type { RegistrationStep } from "@shared/schema";
+import type { RegistrationStep, TeamProfile } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link } from "wouter";
 
 interface RegistrationConfig {
   id: string;
@@ -41,6 +43,13 @@ export default function TournamentRegistrationForm({
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [showAlreadyRegistered, setShowAlreadyRegistered] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("new");
+
+  // Fetch user's persistent teams
+  const { data: userTeams = [] } = useQuery<TeamProfile[]>({
+    queryKey: [`/api/users/${user?.id}/team-profiles`],
+    enabled: !!user?.id,
+  });
 
   // Fetch registration config with steps
   const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig | null>({
@@ -79,6 +88,7 @@ export default function TournamentRegistrationForm({
     mutationFn: async (data: FormData) => {
       const res = await apiRequest("POST", `/api/tournaments/${tournamentId}/registrations`, {
         userId: user?.id,
+        teamProfileId: selectedTeamId !== "new" ? selectedTeamId : undefined,
         responses: data,
       });
       return res; // apiRequest already returns the parsed JSON data
@@ -251,6 +261,66 @@ export default function TournamentRegistrationForm({
                 />
               ))}
             </div>
+
+            {/* Team Selection Dropdown */}
+            {userTeams.length > 0 && (
+              <div className="space-y-4 pt-2 border-t mt-4">
+                <div className="space-y-2">
+                  <FormLabel className="text-base">Join with an Existing Team</FormLabel>
+                  <CardDescription className="pb-2">
+                    Select one of your established teams to auto-fill the team name and link your team profile.
+                  </CardDescription>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={(val) => {
+                      setSelectedTeamId(val);
+                      if (val !== "new") {
+                        const team = userTeams.find(t => t.id === val);
+                        if (team && config.steps) {
+                          // Try to find a field that looks like "Team Name" and auto-fill it
+                          // Check all steps for a "Team Name" field
+                          config.steps.forEach(step => {
+                            if (step.stepTitle.toLowerCase().includes("team")) { // very simple heuristic
+                              form.setValue(step.id, team.name);
+                            }
+                          });
+
+                          // Also try the dedicated header field if configured, or just ANY field named "Team Name" logic which might be simpler:
+                          // Just iterate through fields and if one asks for team name...
+                          // Actually, the previous heuristic of checking step title is decent since usually "Team Name" is a step title.
+                          // But more accurately:
+                          const teamNameStep = config.steps.find(s => s.stepTitle.toLowerCase().includes("team name") || s.stepTitle.toLowerCase() === "team");
+                          if (teamNameStep) {
+                            form.setValue(teamNameStep.id, team.name);
+                          }
+                        }
+                      } else {
+                        // Clear the field? Maybe not, just let them edit.
+                        // form.reset(); // Don't reset everything
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a team profile (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">Create New / Enter Manually</SelectItem>
+                      {userTeams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name} ({team.game})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {!userTeams.length && (
+              <div className="text-sm text-muted-foreground mt-4 p-4 border rounded-md bg-muted/20">
+                Want to track your team's history? <Link href="/teams/new" className="text-primary hover:underline">Create a Team Profile</Link> first!
+              </div>
+            )}
 
             {/* Submit button */}
             <Button

@@ -2717,7 +2717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "This tournament is currently frozen. Registrations are not allowed." });
       }
 
-      const { responses, paymentProofUrl, paymentTransactionId } = req.body;
+      const { responses, paymentProofUrl, paymentTransactionId, teamProfileId } = req.body;
 
       // Get registration config to find the team name step
       const config = await storage.getRegistrationConfigByTournament(tournamentId);
@@ -2796,6 +2796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       registration = await storage.createRegistration({
         userId: req.session.userId,
         teamName,
+        teamProfileId,
         tournamentId,
         status: registrationStatus,
         paymentStatus,
@@ -3496,6 +3497,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/servers/:serverId/channels", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const server = await storage.getServer(req.params.serverId);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (server.ownerId !== req.session.userId && !user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized to create channels" });
+      }
+
       const validatedData = insertChannelSchema.parse({
         ...req.body,
         serverId: req.params.serverId,
@@ -4436,6 +4451,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Channel update/delete routes
   app.patch("/api/channels/:id", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const channel = await storage.getChannel(req.params.id);
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+
+      const server = await storage.getServer(channel.serverId);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (server.ownerId !== req.session.userId && !user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized to update channels" });
+      }
+
       const updateSchema = z.object({
         name: z.string().optional(),
         categoryId: z.string().nullable().optional(),
@@ -4443,11 +4477,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         icon: z.string().optional(),
       });
       const validatedData = updateSchema.parse(req.body);
-      const channel = await storage.updateChannel(req.params.id, validatedData);
-      if (!channel) {
+
+      // We already have the channel, so we can verify if it exists, but storage.updateChannel works fine.
+      const updatedChannel = await storage.updateChannel(req.params.id, validatedData);
+      if (!updatedChannel) {
         return res.status(404).json({ error: "Channel not found" });
       }
-      res.status(200).json(channel);
+      res.status(200).json(updatedChannel);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       console.error("Error updating channel:", error);
@@ -4457,6 +4493,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/channels/:id", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const channel = await storage.getChannel(req.params.id);
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+      const server = await storage.getServer(channel.serverId);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+      const user = await storage.getUser(req.session.userId);
+      if (server.ownerId !== req.session.userId && !user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized to delete channels" });
+      }
       await storage.deleteChannel(req.params.id);
       res.status(204).send();
     } catch (error: any) {

@@ -120,6 +120,7 @@ export const registrations = pgTable("registrations", {
   paymentStatus: text("payment_status", { enum: ["pending", "submitted", "verified", "rejected"] }).default("pending"),
   paymentProofUrl: text("payment_proof_url"),
   paymentTransactionId: text("payment_transaction_id"),
+  teamProfileId: varchar("team_profile_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -196,6 +197,7 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
   updatedAt: true,
 }).extend({
   userId: z.string().optional(),
+  teamProfileId: z.string().optional(),
 });
 
 export const insertRegistrationResponseSchema = createInsertSchema(registrationResponses).omit({

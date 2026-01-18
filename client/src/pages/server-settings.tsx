@@ -168,6 +168,22 @@ export default function ServerSettings() {
   });
 
   useEffect(() => {
+    if (!serverLoading && server && user) {
+      const isOwner = user.id === server.ownerId;
+      const isAdmin = user.isAdmin;
+
+      if (!isOwner && !isAdmin) {
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to view server settings.",
+          variant: "destructive",
+        });
+        navigate("/");
+      }
+    }
+  }, [server, user, serverLoading, navigate, toast]);
+  // Form synchronization effect
+  useEffect(() => {
     if (server && !serverForm.formState.isDirty) {
       serverForm.reset({
         name: server.name || "",

@@ -203,7 +203,7 @@ export default function PreviewMyServers() {
                   <TournamentCard
                     key={st.tournament.id}
                     tournament={st.tournament}
-                    onView={(id) => setLocation(`/tournament/${id}`)} // Redirect to tournament view
+                    onView={(id) => setLocation(`/tournament/${id}/view`)} // Redirect to public tournament view
                   />
                 ))}
               </div>

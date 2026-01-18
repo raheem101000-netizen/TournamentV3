@@ -188,12 +188,16 @@ export default function PreviewServerDetail() {
 
           <span className="font-semibold text-lg">{fullScreenChannel?.name || 'Chat'}</span>
 
-          <button
-            className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
-            onClick={() => setChannelSettingsOpen(true)}
-          >
-            Channel Settings
-          </button>
+          {(isOwner || (user as any)?.isAdmin) ? (
+            <button
+              className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
+              onClick={() => setChannelSettingsOpen(true)}
+            >
+              Channel Settings
+            </button>
+          ) : (
+            <div className="min-w-[60px]" /> /* Spacer to keep title centered */
+          )}
         </div>
 
         {/* Chat Area */}
@@ -201,7 +205,7 @@ export default function PreviewServerDetail() {
           {fullScreenChannel?.type === "announcements" ? (
             <AnnouncementsChannel channelId={fullScreenChannelId} />
           ) : fullScreenChannel?.type === "tournament_dashboard" ? (
-            <TournamentDashboardChannel serverId={serverId!} />
+            <TournamentDashboardChannel serverId={serverId!} canManage={isOwner || (user as any)?.isAdmin} />
           ) : (
             <ChatChannel channelId={fullScreenChannelId} isPreview={false} />
           )}
@@ -520,7 +524,7 @@ export default function PreviewServerDetail() {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Channels
           </h3>
-          {server.ownerId === currentUserId && (
+          {(server.ownerId === currentUserId || (user as any)?.isAdmin) && (
             <div className="flex gap-1">
               <Button
                 size="icon"

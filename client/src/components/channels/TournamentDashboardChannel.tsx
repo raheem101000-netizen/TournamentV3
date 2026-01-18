@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil, Skull, RotateCcw, Bookmark, BookmarkCheck } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, ChevronRight, Check, Trash2, UserPlus, Pencil, Skull, RotateCcw, Bookmark, BookmarkCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +67,12 @@ interface TournamentDashboardChannelProps {
   serverId: string;
 }
 
-export default function TournamentDashboardChannel({ serverId }: TournamentDashboardChannelProps) {
+interface TournamentDashboardChannelProps {
+  serverId: string;
+  canManage?: boolean;
+}
+
+export default function TournamentDashboardChannel({ serverId, canManage = false }: TournamentDashboardChannelProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAwardAchievementDialogOpen, setIsAwardAchievementDialogOpen] = useState(false);
@@ -88,6 +93,9 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Need to wait for selectedTournament to be loaded to determine ownership accurately
+  // For now, checks will be done inside the render with the selectedTournament data
 
   const achievementForm = useForm({
     resolver: zodResolver(awardAchievementSchema),
@@ -554,31 +562,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Save for Later button - visible to all logged in users */}
-            {user && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (savedStatus?.saved) {
-                    unsaveTournamentMutation.mutate(selectedTournamentId!);
-                  } else {
-                    saveTournamentMutation.mutate(selectedTournamentId!);
-                  }
-                }}
-                disabled={saveTournamentMutation.isPending || unsaveTournamentMutation.isPending}
-                title={savedStatus?.saved ? "Remove from saved" : "Save for later"}
-                data-testid="button-save-tournament"
-              >
-                {savedStatus?.saved ? (
-                  <BookmarkCheck className="h-4 w-4 text-primary" />
-                ) : (
-                  <Bookmark className="h-4 w-4" />
-                )}
-              </Button>
-            )}
             {/* Organizer controls */}
-            {user?.id === selectedTournament.organizerId && (
+            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
               <>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
                   Edit Tournament
@@ -600,8 +585,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
             <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
-            <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Create Match</TabsTrigger>
-            <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
+            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+              <>
+                <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Create Match</TabsTrigger>
+                <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
 
@@ -696,7 +685,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   <p className="text-muted-foreground">
                     No matches scheduled yet
                   </p>
-                  {selectedTournamentTeams.length >= 2 && (
+                  {selectedTournamentTeams.length >= 2 && (user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
                     <Button
                       onClick={() => {
                         apiRequest('POST', `/api/tournaments/${selectedTournamentId}/generate-fixtures`)
@@ -786,17 +775,19 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     })()}
 
                     {/* Elimination Button */}
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      title="Permanently remove eliminated player"
-                      onClick={() => setIsEliminateTeamDialogOpen(true)}
-                    >
-                      <Skull className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        title="Permanently remove eliminated player"
+                        onClick={() => setIsEliminateTeamDialogOpen(true)}
+                      >
+                        <Skull className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
 
                     {/* Reverse Win Button - only show if match has a winner */}
-                    {selectedMatch.winnerId && (
+                    {selectedMatch.winnerId && (user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -814,34 +805,36 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                       </Button>
                     )}
 
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this match? This action cannot be undone.')) {
-                          apiRequest('DELETE', `/api/matches/${selectedMatch.id}`)
-                            .then(() => {
-                              queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
-                              setShowMatchChat(false);
-                              setSelectedMatchId(null);
-                              toast({
-                                title: "Match deleted",
-                                description: "The match has been deleted successfully.",
+                    {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this match? This action cannot be undone.')) {
+                            apiRequest('DELETE', `/api/matches/${selectedMatch.id}`)
+                              .then(() => {
+                                queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+                                setShowMatchChat(false);
+                                setSelectedMatchId(null);
+                                toast({
+                                  title: "Match deleted",
+                                  description: "The match has been deleted successfully.",
+                                });
+                              })
+                              .catch((error) => {
+                                toast({
+                                  title: "Error",
+                                  description: error.message,
+                                  variant: "destructive",
+                                });
                               });
-                            })
-                            .catch((error) => {
-                              toast({
-                                title: "Error",
-                                description: error.message,
-                                variant: "destructive",
-                              });
-                            });
-                        }
-                      }}
-                      data-testid="button-delete-match"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                          }
+                        }}
+                        data-testid="button-delete-match"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Elimination Dialog */}
@@ -961,7 +954,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             {selectedTournamentTeams.length > 0 ? (
               <StandingsTable
                 teams={selectedTournamentTeams}
-                isEditable={user?.id === selectedTournament.organizerId || user?.isAdmin}
+                isEditable={user?.id === selectedTournament.organizerId || (user as any)?.isAdmin}
               />
             ) : (
               <Card className="p-8">
@@ -974,304 +967,324 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
 
           <TabsContent value="registrations">
-            {registrations.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {registrations.length} registration{registrations.length !== 1 ? 's' : ''}
-                </p>
-                <div className="space-y-2">
-                  {registrations.map((reg) => {
-                    // Use the stored teamName directly - it's extracted correctly on the backend
-                    const headerValue = reg.teamName || "Unknown Team";
-                    const isExpanded = expandedRegistrationId === reg.id;
+            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) ? (
+              registrations.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    {registrations.length} registration{registrations.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="space-y-2">
+                    {registrations.map((reg) => {
+                      // Use the stored teamName directly - it's extracted correctly on the backend
+                      const headerValue = reg.teamName || "Unknown Team";
+                      const isExpanded = expandedRegistrationId === reg.id;
 
-                    return (
-                      <Card key={reg.id} className="overflow-hidden">
-                        <CardHeader
-                          className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate"
-                          onClick={() => setExpandedRegistrationId(isExpanded ? null : reg.id)}
-                          data-testid={`button-expand-registration-${reg.id}`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            )}
-                            {reg.userAvatar && (
-                              <img
-                                src={reg.userAvatar}
-                                alt={reg.userUsername}
-                                className="w-10 h-10 rounded-full object-cover"
-                                data-testid={`img-avatar-${reg.userId}`}
-                              />
-                            )}
-                            <div className="flex-1">
-                              <Button
-                                variant="ghost"
-                                className="p-0 h-auto text-base font-semibold"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Navigate to user profile
-                                  window.location.href = `/profile/${reg.userId}`;
-                                }}
-                                data-testid={`button-view-profile-${reg.userId}`}
-                              >
-                                @{reg.userUsername}
-                              </Button>
-                              <p className="text-sm text-muted-foreground">
-                                {headerValue}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant={
-                            reg.status === 'approved' ? 'default' :
-                              reg.status === 'submitted' ? 'secondary' :
-                                'outline'
-                          }>
-                            {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
-                          </Badge>
-                        </CardHeader>
-
-                        {/* Expandable Q&A section */}
-                        {isExpanded && (
-                          <CardContent className="pt-0 border-t">
-                            <div className="space-y-3 pt-4">
-                              <h4 className="text-sm font-medium text-muted-foreground">Registration Responses</h4>
-                              {registrationConfig?.steps && registrationConfig.steps.length > 0 ? (
-                                <div className="space-y-3">
-                                  {registrationConfig.steps.map((step) => {
-                                    const answer = reg.responses?.[step.id] || "";
-                                    return (
-                                      <div key={step.id} className="bg-muted/50 rounded-md p-3">
-                                        <p className="text-sm font-medium mb-1">{step.stepTitle}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {answer || <span className="italic">No answer provided</span>}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                      return (
+                        <Card key={reg.id} className="overflow-hidden">
+                          <CardHeader
+                            className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate"
+                            onClick={() => setExpandedRegistrationId(isExpanded ? null : reg.id)}
+                            data-testid={`button-expand-registration-${reg.id}`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               ) : (
-                                <p className="text-sm text-muted-foreground italic">
-                                  No registration questions configured
-                                </p>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               )}
+                              {reg.userAvatar && (
+                                <img
+                                  src={reg.userAvatar}
+                                  alt={reg.userUsername}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                  data-testid={`img-avatar-${reg.userId}`}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <Button
+                                  variant="ghost"
+                                  className="p-0 h-auto text-base font-semibold"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Navigate to user profile
+                                    window.location.href = `/profile/${reg.userId}`;
+                                  }}
+                                  data-testid={`button-view-profile-${reg.userId}`}
+                                >
+                                  @{reg.userUsername}
+                                </Button>
+                                <p className="text-sm text-muted-foreground">
+                                  {headerValue}
+                                </p>
+                              </div>
                             </div>
-                          </CardContent>
-                        )}
-                      </Card>
-                    );
-                  })}
+                            <Badge variant={
+                              reg.status === 'approved' ? 'default' :
+                                reg.status === 'submitted' ? 'secondary' :
+                                  'outline'
+                            }>
+                              {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                            </Badge>
+                          </CardHeader>
+
+                          {/* Expandable Q&A section */}
+                          {isExpanded && (
+                            <CardContent className="pt-0 border-t">
+                              <div className="space-y-3 pt-4">
+                                <h4 className="text-sm font-medium text-muted-foreground">Registration Responses</h4>
+                                {registrationConfig?.steps && registrationConfig.steps.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {registrationConfig.steps.map((step) => {
+                                      const answer = reg.responses?.[step.id] || "";
+                                      return (
+                                        <div key={step.id} className="bg-muted/50 rounded-md p-3">
+                                          <p className="text-sm font-medium mb-1">{step.stepTitle}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {answer || <span className="italic">No answer provided</span>}
+                                          </p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic">
+                                    No registration questions configured
+                                  </p>
+                                )}
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <Card className="p-8">
+                  <p className="text-center text-muted-foreground">
+                    No registrations yet
+                  </p>
+                </Card>
+              )
             ) : (
               <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No registrations yet
-                </p>
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <Lock className="w-12 h-12 mb-4 opacity-50" />
+                  <p className="text-center font-semibold">Access Restricted</p>
+                  <p className="text-center text-sm">Only organizers can manage registrations.</p>
+                </div>
               </Card>
             )}
           </TabsContent>
 
           <TabsContent value="participants">
-            {registrations.filter(r => r.status === 'approved').length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card/50">
-                  <h3 className="font-semibold text-sm">Match Generation</h3>
-                  <div className="flex gap-2 items-end">
-                    <div className="flex-1 space-y-2">
-                      <Label htmlFor="roundName">Round Name (Optional)</Label>
-                      <Input
-                        id="roundName"
-                        placeholder="e.g. Quarterfinals"
-                        value={roundName}
-                        onChange={(e) => setRoundName(e.target.value)}
-                      />
+            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) ? (
+              registrations.filter(r => r.status === 'approved').length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card/50">
+                    <h3 className="font-semibold text-sm">Match Generation</h3>
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="roundName">Round Name (Optional)</Label>
+                        <Input
+                          id="roundName"
+                          placeholder="e.g. Quarterfinals"
+                          value={roundName}
+                          onChange={(e) => setRoundName(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={() => generateFixturesMutation.mutate()}
+                        disabled={generateFixturesMutation.isPending || registrations.filter(r => r.status === 'approved').length < 2}
+                        data-testid="button-generate-matches"
+                      >
+                        {generateFixturesMutation.isPending ? "Generating..." : "Generate Matches"}
+                      </Button>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
                     <Button
-                      onClick={() => generateFixturesMutation.mutate()}
-                      disabled={generateFixturesMutation.isPending || registrations.filter(r => r.status === 'approved').length < 2}
-                      data-testid="button-generate-matches"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsCreateMatchDialogOpen(true)}
+                      data-testid="button-create-custom-match"
                     >
-                      {generateFixturesMutation.isPending ? "Generating..." : "Generate Matches"}
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Manual Match
                     </Button>
+                    <p className="text-sm text-muted-foreground">
+                      {registrations.filter(r => r.status === 'approved').length} participant{registrations.filter(r => r.status === 'approved').length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {registrations.filter(r => r.status === 'approved').map((reg) => {
+                      const headerValue = reg.teamName || "Unknown Team";
+                      const isExpanded = expandedParticipantId === reg.id;
+                      // Find the matching team by user membership (not by name, since names can be duplicated)
+                      const matchingTeam = selectedTournamentTeams.find((t: any) =>
+                        t.members && t.members.some((m: any) => m.userId === reg.userId)
+                      );
+
+                      return (
+                        <Card key={reg.id} className={`overflow-hidden ${matchingTeam?.isRemoved ? "opacity-50" : ""}`}>
+                          <CardHeader
+                            className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate gap-2"
+                            onClick={() => setExpandedParticipantId(isExpanded ? null : reg.id)}
+                            data-testid={`button-expand-participant-${reg.id}`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                              {reg.userAvatar && (
+                                <img
+                                  src={reg.userAvatar}
+                                  alt={reg.userUsername}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                  data-testid={`img-avatar-participant-${reg.userId}`}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <Button
+                                  variant="ghost"
+                                  className="p-0 h-auto text-base font-semibold"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.location.href = `/profile/${reg.userId}`;
+                                  }}
+                                  data-testid={`button-view-profile-participant-${reg.userId}`}
+                                >
+                                  @{reg.userUsername}
+                                </Button>
+                                <p className="text-sm text-muted-foreground">
+                                  {headerValue}
+                                </p>
+                                {matchingTeam?.isRemoved && (
+                                  <Badge variant="destructive" className="mt-1">Eliminated</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              {matchingTeam && (
+                                <>
+                                  <Badge variant="outline">{matchingTeam.wins}W</Badge>
+                                  <Badge variant="outline">{matchingTeam.losses}L</Badge>
+                                </>
+                              )}
+                            </div>
+                          </CardHeader>
+
+                          {/* Expandable Q&A section */}
+                          {isExpanded && (
+                            <CardContent className="pt-0 border-t">
+                              <div className="space-y-3 pt-4">
+                                <h4 className="text-sm font-medium text-muted-foreground">Registration Responses</h4>
+                                {registrationConfig?.steps && registrationConfig.steps.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {registrationConfig.steps.map((step) => {
+                                      const answer = reg.responses?.[step.id] || "";
+                                      return (
+                                        <div key={step.id} className="bg-muted/50 rounded-md p-3">
+                                          <p className="text-sm font-medium mb-1">{step.stepTitle}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {answer || <span className="italic">No answer provided</span>}
+                                          </p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic">
+                                    No registration questions configured
+                                  </p>
+                                )}
+
+                                {/* Team actions */}
+                                {matchingTeam && (
+                                  <div className="flex gap-2 flex-wrap pt-2 border-t mt-4">
+                                    {!matchingTeam.isRemoved && (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          apiRequest('PATCH', `/api/teams/${matchingTeam.id}`, {
+                                            isRemoved: 1,
+                                          }).then(() => {
+                                            queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+                                            const memberUsername = (matchingTeam as any).members?.[0]?.username;
+                                            toast({
+                                              title: "Player eliminated",
+                                              description: `@${memberUsername || 'Player'} has been eliminated from the tournament.`,
+                                            });
+                                          }).catch((error) => {
+                                            toast({
+                                              title: "Error",
+                                              description: error.message,
+                                              variant: "destructive",
+                                            });
+                                          });
+                                        }}
+                                        data-testid={`button-eliminate-${matchingTeam.id}`}
+                                      >
+                                        Eliminate
+                                      </Button>
+                                    )}
+                                    {matchingTeam.isRemoved && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          apiRequest('PATCH', `/api/teams/${matchingTeam.id}`, {
+                                            isRemoved: 0,
+                                          }).then(() => {
+                                            queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+                                            const memberUsername = (matchingTeam as any).members?.[0]?.username;
+                                            toast({
+                                              title: "Player restored",
+                                              description: `@${memberUsername || 'Player'} has been restored to the tournament.`,
+                                            });
+                                          }).catch((error) => {
+                                            toast({
+                                              title: "Error",
+                                              description: error.message,
+                                              variant: "destructive",
+                                            });
+                                          });
+                                        }}
+                                        data-testid={`button-restore-${matchingTeam.id}`}
+                                      >
+                                        Restore
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsCreateMatchDialogOpen(true)}
-                    data-testid="button-create-custom-match"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Manual Match
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    {registrations.filter(r => r.status === 'approved').length} participant{registrations.filter(r => r.status === 'approved').length !== 1 ? 's' : ''}
+              ) : (
+                <Card className="p-8">
+                  <p className="text-center text-muted-foreground">
+                    No participants yet
                   </p>
-                </div>
-                <div className="space-y-2">
-                  {registrations.filter(r => r.status === 'approved').map((reg) => {
-                    const headerValue = reg.teamName || "Unknown Team";
-                    const isExpanded = expandedParticipantId === reg.id;
-                    // Find the matching team by user membership (not by name, since names can be duplicated)
-                    const matchingTeam = selectedTournamentTeams.find((t: any) =>
-                      t.members && t.members.some((m: any) => m.userId === reg.userId)
-                    );
-
-                    return (
-                      <Card key={reg.id} className={`overflow-hidden ${matchingTeam?.isRemoved ? "opacity-50" : ""}`}>
-                        <CardHeader
-                          className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer hover-elevate gap-2"
-                          onClick={() => setExpandedParticipantId(isExpanded ? null : reg.id)}
-                          data-testid={`button-expand-participant-${reg.id}`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            )}
-                            {reg.userAvatar && (
-                              <img
-                                src={reg.userAvatar}
-                                alt={reg.userUsername}
-                                className="w-10 h-10 rounded-full object-cover"
-                                data-testid={`img-avatar-participant-${reg.userId}`}
-                              />
-                            )}
-                            <div className="flex-1">
-                              <Button
-                                variant="ghost"
-                                className="p-0 h-auto text-base font-semibold"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.location.href = `/profile/${reg.userId}`;
-                                }}
-                                data-testid={`button-view-profile-participant-${reg.userId}`}
-                              >
-                                @{reg.userUsername}
-                              </Button>
-                              <p className="text-sm text-muted-foreground">
-                                {headerValue}
-                              </p>
-                              {matchingTeam?.isRemoved && (
-                                <Badge variant="destructive" className="mt-1">Eliminated</Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 items-center">
-                            {matchingTeam && (
-                              <>
-                                <Badge variant="outline">{matchingTeam.wins}W</Badge>
-                                <Badge variant="outline">{matchingTeam.losses}L</Badge>
-                              </>
-                            )}
-                          </div>
-                        </CardHeader>
-
-                        {/* Expandable Q&A section */}
-                        {isExpanded && (
-                          <CardContent className="pt-0 border-t">
-                            <div className="space-y-3 pt-4">
-                              <h4 className="text-sm font-medium text-muted-foreground">Registration Responses</h4>
-                              {registrationConfig?.steps && registrationConfig.steps.length > 0 ? (
-                                <div className="space-y-3">
-                                  {registrationConfig.steps.map((step) => {
-                                    const answer = reg.responses?.[step.id] || "";
-                                    return (
-                                      <div key={step.id} className="bg-muted/50 rounded-md p-3">
-                                        <p className="text-sm font-medium mb-1">{step.stepTitle}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {answer || <span className="italic">No answer provided</span>}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-muted-foreground italic">
-                                  No registration questions configured
-                                </p>
-                              )}
-
-                              {/* Team actions */}
-                              {matchingTeam && (
-                                <div className="flex gap-2 flex-wrap pt-2 border-t mt-4">
-                                  {!matchingTeam.isRemoved && (
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        apiRequest('PATCH', `/api/teams/${matchingTeam.id}`, {
-                                          isRemoved: 1,
-                                        }).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
-                                          const memberUsername = (matchingTeam as any).members?.[0]?.username;
-                                          toast({
-                                            title: "Player eliminated",
-                                            description: `@${memberUsername || 'Player'} has been eliminated from the tournament.`,
-                                          });
-                                        }).catch((error) => {
-                                          toast({
-                                            title: "Error",
-                                            description: error.message,
-                                            variant: "destructive",
-                                          });
-                                        });
-                                      }}
-                                      data-testid={`button-eliminate-${matchingTeam.id}`}
-                                    >
-                                      Eliminate
-                                    </Button>
-                                  )}
-                                  {matchingTeam.isRemoved && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        apiRequest('PATCH', `/api/teams/${matchingTeam.id}`, {
-                                          isRemoved: 0,
-                                        }).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
-                                          const memberUsername = (matchingTeam as any).members?.[0]?.username;
-                                          toast({
-                                            title: "Player restored",
-                                            description: `@${memberUsername || 'Player'} has been restored to the tournament.`,
-                                          });
-                                        }).catch((error) => {
-                                          toast({
-                                            title: "Error",
-                                            description: error.message,
-                                            variant: "destructive",
-                                          });
-                                        });
-                                      }}
-                                      data-testid={`button-restore-${matchingTeam.id}`}
-                                    >
-                                      Restore
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
+                </Card>
+              )
             ) : (
               <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No participants yet
-                </p>
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <Lock className="w-12 h-12 mb-4 opacity-50" />
+                  <p className="text-center font-semibold">Access Restricted</p>
+                  <p className="text-center text-sm">Only organizers can create matches.</p>
+                </div>
               </Card>
             )}
           </TabsContent>
@@ -1482,14 +1495,18 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           <h2 className="text-lg font-semibold">Tournament Dashboard</h2>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" data-testid="button-award-achievement">
-            <Trophy className="h-4 w-4 mr-2" />
-            Award Achievement
-          </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-tournament">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Tournament
-          </Button>
+          {canManage && (
+            <>
+              <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" data-testid="button-award-achievement">
+                <Trophy className="h-4 w-4 mr-2" />
+                Award Achievement
+              </Button>
+              <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-tournament">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Tournament
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
