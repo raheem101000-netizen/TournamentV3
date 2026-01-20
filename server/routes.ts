@@ -1062,6 +1062,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bio: user.bio,
         level: user.level,
         language: user.language,
+        isAdmin: user.isAdmin,
+        role: user.role,
       });
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
@@ -1289,7 +1291,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Keep serverId - it needs to be saved!
       const { teamNames, registrationConfig, ...tournamentData } = validatedData;
 
-      const tournament = await storage.createTournament(tournamentData as any);
+      // IMPORTANT: Auto-set organizerId to the authenticated user
+      const tournamentWithOwner = {
+        ...tournamentData,
+        organizerId: req.session.userId,
+        organizerName: user.username,
+      };
+
+      const tournament = await storage.createTournament(tournamentWithOwner as any);
 
       if (teamNames && teamNames.length > 0) {
         const createdTeams = await Promise.all(

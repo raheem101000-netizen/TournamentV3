@@ -86,6 +86,7 @@ interface RichMatchChatProps {
   team2Name?: string;
   team1Id?: string;
   team2Id?: string;
+  canManage?: boolean;
 }
 
 export default function RichMatchChat({
@@ -95,7 +96,8 @@ export default function RichMatchChat({
   team1Name = "Team 1",
   team2Name = "Team 2",
   team1Id = "",
-  team2Id = ""
+  team2Id = "",
+  canManage = false
 }: RichMatchChatProps) {
   const [messageInput, setMessageInput] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -670,7 +672,7 @@ export default function RichMatchChat({
             </div>
           </ScrollArea>
 
-          {team1Id && team2Id && (
+          {canManage && team1Id && team2Id && (
             <div className="border-t pt-3 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
               <div className="flex gap-2">

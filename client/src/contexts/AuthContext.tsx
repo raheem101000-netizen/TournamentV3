@@ -12,6 +12,8 @@ interface User {
   bio: string | null;
   level: number | null;
   language: string | null;
+  isAdmin: number | null;
+  role: string | null;
 }
 
 interface AuthContextType {

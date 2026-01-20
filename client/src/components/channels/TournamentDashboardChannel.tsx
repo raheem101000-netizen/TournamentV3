@@ -114,6 +114,15 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
     queryKey: ["/api/tournaments"],
   });
 
+  // Fetch server data to check if user is server owner
+  const { data: server } = useQuery<{ id: string; ownerId: string; name: string }>({
+    queryKey: [`/api/servers/${serverId}`],
+    enabled: !!serverId,
+  });
+
+  // Computed permission: user is server owner
+  const isServerOwner = user?.id === server?.ownerId;
+
   const createTournamentMutation = useMutation({
     mutationFn: async (data: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig; serverId?: string }) => {
       const tournament = await apiRequest('POST', '/api/tournaments', data);
@@ -563,7 +572,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           </div>
           <div className="flex items-center gap-2">
             {/* Organizer controls */}
-            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+            {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') && (
               <>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
                   Edit Tournament
@@ -585,7 +594,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
             <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
-            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+            {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') && (
               <>
                 <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Create Match</TabsTrigger>
                 <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
@@ -805,7 +814,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
                       </Button>
                     )}
 
-                    {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) && (
+                    {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') && (
                       <Button
                         variant="destructive"
                         size="icon"
@@ -880,6 +889,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
                         team2Name={`@${getUsernameByTeamId(selectedMatch.team2Id) || 'Player 2'}`}
                         team1Id={selectedMatch.team1Id || ''}
                         team2Id={selectedMatch.team2Id || ''}
+                        canManage={user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin'}
                       />
                     )}
                   </div>
@@ -954,7 +964,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             {selectedTournamentTeams.length > 0 ? (
               <StandingsTable
                 teams={selectedTournamentTeams}
-                isEditable={user?.id === selectedTournament.organizerId || (user as any)?.isAdmin}
+                isEditable={user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin'}
               />
             ) : (
               <Card className="p-8">
@@ -967,7 +977,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
 
 
           <TabsContent value="registrations">
-            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) ? (
+            {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') ? (
               registrations.length > 0 ? (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
@@ -1078,7 +1088,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           </TabsContent>
 
           <TabsContent value="participants">
-            {(user?.id === selectedTournament.organizerId || (user as any)?.isAdmin) ? (
+            {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') ? (
               registrations.filter(r => r.status === 'approved').length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card/50">
