@@ -102,7 +102,7 @@ function SwipeableThreadItem({ thread, onSelect, onDelete }: { thread: MessageTh
                 whileTap={{ cursor: "grabbing" }}
             >
                 <Avatar className="h-14 w-14 flex-none border border-zinc-800 pointer-events-none">
-                    <AvatarImage src={thread.participantAvatar || undefined} />
+                    <AvatarImage src={thread.isGroup ? (thread.groupIconUrl || undefined) : (thread.participantAvatar || undefined)} />
                     <AvatarFallback>{thread.participantName[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left pointer-events-none">

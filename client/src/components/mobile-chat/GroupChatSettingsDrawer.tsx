@@ -150,9 +150,13 @@ export function GroupChatSettingsDrawer({
         mutationFn: async (groupIconUrl: string) => {
             await apiRequest("PATCH", `/api/threads/${threadId}`, { groupIconUrl });
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/threads", threadId, "participants"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/threads"] });
+        onSuccess: async () => {
+            // Force immediate refetch of both queries
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["/api/threads", threadId, "participants"] }),
+                queryClient.invalidateQueries({ queryKey: ["/api/threads"] }),
+            ]);
+            await queryClient.refetchQueries({ queryKey: ["/api/threads"] });
             toast({ title: "Group icon updated" });
         },
         onError: (error: any) => {
@@ -244,13 +248,24 @@ export function GroupChatSettingsDrawer({
                                                     }}
                                                     className="hidden"
                                                     id="group-icon-upload"
+                                                    disabled={updateIconMutation.isPending}
                                                 />
                                                 <label
                                                     htmlFor="group-icon-upload"
-                                                    className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                                    className={`absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center ${updateIconMutation.isPending ? 'pointer-events-none' : 'cursor-pointer'
+                                                        }`}
                                                 >
-                                                    <Camera className="h-6 w-6 text-white" />
+                                                    {updateIconMutation.isPending ? (
+                                                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                                    ) : (
+                                                        <Camera className="h-6 w-6 text-white" />
+                                                    )}
                                                 </label>
+                                                {updateIconMutation.isPending && (
+                                                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-100">
+                                                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>

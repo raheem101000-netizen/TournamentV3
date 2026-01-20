@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MessagesListView } from "@/components/mobile-chat/MessagesListView";
 import ChatChannel from "@/components/channels/ChatChannel";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
-import { ChevronLeft, User, BellOff, Trash2, Ban, Flag, Info, Settings } from "lucide-react";
+import { ChevronLeft, User, BellOff, Trash2, Ban, Flag, Info, Settings, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   Drawer,
@@ -74,7 +74,27 @@ export default function PreviewMessages() {
               <span className="text-lg">Back</span>
             </button>
 
-            <span className="font-semibold text-lg">Chat</span>
+            {/* Chat Info - Avatar & Name */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={isGroupChat ? threadData?.groupIconUrl || undefined : threadData?.participantAvatar || undefined} />
+                <AvatarFallback className="text-xs">
+                  {isGroupChat ? (
+                    <Users className="h-4 w-4" />
+                  ) : (
+                    threadData?.participantName?.[0]?.toUpperCase() || "U"
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-semibold text-sm leading-tight">
+                  {isGroupChat ? threadData?.groupName : threadData?.participantName || "Chat"}
+                </span>
+                {isGroupChat && (
+                  <span className="text-[10px] text-zinc-400">Group</span>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center gap-3">
               {isGroupChat && (
