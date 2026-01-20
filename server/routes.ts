@@ -5922,6 +5922,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get thread details
+  app.get("/api/threads/:threadId", requireAuth, async (req, res) => {
+    try {
+      const threadId = req.params.threadId;
+      const thread = await storage.getMessageThread(threadId);
+
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      res.json(thread);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Delete a thread
   app.delete("/api/threads/:threadId", requireAuth, async (req, res) => {
     try {
@@ -5996,6 +6013,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(newMessage);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get group participants with user details
+  app.get("/api/threads/:threadId/participants", requireAuth, async (req, res) => {
+    try {
+      const threadId = req.params.threadId;
+      const userId = req.session.userId!;
+
+      // Check if thread exists and is a group
+      const thread = await storage.getMessageThread(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      if (!thread.isGroup) {
+        return res.status(400).json({ error: "This is not a group chat" });
+      }
+
+      // Get participants with their user details
+      const participants = await storage.getGroupParticipantsWithDetails(threadId);
+
+      // Also include the creator info
+      const response = {
+        participants,
+        createdBy: thread.createdBy,
+        groupName: thread.groupName,
+        groupIconUrl: thread.groupIconUrl,
+      };
+
+      res.json(response);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Kick a participant from group
+  app.delete("/api/threads/:threadId/participants/:userId", requireAuth, async (req, res) => {
+    try {
+      const { threadId, userId: targetUserId } = req.params;
+      const currentUserId = req.session.userId!;
+
+      // Check if thread exists and is a group
+      const thread = await storage.getMessageThread(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      if (!thread.isGroup) {
+        return res.status(400).json({ error: "This is not a group chat" });
+      }
+
+      // Check if current user is admin
+      const isAdmin = await storage.isGroupAdmin(threadId, currentUserId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Only group admins can remove members" });
+      }
+
+      // Cannot kick the creator
+      if (thread.createdBy === targetUserId) {
+        return res.status(403).json({ error: "Cannot remove the group creator" });
+      }
+
+      // Remove the participant
+      await storage.removeGroupParticipant(threadId, targetUserId);
+
+      // Invalidate cache for the kicked user
+      cache.delete(`threads:user:${targetUserId}`);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Invite users to existing group
+  app.post("/api/threads/:threadId/participants", requireAuth, async (req, res) => {
+    try {
+      const threadId = req.params.threadId;
+      const currentUserId = req.session.userId!;
+      const { userIds } = req.body;
+
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: "User IDs array is required" });
+      }
+
+      // Check if thread exists and is a group
+      const thread = await storage.getMessageThread(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      if (!thread.isGroup) {
+        return res.status(400).json({ error: "This is not a group chat" });
+      }
+
+      // Check if current user is admin
+      const isAdmin = await storage.isGroupAdmin(threadId, currentUserId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Only group admins can add members" });
+      }
+
+      // Add the participants
+      await storage.addGroupParticipants(threadId, userIds);
+
+      // Invalidate cache for all new participants
+      for (const userId of userIds) {
+        cache.delete(`threads:user:${userId}`);
+      }
+
+      res.json({ success: true, addedCount: userIds.length });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update group settings (name and/or icon)
+  app.patch("/api/threads/:threadId", requireAuth, async (req, res) => {
+    try {
+      const threadId = req.params.threadId;
+      const currentUserId = req.session.userId!;
+      const { groupName, groupIconUrl } = req.body;
+
+      // Check if thread exists and is a group
+      const thread = await storage.getMessageThread(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      if (!thread.isGroup) {
+        return res.status(400).json({ error: "This is not a group chat" });
+      }
+
+      // Check if current user is admin
+      const isAdmin = await storage.isGroupAdmin(threadId, currentUserId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Only group admins can update group settings" });
+      }
+
+      // Update the group
+      const updates: { groupName?: string; groupIconUrl?: string } = {};
+      if (groupName !== undefined) updates.groupName = groupName;
+      if (groupIconUrl !== undefined) updates.groupIconUrl = groupIconUrl;
+
+      const updatedThread = await storage.updateGroupThread(threadId, updates);
+
+      // Invalidate cache for all participants
+      const participants = await storage.getGroupParticipants(threadId);
+      for (const participant of participants) {
+        cache.delete(`threads:user:${participant.userId}`);
+      }
+
+      res.json(updatedThread);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });

@@ -319,6 +319,10 @@ export interface IStorage {
   removeGroupParticipant(threadId: string, userId: string): Promise<void>;
   getGroupParticipants(threadId: string): Promise<GroupParticipant[]>;
   getGroupThreadsForUser(userId: string): Promise<MessageThread[]>;
+  getGroupParticipantsWithDetails(threadId: string): Promise<Array<GroupParticipant & { user: { id: string; username: string; displayName: string | null; avatarUrl: string | null } | null }>>;
+  isGroupAdmin(threadId: string, userId: string): Promise<boolean>;
+  updateGroupThread(threadId: string, updates: { groupName?: string; groupIconUrl?: string }): Promise<MessageThread | undefined>;
+  addGroupParticipants(threadId: string, userIds: string[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -788,13 +792,26 @@ export class DatabaseStorage implements IStorage {
       : eq(threadMessages.threadId, threadId);
 
     const messages = await db
-      .select()
+      .select({
+        id: threadMessages.id,
+        threadId: threadMessages.threadId,
+        userId: threadMessages.userId,
+        username: threadMessages.username,
+        message: threadMessages.message,
+        imageUrl: threadMessages.imageUrl,
+        replyToId: threadMessages.replyToId,
+        tournamentId: threadMessages.tournamentId,
+        createdAt: threadMessages.createdAt,
+        avatarUrl: users.avatarUrl,
+        displayName: users.displayName,
+      })
       .from(threadMessages)
+      .leftJoin(users, eq(threadMessages.userId, users.id))
       .where(whereClause)
       .orderBy(desc(threadMessages.createdAt)) // Get newest first
       .limit(limit);
 
-    return messages.reverse(); // Return in chronological order
+    return messages.reverse() as any; // Return in chronological order
   }
 
   async updateThreadMessage(id: string, data: { message?: string }): Promise<ThreadMessage | undefined> {
@@ -1806,6 +1823,83 @@ export class DatabaseStorage implements IStorage {
       )
     );
   }
+
+  async getGroupParticipantsWithDetails(threadId: string): Promise<Array<GroupParticipant & { user: { id: string; username: string; displayName: string | null; avatarUrl: string | null } | null }>> {
+    const participants = await db.select().from(groupParticipants).where(
+      eq(groupParticipants.threadId, threadId)
+    );
+
+    const result = await Promise.all(
+      participants.map(async (participant) => {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        }).from(users).where(eq(users.id, participant.userId));
+        return { ...participant, user: user || null };
+      })
+    );
+
+    return result;
+  }
+
+  async isGroupAdmin(threadId: string, userId: string): Promise<boolean> {
+    // Check if user is the creator or has admin role
+    const [thread] = await db.select().from(messageThreads).where(
+      eq(messageThreads.id, threadId)
+    );
+
+    if (thread?.createdBy === userId) {
+      return true;
+    }
+
+    const [participant] = await db.select().from(groupParticipants).where(
+      and(
+        eq(groupParticipants.threadId, threadId),
+        eq(groupParticipants.userId, userId)
+      )
+    );
+
+    return participant?.role === "admin";
+  }
+
+  async updateGroupThread(threadId: string, updates: { groupName?: string; groupIconUrl?: string }): Promise<MessageThread | undefined> {
+    const updateData: Partial<MessageThread> = {};
+
+    if (updates.groupName !== undefined) {
+      updateData.groupName = updates.groupName;
+      updateData.participantName = updates.groupName; // Keep in sync for display
+    }
+    if (updates.groupIconUrl !== undefined) {
+      updateData.groupIconUrl = updates.groupIconUrl;
+    }
+
+    const [thread] = await db
+      .update(messageThreads)
+      .set(updateData)
+      .where(eq(messageThreads.id, threadId))
+      .returning();
+
+    return thread || undefined;
+  }
+
+  async addGroupParticipants(threadId: string, userIds: string[]): Promise<void> {
+    // Get existing participants to avoid duplicates
+    const existing = await this.getGroupParticipants(threadId);
+    const existingUserIds = new Set(existing.map(p => p.userId));
+
+    for (const userId of userIds) {
+      if (!existingUserIds.has(userId)) {
+        await db.insert(groupParticipants).values({
+          threadId,
+          userId,
+          role: "member",
+        });
+      }
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
+
