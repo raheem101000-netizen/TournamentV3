@@ -574,6 +574,10 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             {/* Organizer controls */}
             {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') && (
               <>
+                <Button variant="outline" onClick={() => setIsAwardAchievementDialogOpen(true)} data-testid="button-award-achievement-detail">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Award
+                </Button>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
                   Edit Tournament
                 </Button>
@@ -589,7 +593,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap overflow-x-auto bg-transparent p-0 gap-2">
+          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap overflow-x-auto bg-transparent px-4 py-2 gap-2 hide-scrollbar">
             <TabsTrigger value="overview" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Overview</TabsTrigger>
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
@@ -603,58 +607,49 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 overflow-y-auto max-h-[60vh]">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Format</CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-base font-bold capitalize">
-                    {selectedTournament.format.replace('_', ' ')}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Teams</CardTitle>
-                  <UsersIcon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-base font-bold">{selectedTournament.totalTeams === -1 ? "Unlimited" : selectedTournament.totalTeams}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Prize Pool</CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-base font-bold">{selectedTournament.prizeReward || 'TBD'}</div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="overview" className="space-y-4 overflow-y-auto max-h-[60vh]">
+            {/* Compact Grid Container with margins */}
+            <div className="grid grid-cols-2 gap-3 px-4 sm:px-6 py-3"> {/* Increased padding from p-1 to p-3 */}
+              <Card className="col-span-1 p-3 flex flex-col justify-between h-24 bg-card/50 border-white/5"> {/* Slightly increased height for readability */}
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-bold uppercase tracking-wider">Format</span>
+                  <Trophy className="h-4 w-4 opacity-50" />
+                </div>
+                <div className="text-base font-bold capitalize mt-1 leading-tight text-foreground">
+                  {selectedTournament.format.replace('_', ' ')}
+                </div>
+              </Card>
+
+              <Card className="col-span-1 p-3 flex flex-col justify-between h-24 bg-card/50 border-white/5">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-bold uppercase tracking-wider">Teams</span>
+                  <UsersIcon className="h-4 w-4 opacity-50" />
+                </div>
+                <div className="text-3xl font-bold mt-1 tracking-tight text-foreground"> {/* Larger number for emphasis */}
+                  {selectedTournament.totalTeams === -1 ? "∞" : selectedTournament.totalTeams}
+                </div>
+              </Card>
+
+              <Card className="col-span-2 p-4 flex flex-row items-center justify-between h-20 bg-card/50 border-white/5"> {/* Compact Horizontal Card */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Prize Pool</span>
+                  <div className="text-2xl font-black text-blue-500">{selectedTournament.prizeReward || 'TBD'}</div>
+                </div>
+                <Trophy className="h-8 w-8 text-blue-500/20" />
+              </Card>
+
               {selectedTournament.platform && (
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Platform</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm font-semibold">{selectedTournament.platform}</div>
-                  </CardContent>
+                <Card className="col-span-1 p-3 h-20 flex flex-col justify-center bg-card/50 border-white/5">
+                  <span className="text-xs text-zinc-400 font-bold uppercase mb-1">Platform</span>
+                  <div className="text-base font-semibold truncate text-foreground">{selectedTournament.platform}</div>
                 </Card>
               )}
+
               {selectedTournament.region && (
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Region</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm font-semibold">{selectedTournament.region}</div>
-                  </CardContent>
+                <Card className="col-span-1 p-3 h-20 flex flex-col justify-center bg-card/50 border-white/5">
+                  <span className="text-xs text-zinc-400 font-bold uppercase mb-1">Region</span>
+                  <div className="text-base font-semibold truncate text-foreground">{selectedTournament.region}</div>
                 </Card>
               )}
             </div>
@@ -681,7 +676,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             )}
           </TabsContent>
 
-          <TabsContent value="bracket">
+          <TabsContent value="bracket" className="w-full px-4 sm:px-6 py-4">
             {selectedTournamentMatches.length > 0 ? (
               <BracketView
                 matches={selectedTournamentMatches}
@@ -730,7 +725,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           </TabsContent>
 
 
-          <TabsContent value="match-chat" className="space-y-4">
+          <TabsContent value="match-chat" className="space-y-4 w-full px-4 sm:px-6 pb-4">
             {selectedTournamentMatches.length > 0 ? (
               showMatchChat && selectedMatch ? (
                 // Full match chat view with back button
@@ -855,7 +850,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
                           Permanently remove a player from the tournament. They will be excluded from future match generations.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="grid grid-cols-2 gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4 py-4 w-full px-4 sm:px-6">
                         <Button
                           variant="outline"
                           className="h-auto py-4 flex flex-col gap-2"
@@ -960,7 +955,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             )}
           </TabsContent>
 
-          <TabsContent value="standings">
+          <TabsContent value="standings" className="w-full px-4 sm:px-6 py-4">
             {selectedTournamentTeams.length > 0 ? (
               <StandingsTable
                 teams={selectedTournamentTeams}
@@ -976,7 +971,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           </TabsContent>
 
 
-          <TabsContent value="registrations">
+          <TabsContent value="registrations" className="w-full px-4 sm:px-6 py-4">
             {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') ? (
               registrations.length > 0 ? (
                 <div className="space-y-4">
@@ -1087,7 +1082,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             )}
           </TabsContent>
 
-          <TabsContent value="participants">
+          <TabsContent value="participants" className="w-full px-4 sm:px-6 py-4">
             {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') ? (
               registrations.filter(r => r.status === 'approved').length > 0 ? (
                 <div className="space-y-4">
@@ -1299,7 +1294,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             )}
           </TabsContent>
 
-          <TabsContent value="teams">
+          <TabsContent value="teams" className="w-full px-4 sm:px-6 py-4">
             {selectedTournamentTeams.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {selectedTournamentTeams.map((team) => {
@@ -1350,7 +1345,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 w-full px-4 sm:px-6">
               {(() => {
                 // Get approved participants - use registration ID as unique identifier
                 // Find team by matching user ID in team_members, not by team name
@@ -1492,26 +1487,34 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           tournament={selectedTournament}
           onSubmit={(data) => updateTournamentMutation.mutate({ tournamentId: selectedTournamentId!, data })}
         />
+
+        <AwardAchievementDialog
+          open={isAwardAchievementDialogOpen}
+          onOpenChange={setIsAwardAchievementDialogOpen}
+          form={achievementForm}
+          onSubmit={(data) => awardAchievementMutation.mutate(data)}
+          isPending={awardAchievementMutation.isPending}
+        />
       </div >
     );
   }
 
   // Show tournament list view
   return (
-    <div className="space-y-6 h-full overflow-y-auto pb-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 h-full overflow-y-auto pb-8 px-4 sm:px-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Tournament Dashboard</h2>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {canManage && (
             <>
-              <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" data-testid="button-award-achievement">
+              <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" className="w-full md:w-auto" data-testid="button-award-achievement">
                 <Trophy className="h-4 w-4 mr-2" />
                 Award Achievement
               </Button>
-              <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-tournament">
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full md:w-auto" data-testid="button-create-tournament">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Tournament
               </Button>
@@ -1717,7 +1720,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 w-full px-4 sm:px-6">
           <div className="space-y-2">
             <Label htmlFor="edit-name">Tournament Name</Label>
             <Input
@@ -1898,183 +1901,478 @@ function AwardAchievementDialog({
   onSubmit,
   isPending
 }: AwardAchievementDialogProps) {
+  const [awardType, setAwardType] = useState<'individual' | 'team'>('individual');
+  const [teamSearchQuery, setTeamSearchQuery] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
+  const [showTeamSuggestions, setShowTeamSuggestions] = useState(false);
+
+  // Player search state
+  const [playerSearchQuery, setPlayerSearchQuery] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [showPlayerSuggestions, setShowPlayerSuggestions] = useState(false);
+
+  const { toast } = useToast();
+
+  // Player search query
+  const { data: playerSuggestions = [], isLoading: isSearchingPlayers } = useQuery<any[]>({
+    queryKey: ['/api/users/search', playerSearchQuery],
+    queryFn: async () => {
+      if (playerSearchQuery.length < 2) return [];
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(playerSearchQuery)}`);
+      return res.json();
+    },
+    enabled: playerSearchQuery.length >= 2 && awardType === 'individual',
+  });
+
+  // Team search query
+  const { data: teamSuggestions = [], isLoading: isSearchingTeams } = useQuery<any[]>({
+    queryKey: ['/api/teams/search', teamSearchQuery],
+    queryFn: async () => {
+      if (teamSearchQuery.length < 2) return [];
+      const res = await fetch(`/api/teams/search?q=${encodeURIComponent(teamSearchQuery)}`);
+      return res.json();
+    },
+    enabled: teamSearchQuery.length >= 2 && awardType === 'team',
+  });
+
+  // Team award mutation
+  const awardTeamMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/achievements/team', data);
+      return res;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Achievement Awarded",
+        description: `Team achievement awarded to ${selectedTeam?.name}`,
+      });
+      setSelectedTeam(null);
+      setTeamSearchQuery('');
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to award achievement",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleTeamSubmit = () => {
+    if (!selectedTeam) {
+      toast({ title: "Please select a team", variant: "destructive" });
+      return;
+    }
+
+    const achievementId = form.getValues('achievementId');
+    const selectedAchievement = predefinedAchievements.find(a => a.id === achievementId);
+    const customTitle = form.getValues('customTitle');
+
+    awardTeamMutation.mutate({
+      teamId: selectedTeam.id,
+      title: selectedAchievement?.isEditable ? customTitle : selectedAchievement?.title,
+      description: form.getValues('description'),
+      category: achievementId,
+      game: form.getValues('game'),
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Award Achievement</DialogTitle>
           <DialogDescription>
-            Recognize a player for their outstanding performance
+            Recognize outstanding performance
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Player ID */}
-            <FormField
-              control={form.control}
-              name="playerId"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Player ID/Username</FormLabelComponent>
-                  <FormControl>
+        <div className="w-full px-4 sm:px-6 pb-4">
+          {/* Individual/Team Toggle */}
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant={awardType === 'individual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setAwardType('individual');
+                setSelectedTeam(null);
+                setTeamSearchQuery('');
+              }}
+              className="flex-1"
+            >
+              Individual Player
+            </Button>
+            <Button
+              type="button"
+              variant={awardType === 'team' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAwardType('team')}
+              className="flex-1"
+            >
+              Team
+            </Button>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={awardType === 'individual' ? form.handleSubmit(onSubmit) : (e) => { e.preventDefault(); handleTeamSubmit(); }} className="space-y-4">
+
+              {awardType === 'individual' ? (
+                /* Individual Player Search and Selection */
+                <div className="space-y-3">
+                  <Label>Search Player</Label>
+                  <div className="relative">
                     <Input
-                      placeholder="Enter player's ID or username"
-                      {...field}
-                      data-testid="input-achievement-player-id"
+                      placeholder="Search by username or display name"
+                      value={playerSearchQuery}
+                      onChange={(e) => {
+                        setPlayerSearchQuery(e.target.value);
+                        setShowPlayerSuggestions(true);
+                        if (e.target.value.length < 2) setSelectedPlayer(null);
+                      }}
+                      onFocus={() => setShowPlayerSuggestions(true)}
+                      data-testid="input-player-search"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            {/* Achievement Selection */}
-            <FormField
-              control={form.control}
-              name="achievementId"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Achievement</FormLabelComponent>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-achievement">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {predefinedAchievements.map(({ id, icon: IconComponent, color, title }) => {
-                        return (
-                          <SelectItem key={id} value={id}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className={`w-4 h-4 ${color}`} />
-                              <span>{title}</span>
+                    {/* Player Suggestions Dropdown */}
+                    {showPlayerSuggestions && playerSearchQuery.length >= 2 && (
+                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-56 overflow-y-auto">
+                        {isSearchingPlayers ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">Searching...</div>
+                        ) : playerSuggestions.length === 0 ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">No players found</div>
+                        ) : (
+                          playerSuggestions.map((player: any) => (
+                            <div
+                              key={player.id}
+                              className="p-3 hover:bg-accent cursor-pointer flex items-center gap-3 border-b border-border last:border-b-0"
+                              onClick={() => {
+                                setSelectedPlayer(player);
+                                setPlayerSearchQuery(player.username);
+                                setShowPlayerSuggestions(false);
+                                form.setValue('playerId', player.username);
+                              }}
+                            >
+                              {/* Player Avatar */}
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {player.avatarUrl ? (
+                                  <img src={player.avatarUrl} alt={player.username} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-lg font-bold">{player.username?.charAt(0)?.toUpperCase()}</span>
+                                )}
+                              </div>
+
+                              {/* Player Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold truncate">@{player.username}</div>
+                                {player.displayName && (
+                                  <div className="text-xs text-muted-foreground truncate">{player.displayName}</div>
+                                )}
+                              </div>
                             </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-            {/* Custom Title for Editable Achievements */}
-            {(() => {
-              const selectedAchievement = predefinedAchievements.find(
-                a => a.id === form.watch("achievementId")
-              );
-              return selectedAchievement?.isEditable ? (
+                  {/* Selected Player Card (Visual Verification) */}
+                  {selectedPlayer && (
+                    <Card className="p-3 bg-accent/50 border-primary/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center overflow-hidden flex-shrink-0 border">
+                          {selectedPlayer.avatarUrl ? (
+                            <img src={selectedPlayer.avatarUrl} alt={selectedPlayer.username} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xl font-bold">{selectedPlayer.username?.charAt(0)?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-bold">@{selectedPlayer.username}</div>
+                          {selectedPlayer.displayName && (
+                            <div className="text-sm text-muted-foreground">{selectedPlayer.displayName}</div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              ) : (
+                /* Team Search and Selection */
+                <div className="space-y-3">
+                  <Label>Search Team</Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Search by team name or Profile ID (e.g., #WOLV-01)"
+                      value={teamSearchQuery}
+                      onChange={(e) => {
+                        setTeamSearchQuery(e.target.value);
+                        setShowTeamSuggestions(true);
+                        if (e.target.value.length < 2) setSelectedTeam(null);
+                      }}
+                      onFocus={() => setShowTeamSuggestions(true)}
+                      data-testid="input-team-search"
+                    />
+
+                    {/* Team Suggestions Dropdown */}
+                    {showTeamSuggestions && teamSearchQuery.length >= 2 && (
+                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-56 overflow-y-auto">
+                        {isSearchingTeams ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">Searching...</div>
+                        ) : teamSuggestions.length === 0 ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">No teams found</div>
+                        ) : (
+                          teamSuggestions.map((team: any) => (
+                            <div
+                              key={team.id}
+                              className="p-3 hover:bg-accent cursor-pointer flex items-center gap-3 border-b border-border last:border-b-0"
+                              onClick={() => {
+                                setSelectedTeam(team);
+                                setTeamSearchQuery(team.name);
+                                setShowTeamSuggestions(false);
+                              }}
+                            >
+                              {/* Team Logo */}
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {team.logoUrl ? (
+                                  <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-lg font-bold">{team.name.charAt(0)}</span>
+                                )}
+                              </div>
+
+                              {/* Team Name and Profile ID */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold truncate">{team.name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{team.profileId || 'No ID'}</div>
+                              </div>
+
+                              {/* Captain Info */}
+                              {team.captain && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <div className="w-6 h-6 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                                    {team.captain.avatarUrl ? (
+                                      <img src={team.captain.avatarUrl} alt={team.captain.username} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span className="flex items-center justify-center w-full h-full text-[10px]">{team.captain.username?.charAt(0)}</span>
+                                    )}
+                                  </div>
+                                  <span className="truncate max-w-[80px]">@{team.captain.username}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selected Team Card (Visual Verification) */}
+                  {selectedTeam && (
+                    <Card className="p-4 bg-accent/50 border-primary/30">
+                      <div className="flex items-center gap-4">
+                        {/* Team Logo */}
+                        <div className="w-14 h-14 rounded-lg bg-background flex items-center justify-center overflow-hidden flex-shrink-0 border">
+                          {selectedTeam.logoUrl ? (
+                            <img src={selectedTeam.logoUrl} alt={selectedTeam.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-2xl font-bold">{selectedTeam.name.charAt(0)}</span>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-lg">{selectedTeam.name}</h4>
+                            <Badge variant="secondary" className="font-mono text-xs">{selectedTeam.profileId || 'No ID'}</Badge>
+                          </div>
+                          {selectedTeam.captain && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <span>Captain:</span>
+                              <div className="w-5 h-5 rounded-full bg-muted overflow-hidden">
+                                {selectedTeam.captain.avatarUrl ? (
+                                  <img src={selectedTeam.captain.avatarUrl} alt={selectedTeam.captain.username} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="flex items-center justify-center w-full h-full text-[10px]">{selectedTeam.captain.username?.charAt(0)}</span>
+                                )}
+                              </div>
+                              <span className="font-medium">@{selectedTeam.captain.username}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTeam(null);
+                            setTeamSearchQuery('');
+                          }}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Achievement Selection */}
+              <FormField
+                control={form.control}
+                name="achievementId"
+                render={({ field }: any) => (
+                  <FormItem>
+                    <FormLabelComponent>Achievement</FormLabelComponent>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-achievement">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {predefinedAchievements.map(({ id, icon: IconComponent, color, title }) => {
+                          return (
+                            <SelectItem key={id} value={id}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className={`w-4 h-4 ${color}`} />
+                                <span>{title || id.replace(/-/g, ' ')}</span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Custom Title for Editable Achievements */}
+              {(() => {
+                const selectedAchievement = predefinedAchievements.find(
+                  a => a.id === form.watch("achievementId")
+                );
+                return selectedAchievement?.isEditable ? (
+                  <FormField
+                    control={form.control}
+                    name="customTitle"
+                    render={({ field }: any) => (
+                      <FormItem>
+                        <FormLabelComponent>Achievement Title</FormLabelComponent>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Top Scorer, Best Defender, Rising Star, or any custom name"
+                            {...field}
+                            data-testid="input-custom-achievement-title"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter a custom title for this achievement
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : null;
+              })()}
+
+              {/* Description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }: any) => (
+                  <FormItem>
+                    <FormLabelComponent>Description (Optional)</FormLabelComponent>
+                    <FormControl>
+                      <Input
+                        placeholder="Why they earned this achievement"
+                        {...field}
+                        data-testid="input-achievement-description"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Reward - Only for individual */}
+              {awardType === 'individual' && (
                 <FormField
                   control={form.control}
-                  name="customTitle"
+                  name="reward"
                   render={({ field }: any) => (
                     <FormItem>
-                      <FormLabelComponent>Achievement Title</FormLabelComponent>
+                      <FormLabelComponent>Reward</FormLabelComponent>
                       <FormControl>
                         <Input
-                          placeholder="e.g., Top Scorer, Best Defender, Rising Star, or any custom name"
+                          placeholder="e.g., $500 Prize Pool, Trophy, In-game rewards"
                           {...field}
-                          data-testid="input-custom-achievement-title"
+                          data-testid="input-achievement-reward"
                         />
                       </FormControl>
-                      <FormDescription>
-                        Enter a custom title for this achievement
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              ) : null;
-            })()}
-
-            {/* Description */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Description (Optional)</FormLabelComponent>
-                  <FormControl>
-                    <Input
-                      placeholder="Why they earned this achievement"
-                      {...field}
-                      data-testid="input-achievement-description"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
               )}
-            />
 
-            {/* Reward */}
-            <FormField
-              control={form.control}
-              name="reward"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Reward</FormLabelComponent>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., $500 Prize Pool, Trophy, In-game rewards"
-                      {...field}
-                      data-testid="input-achievement-reward"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              {/* Game */}
+              <FormField
+                control={form.control}
+                name="game"
+                render={({ field }: any) => (
+                  <FormItem>
+                    <FormLabelComponent>Game</FormLabelComponent>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Valorant, Counter-Strike 2, League of Legends"
+                        {...field}
+                        data-testid="input-achievement-game"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Region - Only for individual */}
+              {awardType === 'individual' && (
+                <FormField
+                  control={form.control}
+                  name="region"
+                  render={({ field }: any) => (
+                    <FormItem>
+                      <FormLabelComponent>Region</FormLabelComponent>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., NA, EU, APAC, Global"
+                          {...field}
+                          data-testid="input-achievement-region"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
 
-            {/* Game */}
-            <FormField
-              control={form.control}
-              name="game"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Game</FormLabelComponent>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., Valorant, Counter-Strike 2, League of Legends"
-                      {...field}
-                      data-testid="input-achievement-game"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Region */}
-            <FormField
-              control={form.control}
-              name="region"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Region</FormLabelComponent>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., NA, EU, APAC, Global"
-                      {...field}
-                      data-testid="input-achievement-region"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending} data-testid="button-submit-achievement">
-                {isPending ? "Awarding..." : "Award Achievement"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending || (awardType === 'team' && (awardTeamMutation.isPending || !selectedTeam))}
+                  data-testid="button-submit-achievement"
+                >
+                  {(isPending || awardTeamMutation.isPending) ? "Awarding..." : "Award Achievement"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

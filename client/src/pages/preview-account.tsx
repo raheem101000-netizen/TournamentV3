@@ -6,7 +6,7 @@ import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2, Search, Loader2 } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2, Search, Loader2, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -32,6 +32,7 @@ const mockUser = {
   friendCount: 247,
   level: 42,
   displayName: "Pro Gamer",
+  profileId: undefined as string | undefined,
 };
 
 import type { TeamProfile } from "@shared/schema";
@@ -69,6 +70,7 @@ export default function PreviewAccount() {
     level: authUser.level || 1,
     friendCount: mockUser.friendCount, // Not in schema, use mock
     displayName: authUser.displayName || authUser.username,
+    profileId: authUser.profileId || undefined,
   } : mockUser;
 
   // Check if viewing own profile or another user's profile
@@ -330,6 +332,27 @@ export default function PreviewAccount() {
                     <div className="space-y-2 w-full">
                       <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
                       <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
+
+                      {/* Profile ID */}
+                      {currentUser.profileId && (
+                        <div className="flex items-center justify-center gap-2">
+                          <Badge variant="outline" className="font-mono text-sm px-3 py-1 bg-primary/10">
+                            {currentUser.profileId}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(currentUser.profileId!);
+                              toast({ title: "Copied!", description: "Profile ID copied to clipboard" });
+                            }}
+                            data-testid="button-copy-user-profile-id"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-center gap-2 text-muted-foreground">
                         <Users className="w-4 h-4" />
@@ -694,6 +717,29 @@ export default function PreviewAccount() {
                     )}
                     {selectedTeam.tag && (
                       <Badge variant="secondary" className="mt-1">[{selectedTeam.tag}]</Badge>
+                    )}
+                    {/* Auto-generated Profile ID */}
+                    {selectedTeam.profileId && (
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <Badge variant="outline" className="font-mono text-sm px-3 py-1 bg-primary/10">
+                          {selectedTeam.profileId}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedTeam.profileId!);
+                            toast({ title: "Copied!", description: "Profile ID copied to clipboard" });
+                          }}
+                          data-testid="button-copy-profile-id"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {!selectedTeam.profileId && (
+                      <p className="text-xs text-muted-foreground mt-2">No Profile ID assigned yet</p>
                     )}
                   </div>
                 </div>

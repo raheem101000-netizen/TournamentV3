@@ -1,4 +1,5 @@
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import Particles from "@/components/ui/particles";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -956,15 +957,16 @@ export default function PreviewServerDetail() {
             </div>
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex gap-4">
-                {serverTournaments.map((tournament) => (
+                {serverTournaments.map((tournament, index) => (
                   <div key={tournament.id} className="flex-[0_0_100%] min-w-0">
                     <Card className="overflow-hidden" data-testid={`tournament-card-${tournament.id}`}>
                       {tournament.imageUrl ? (
                         <div className="relative h-32 overflow-hidden">
-                          <img
+                          <OptimizedImage
                             src={tournament.imageUrl}
                             alt={tournament.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full"
+                            priority={index === 0}
                           />
                         </div>
                       ) : (

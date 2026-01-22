@@ -33,7 +33,8 @@ function getThumbnailUrl(src: string, size: "sm" | "md" | "lg"): string {
   }
 
   // Handle external URLs (Vercel Blob, etc) using wsrv.nl for on-the-fly optimization
-  if (src.startsWith("http")) {
+  // Skip optimization for localhost, private IPs, or if explicitly disabled
+  if (src.startsWith("http") && !src.includes("localhost") && !src.includes("127.0.0.1") && !src.includes("192.168.")) {
     try {
       const url = new URL("https://wsrv.nl/");
       url.searchParams.set("url", src);

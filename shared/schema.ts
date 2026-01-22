@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export const tournaments = pgTable("tournaments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: text("tournament_id").unique(),
   serverId: varchar("server_id"),
   name: text("name").notNull(),
   game: text("game"),
@@ -458,6 +459,7 @@ export type PosterTemplateTag = typeof posterTemplateTags.$inferSelect;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: text("profile_id").unique(),
   username: text("username").notNull(),
   email: text("email"),
   fullName: text("full_name"),
@@ -487,7 +489,9 @@ export const users = pgTable("users", {
 
 export const achievements = pgTable("achievements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id"), // Nullable for team achievements
+  teamProfileId: varchar("team_profile_id"), // Link to Team Profile
+  teamId: varchar("team_id"), // Link to Tournament Team (registration)
   serverId: varchar("server_id"),
   title: text("title").notNull(),
   description: text("description"),
@@ -499,11 +503,13 @@ export const achievements = pgTable("achievements", {
   category: text("category"),
   type: text("type", { enum: ["solo", "team"] }).notNull(),
   awardedBy: varchar("awarded_by"),
+  awardedViaTeam: integer("awarded_via_team").default(0), // Boolean 0/1 to track source
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const teamProfiles = pgTable("team_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: text("profile_id").unique(),
   name: text("name").notNull(),
   tag: text("tag"),
   bio: text("bio"),
@@ -613,6 +619,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertAchievementSchema = createInsertSchema(achievements).omit({
   id: true,
   achievedAt: true,
+  createdAt: true,
+}).extend({
+  awardedViaTeam: z.number().optional(),
 });
 
 export const insertTeamProfileSchema = createInsertSchema(teamProfiles).omit({

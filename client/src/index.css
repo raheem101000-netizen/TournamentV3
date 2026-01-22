@@ -230,17 +230,28 @@ body {
     display: none;
   }
 
-  /* Glassmorphism Utilities */
+  /* Glassmorphism Utilities - Shiny & Polished (Optimized) */
   .glass {
-    @apply bg-background/60 backdrop-blur-md border border-white/10 shadow-lg;
+    @apply bg-gradient-to-br from-background/90 to-background/70 backdrop-blur-lg border border-white/10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
 
   .glass-heavy {
-    @apply bg-background/80 backdrop-blur-xl border border-white/10 shadow-xl;
+    @apply bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-xl border border-white/10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
 
   .glass-card {
-    @apply bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-card/70 transition-all duration-300;
+    @apply bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-md border border-white/10 duration-300;
+    transition-property: transform, box-shadow, border-color, opacity;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-card:hover {
+    @apply border-white/20;
+    /* Avoid transitioning gradients as it triggers expensive repaints. 
+       Instead, we can use a simpler effect or just accept the snap if needed, 
+       but for performance, we limit what we animate. */
   }
 
   /* Animations */

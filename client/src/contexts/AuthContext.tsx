@@ -14,6 +14,7 @@ interface User {
   language: string | null;
   isAdmin: number | null;
   role: string | null;
+  profileId: string | null;
 }
 
 interface AuthContextType {

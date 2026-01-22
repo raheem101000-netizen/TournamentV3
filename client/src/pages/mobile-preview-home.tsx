@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function MobilePreviewHome() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -33,6 +35,12 @@ export default function MobilePreviewHome() {
 
   const { data: servers } = useQuery<Server[]>({
     queryKey: ["/api/mobile-preview/servers"],
+  });
+
+  const { user } = useAuth();
+  const { data: savedTournaments } = useQuery<(Tournament & { savedAt: string })[]>({
+    queryKey: ['/api/users/me/saved-tournaments'],
+    enabled: !!user,
   });
 
   const uniqueGames = useMemo(() => {
@@ -56,11 +64,12 @@ export default function MobilePreviewHome() {
       if (!matchesSearch) return false;
 
       // 4. Game Filter Check
+
       if (gameFilter !== "all" && t.game !== gameFilter) return false;
 
       return true;
     });
-  }, [tournaments, searchQuery, gameFilter]);
+  }, [tournaments, searchQuery, gameFilter, savedTournaments]);
 
   const isServerVerified = (serverId: string | null | undefined) => {
     if (!serverId || !servers) return false;
@@ -70,6 +79,31 @@ export default function MobilePreviewHome() {
 
   const handleJoinTournament = (tournamentId: string) => {
     setLocation(`/tournament/${tournamentId}/register`);
+  };
+
+  const handleToggleSave = async (e: React.MouseEvent, tournamentId: string) => {
+    e.stopPropagation();
+    if (!user) {
+      toast({ title: "Login required", description: "Please login to save tournaments", variant: "destructive" });
+      return;
+    }
+
+    const isSaved = savedTournaments?.some(st => st.id === tournamentId);
+
+    try {
+      if (isSaved) {
+        await apiRequest('DELETE', `/api/tournaments/${tournamentId}/save`);
+        toast({ title: "Tournament removed", description: "Removed from saved tournaments" });
+      } else {
+        await apiRequest('POST', `/api/tournaments/${tournamentId}/save`);
+        toast({ title: "Tournament saved", description: "Added to saved tournaments" });
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/mobile-preview/servers`] }); // also updates home potentially? No, separate.
+      queryClient.invalidateQueries({ queryKey: [`/api/users/me/saved-tournaments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/saved`] });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update saved status", variant: "destructive" });
+    }
   };
 
   // Moved loading state handling inside the render to show layout frame immediately
@@ -106,6 +140,7 @@ export default function MobilePreviewHome() {
             >
               All Games
             </Button>
+
             {uniqueGames.map((game) => (
               <Button
                 key={game}
@@ -119,6 +154,8 @@ export default function MobilePreviewHome() {
             ))}
           </div>
         </div>
+
+
 
         {/* Section Header */}
         <div>
@@ -170,6 +207,20 @@ export default function MobilePreviewHome() {
                       </Badge>
                     </div>
                   )}
+
+                  {/* Star Button */}
+                  <div className="absolute top-2 right-2 z-20">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white border border-white/10"
+                      onClick={(e) => handleToggleSave(e, tournament.id)}
+                    >
+                      <Star
+                        className={`h-4 w-4 ${savedTournaments?.some(st => st.id === tournament.id) ? "fill-yellow-400 text-yellow-400" : "text-white"}`}
+                      />
+                    </Button>
+                  </div>
 
                   <OptimizedImage
                     src={tournament.imageUrl}

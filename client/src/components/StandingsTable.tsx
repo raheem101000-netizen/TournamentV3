@@ -141,69 +141,139 @@ export default function StandingsTable({ teams, isEditable = false }: StandingsT
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[60px]">Rank</TableHead>
-            <TableHead>Player</TableHead>
-            <TableHead className="text-center">Wins</TableHead>
-            <TableHead className="text-center">Losses</TableHead>
-            <TableHead className="text-center">Points</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedTeams.map((team, index) => (
-            <TableRow key={team.id} data-testid={`row-team-${team.id}`}>
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  {getRankIcon(index + 1)}
-                  <span>{index + 1}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    {getTeamAvatar(team) && (
-                      <AvatarImage src={getTeamAvatar(team)!} alt={getTeamDisplayName(team)} />
-                    )}
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {getTeamInitials(team)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-display font-medium" data-testid={`text-team-name-${team.id}`}>
-                    {getTeamDisplayName(team)}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center font-semibold text-chart-2">
-                <EditableCell
-                  value={team.wins || 0}
-                  teamId={team.id}
-                  field="wins"
-                  isEditable={isEditable}
-                />
-              </TableCell>
-              <TableCell className="text-center font-semibold text-destructive">
-                <EditableCell
-                  value={team.losses || 0}
-                  teamId={team.id}
-                  field="losses"
-                  isEditable={isEditable}
-                />
-              </TableCell>
-              <TableCell className="text-center font-bold text-lg">
-                <EditableCell
-                  value={team.points || 0}
-                  teamId={team.id}
-                  field="points"
-                  isEditable={isEditable}
-                />
-              </TableCell>
+    <>
+      {/* Desktop View - Table */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[60px]">Rank</TableHead>
+              <TableHead>Player</TableHead>
+              <TableHead className="text-center">Wins</TableHead>
+              <TableHead className="text-center">Losses</TableHead>
+              <TableHead className="text-center">Points</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {sortedTeams.map((team, index) => (
+              <TableRow key={team.id} data-testid={`row-team-${team.id}`}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {getRankIcon(index + 1)}
+                    <span>{index + 1}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      {getTeamAvatar(team) && (
+                        <AvatarImage src={getTeamAvatar(team)!} alt={getTeamDisplayName(team)} />
+                      )}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {getTeamInitials(team)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-display font-medium" data-testid={`text-team-name-${team.id}`}>
+                      {getTeamDisplayName(team)}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center font-semibold text-chart-2">
+                  <EditableCell
+                    value={team.wins || 0}
+                    teamId={team.id}
+                    field="wins"
+                    isEditable={isEditable}
+                  />
+                </TableCell>
+                <TableCell className="text-center font-semibold text-destructive">
+                  <EditableCell
+                    value={team.losses || 0}
+                    teamId={team.id}
+                    field="losses"
+                    isEditable={isEditable}
+                  />
+                </TableCell>
+                <TableCell className="text-center font-bold text-lg">
+                  <EditableCell
+                    value={team.points || 0}
+                    teamId={team.id}
+                    field="points"
+                    isEditable={isEditable}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile View - Cards */}
+      <div className="md:hidden space-y-3">
+        {sortedTeams.map((team, index) => (
+          <div
+            key={team.id}
+            className="flex items-center p-4 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors"
+            data-testid={`card-team-${team.id}`}
+          >
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex-shrink-0 flex items-center justify-center w-8 text-muted-foreground font-bold">
+                {getRankIcon(index + 1) || `#${index + 1}`}
+              </div>
+
+              <Avatar className="h-10 w-10 flex-shrink-0">
+                {getTeamAvatar(team) && (
+                  <AvatarImage src={getTeamAvatar(team)!} alt={getTeamDisplayName(team)} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  {getTeamInitials(team)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-semibold truncate text-base">
+                  {getTeamDisplayName(team)}
+                </div>
+                <div className="flex items-center gap-3 text-sm mt-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">W:</span>
+                    <span className="font-semibold text-green-500">
+                      <EditableCell
+                        value={team.wins || 0}
+                        teamId={team.id}
+                        field="wins"
+                        isEditable={isEditable}
+                      />
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">L:</span>
+                    <span className="font-semibold text-red-500">
+                      <EditableCell
+                        value={team.losses || 0}
+                        teamId={team.id}
+                        field="losses"
+                        isEditable={isEditable}
+                      />
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <span className="text-muted-foreground font-medium">Pts:</span>
+                    <span className="font-bold text-foreground">
+                      <EditableCell
+                        value={team.points || 0}
+                        teamId={team.id}
+                        field="points"
+                        isEditable={isEditable}
+                      />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

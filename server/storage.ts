@@ -310,6 +310,7 @@ export interface IStorage {
   // Saved tournament operations
   saveTournament(userId: string, tournamentId: string): Promise<SavedTournament>;
   unsaveTournament(userId: string, tournamentId: string): Promise<void>;
+  clearSavedTournaments(userId: string): Promise<void>;
   getSavedTournamentsByUser(userId: string): Promise<SavedTournament[]>;
   isTournamentSavedByUser(userId: string, tournamentId: string): Promise<boolean>;
 
@@ -1731,6 +1732,12 @@ export class DatabaseStorage implements IStorage {
         eq(savedTournaments.userId, userId),
         eq(savedTournaments.tournamentId, tournamentId)
       )
+    );
+  }
+
+  async clearSavedTournaments(userId: string): Promise<void> {
+    await db.delete(savedTournaments).where(
+      eq(savedTournaments.userId, userId)
     );
   }
 

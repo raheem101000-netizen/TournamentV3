@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface TournamentCardProps {
   tournament: Tournament & {
@@ -86,10 +87,10 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
     : 0;
 
   return (
-    <Card className="hover-elevate min-h-[280px] flex flex-col group relative">
+    <Card variant="glass" className="hover-elevate min-h-[320px] flex flex-col group relative overflow-hidden">
       {/* Save Button */}
       {user && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 right-2 z-20">
           <Button
             variant="ghost"
             size="icon"
@@ -112,63 +113,58 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
         </div>
       )}
 
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-        <div className="flex-1 min-w-0 pr-8"> {/* Added padding for save button */}
-          <h3 className="font-display font-semibold text-lg truncate" data-testid={`text-tournament-name-${tournament.id}`}>
-            {tournament.name}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Badge moved to prevent overlap or visual clutter, or kept if it fits */}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 pb-4 flex-1">
-        <div className="flex items-center gap-2 text-sm justify-between">
-          <Badge className={statusColors[tournament.status]} data-testid={`badge-status-${tournament.id}`}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {tournament.status.replace('_', ' ')}
-          </Badge>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span>{tournament.totalTeams === -1 ? "Unlimited" : tournament.totalTeams} teams</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Badge variant="outline" className="font-medium" data-testid={`badge-format-${tournament.id}`}>
-            {formatLabels[tournament.format]}
-          </Badge>
-        </div>
-
-
-        {tournament.totalMatches && tournament.totalMatches > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium">{completionPercentage}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{tournament.completedMatches || 0} completed</span>
-              <span>{tournament.totalMatches} total matches</span>
-            </div>
+      {/* Hero Image Section */}
+      <div className="h-32 w-full relative bg-muted shrink-0">
+        {tournament.imageUrl ? (
+          <OptimizedImage
+            src={tournament.imageUrl}
+            alt={tournament.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted/50">
+            <Trophy className="h-10 w-10 text-muted-foreground/20" />
           </div>
         )}
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/60 to-transparent" />
+      </div>
 
-        {tournament.format === "swiss" && tournament.swissRounds && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span>{tournament.swissRounds} rounds</span>
+      <CardContent className="space-y-3 p-4 flex-1 relative -mt-6">
+        {/* Header Row */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h3 className="font-display font-semibold text-lg truncate pr-8" data-testid={`text-tournament-name-${tournament.id}`}>
+              {tournament.name}
+            </h3>
+            <div className="flex items-center gap-2">
+              <Badge variant={tournament.status === 'upcoming' ? 'secondary' : 'default'} className="text-xs uppercase tracking-wider h-5">
+                {tournament.status.replace('_', ' ')}
+              </Badge>
+              <Badge variant="outline" className="text-xs text-muted-foreground h-5 border-white/10">
+                {formatLabels[tournament.format] === "Swiss System" ? "Swiss" : "Elimination"} {/* Shortened label */}
+              </Badge>
+            </div>
           </div>
-        )}
+          {/* Join/View Button could go here similar to reference, but keeping bottom for accessibility for now as per previous feedback? 
+                Actually reference has 'Join' button here. 
+                I will stick to 'View Tournament' at bottom as it is existing interaction pattern, but style matches reference content layout.
+             */}
+        </div>
+
+        {/* Metadata Grid similar to reference */}
+        <div className="space-y-1 pt-1">
+          <p className="text-sm font-medium text-foreground">{tournament.game || "Unspecified Game"}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">• {tournament.platform || "Platform TBA"}</span>
+            <span className="flex items-center gap-1">• {tournament.region || "Region TBA"}</span>
+          </div>
+          <p className="text-xs text-muted-foreground pt-1">Entry Fee: <span className="text-foreground font-medium">{tournament.entryFee || "Free"}</span></p>
+        </div>
+
       </CardContent>
-      <CardFooter className="pt-0">
+      <CardFooter className="p-4 pt-0">
         <Button
-          className="w-full"
+          className="w-full h-10 text-sm font-medium"
           onClick={() => onView(tournament.id)}
           data-testid={`button-view-${tournament.id}`}
         >

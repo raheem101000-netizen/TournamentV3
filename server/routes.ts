@@ -1249,6 +1249,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all saved tournaments for current user
+  app.delete("/api/users/me/saved-tournaments", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "You must be logged in" });
+      }
+
+      await storage.clearSavedTournaments(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Check if tournament is saved by current user
   app.get("/api/tournaments/:id/saved", async (req, res) => {
     try {
@@ -3799,6 +3815,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk Team Achievement - creates achievement for team AND distributes to all members
+  app.post("/api/achievements/team", async (req, res) => {
+    try {
+      const { teamProfileId, title, description, iconUrl, reward, game, region, serverId, category, awardedBy } = req.body;
+
+      if (!teamProfileId) {
+        return res.status(400).json({ error: "Team Profile ID is required" });
+      }
+
+      console.log("[TEAM_ACHIEVEMENT] Awarding to team:", teamProfileId);
+
+      // 1. Get the team profile
+      const teamProfile = await storage.getTeamProfile(teamProfileId);
+      if (!teamProfile) {
+        return res.status(404).json({ error: "Team profile not found" });
+      }
+
+      console.log("[TEAM_ACHIEVEMENT] Found team:", teamProfile.name);
+
+      // 2. Get all current team members (the "snapshot")
+      const teamMembers = await storage.getTeamMembersWithUsers(teamProfileId);
+      console.log("[TEAM_ACHIEVEMENT] Team has", teamMembers.length, "members");
+
+      // 3. Create the primary team achievement record
+      const teamAchievementData = {
+        teamProfileId,
+        userId: null, // Team achievement, not individual
+        serverId,
+        title,
+        description: description || `Awarded to team ${teamProfile.name}`,
+        iconUrl,
+        reward,
+        game,
+        region,
+        category,
+        type: "team" as const,
+        awardedBy,
+        awardedViaTeam: 0, // This IS the team achievement itself
+      };
+
+      const teamAchievement = await storage.createAchievement(teamAchievementData);
+      console.log("[TEAM_ACHIEVEMENT] Created team achievement:", teamAchievement.id);
+
+      // 4. Distribute individual copies to each team member
+      const memberAchievements: any[] = [];
+      for (const member of teamMembers) {
+        if (member.userId) {
+          const memberAchievementData = {
+            userId: member.userId,
+            teamProfileId, // Link back to the team
+            serverId,
+            title,
+            description: description ? `${description} (via team ${teamProfile.name})` : `Awarded via team ${teamProfile.name}`,
+            iconUrl,
+            reward,
+            game,
+            region,
+            category,
+            type: "team" as const,
+            awardedBy,
+            awardedViaTeam: 1, // This is a distributed copy
+          };
+
+          const memberAchievement = await storage.createAchievement(memberAchievementData);
+          memberAchievements.push(memberAchievement);
+
+          // Create notification for each member
+          await storage.createNotification({
+            userId: member.userId,
+            senderId: awardedBy || "system",
+            type: "system" as const,
+            title: "Team Achievement Unlocked!",
+            message: `Your team "${teamProfile.name}" earned: ${title}`,
+            actionUrl: `/team/${teamProfileId}`,
+          });
+
+          console.log("[TEAM_ACHIEVEMENT] Distributed to member:", member.userId);
+        }
+      }
+
+      res.status(201).json({
+        teamAchievement,
+        memberAchievements,
+        distributedTo: memberAchievements.length,
+        message: `Team achievement created and distributed to ${memberAchievements.length} members`,
+      });
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      console.error("[TEAM_ACHIEVEMENT] Error:", error.message);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.get("/api/users/:userId/achievements", async (req, res) => {
     try {
       const achievements = await storage.getAchievementsByUser(req.params.userId);
@@ -3820,6 +3929,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Return empty array if no serverId specified - roles are server-specific
         res.json([]);
       }
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Team search endpoint - used by Award Achievement dialog
+  app.get("/api/teams/search", async (req, res) => {
+    try {
+      const query = (req.query.q as string || '').toLowerCase().trim();
+
+      if (query.length < 2) {
+        return res.json([]);
+      }
+
+      console.log("[TEAM_SEARCH] Searching for:", query);
+
+      // Get all users to look up owners later
+      const allUsers = await storage.getAllUsers();
+
+      // We need to get all team profiles - use getAllTeamProfiles or similar
+      // Since there's no direct method, we'll fetch profiles by searching all users' teams
+      const teamProfileResults: any[] = [];
+
+      // Get teams for all users who might be owners
+      for (const user of allUsers.slice(0, 100)) { // Limit to prevent too many queries
+        const userTeams = await storage.getTeamProfilesByOwner(user.id);
+        for (const team of userTeams) {
+          if (
+            team.name.toLowerCase().includes(query) ||
+            (team.profileId && team.profileId.toLowerCase().includes(query))
+          ) {
+            // Find owner info
+            const owner = allUsers.find(u => u.id === team.ownerId);
+            teamProfileResults.push({
+              id: team.id,
+              name: team.name,
+              profileId: team.profileId,
+              logoUrl: team.logoUrl,
+              game: team.game,
+              totalMembers: team.totalMembers,
+              captain: owner ? {
+                userId: owner.id,
+                username: owner.username,
+                displayName: owner.displayName,
+                avatarUrl: owner.avatarUrl,
+              } : null,
+            });
+          }
+        }
+
+        // Stop if we have enough results
+        if (teamProfileResults.length >= 10) break;
+      }
+
+      console.log("[TEAM_SEARCH] Found", teamProfileResults.length, "matches");
+      res.json(teamProfileResults.slice(0, 10));
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });

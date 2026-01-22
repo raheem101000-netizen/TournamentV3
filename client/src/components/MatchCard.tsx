@@ -131,7 +131,7 @@ export default function MatchCard({
 
   return (
     <Card className="hover-elevate overflow-hidden" data-testid={`card-match-${match.id}`}>
-      <CardContent className="p-6 overflow-hidden">
+      <CardContent className="p-4 overflow-hidden">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Badge className={statusColors[match.status]} data-testid={`badge-match-status-${match.id}`}>

@@ -7,7 +7,9 @@ import { Plus, Users, Trophy, Server as ServerIcon, Search, Crown, Shield, Star 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import type { Server, ServerRole } from "@shared/schema";
+import type { Server, ServerRole, Tournament } from "@shared/schema";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -19,7 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import ImageUploadField from "@/components/ImageUploadField";
 import TournamentCard from "@/components/TournamentCard";
 
-type ServerFilter = "all" | "owned" | "member" | "roles" | "saved_tournaments";
+type ServerFilter = "all" | "owned" | "member" | "roles";
 
 interface ServerWithRoles extends Server {
   userRoles?: string[];
@@ -53,10 +55,11 @@ export default function PreviewMyServers() {
   });
 
   // Fetch saved tournaments
-  const { data: savedTournaments } = useQuery<{ tournament: any, savedAt: string }[]>({
+  const { data: savedTournaments } = useQuery<(Tournament & { savedAt: string })[]>({
     queryKey: ['/api/users/me/saved-tournaments'],
     enabled: !!user,
   });
+
 
   const createServerMutation = useMutation({
     mutationFn: async () => {
@@ -110,6 +113,28 @@ export default function PreviewMyServers() {
     }
     createServerMutation.mutate();
   };
+
+  const clearSavedTournamentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', '/api/users/me/saved-tournaments');
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me/saved-tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] }); // to update stars
+      toast({
+        title: "Saved tournaments cleared",
+        description: "All your saved tournaments have been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to clear saved tournaments",
+        variant: "destructive",
+      });
+    }
+  });
 
   const myServers = memberServersData || [];
   const userRoles = userRolesData || [];
@@ -169,68 +194,61 @@ export default function PreviewMyServers() {
                 <Users className="w-3 h-3 mr-1" />
                 Member ({memberServers.length})
               </Badge>
-              <Badge
-                variant={filter === "saved_tournaments" ? "default" : "outline"}
-                className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
-                onClick={() => setFilter("saved_tournaments")}
-                data-testid="filter-saved-tournaments"
-              >
-                <Trophy className="w-3 h-3 mr-1" />
-                Roles ({roleServers.length})
-              </Badge>
-              <Badge
-                variant={filter === "saved_tournaments" ? "default" : "outline"}
-                className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
-                onClick={() => setFilter("saved_tournaments")}
-                data-testid="filter-saved-tournaments"
-              >
-                <Trophy className="w-3 h-3 mr-1" />
-                Saved Tournaments ({savedTournaments?.length || 0})
-              </Badge>
+
+
             </div>
           </div>
         </header>
 
-        <main className="container max-w-lg mx-auto px-4 py-4">
+        <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
+
+          {/* Saved Tournaments Section */}
+          {savedTournaments && savedTournaments.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between border-b-2 border-foreground mb-4 pb-1">
+                <h2 className="text-lg font-bold">
+                  Saved Tournaments
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to remove all saved tournaments?")) {
+                      clearSavedTournamentsMutation.mutate();
+                    }
+                  }}
+                  disabled={clearSavedTournamentsMutation.isPending}
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {savedTournaments.map((tournament) => {
+                  return (
+                    <TournamentCard
+                      key={tournament.id}
+                      tournament={tournament}
+                      onView={(id) => setLocation(`/tournament/${id}/view`)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-muted-foreground">Loading...</p>
             </div>
-          ) : filter === "saved_tournaments" ? (
-            savedTournaments && savedTournaments.length > 0 ? (
-              <div className="grid gap-4">
-                {savedTournaments.map((st: any) => (
-                  <TournamentCard
-                    key={st.tournament.id}
-                    tournament={st.tournament}
-                    onView={(id) => setLocation(`/tournament/${id}/view`)} // Redirect to public tournament view
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Trophy className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">No saved tournaments</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                  Bookmark tournaments from the homepage to see them here!
-                </p>
-                <Link href="/discovery">
-                  <Button data-testid="button-go-to-discovery">
-                    <Search className="w-4 h-4 mr-2" />
-                    Discover Tournaments
-                  </Button>
-                </Link>
-              </div>
-            )
           ) : displayedServers.length > 0 ? (
-            <div className="space-y-3">
-              {displayedServers.map((server) => {
+            <div className="space-y-4">
+              {displayedServers.map((server, i) => {
                 const isOwned = server.ownerId === user?.id;
                 return (
                   <Link key={server.id} href={`/server/${server.id}`}>
                     <Card
+                      variant="glass"
                       className="p-4 hover-elevate cursor-pointer relative"
                       data-testid={isOwned ? `server-owned-${server.id}` : `server-member-${server.id}`}
                     >
@@ -245,6 +263,7 @@ export default function PreviewMyServers() {
                           <AvatarImage
                             src={server.iconUrl || undefined}
                             alt={server.name}
+                            loading={i < 4 ? "eager" : "lazy"}
                           />
                           <AvatarFallback className="text-xl font-semibold">
                             {server.name.charAt(0).toUpperCase()}

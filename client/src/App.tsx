@@ -38,6 +38,7 @@ const AdminPanel = lazy(() => import("@/pages/admin-panel"));
 const Profile = lazy(() => import("@/pages/profile"));
 const ServerPreview = lazy(() => import("@/pages/server-preview"));
 const TournamentPublicView = lazy(() => import("@/pages/tournament-public-view"));
+const TeamProfile = lazy(() => import("@/pages/team-profile"));
 const Particles = lazy(() => import("@/components/ui/particles"));
 
 import { initializeApp } from "../../lib/initializeApp";
@@ -165,6 +166,9 @@ function Router() {
         <Route path="/notifications">
           {() => <ProtectedRoute component={MobilePreviewNotifications} />}
         </Route>
+        <Route path="/team/:id">
+          {() => <TeamProfile />}
+        </Route>
 
         <Route component={NotFound} />
       </Switch>
@@ -203,11 +207,11 @@ function App() {
             <div className="fixed inset-0 z-50 pointer-events-none">
               <Particles
                 particleColors={['#ffffff', '#ffffff', '#ffffff']}
-                particleCount={60}
-                particleSpread={15}
+                particleCount={150}
+                particleSpread={20}
                 speed={0.05}
                 particleBaseSize={100}
-                cameraDistance={20}
+                cameraDistance={15}
                 sizeRandomness={0.3}
                 moveParticlesOnHover={false}
                 alphaParticles={false}

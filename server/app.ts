@@ -17,11 +17,12 @@ export function createApp() {
     app.set('etag', false);
 
     app.use(express.json({
+        limit: '50mb',
         verify: (req, _res, buf) => {
             (req as any).rawBody = buf;
         }
     }));
-    app.use(express.urlencoded({ extended: false }));
+    app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
     const PgSession = connectPg(session);
 
