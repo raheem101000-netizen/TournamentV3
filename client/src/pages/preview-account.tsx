@@ -6,7 +6,7 @@ import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2, Search, Loader2, Copy } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Plus, ArrowRight, Crown, Calendar, Check, X, Pencil, Trash2, Search, Loader2, Copy, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -291,14 +291,27 @@ export default function PreviewAccount() {
             <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
             <div className="flex items-center gap-2">
               {isOwnProfile && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setLocation("/account/settings")}
-                  data-testid="button-settings"
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
+                <>
+                  {/* Admin Panel link - only for admins */}
+                  {(authUser as any)?.isAdmin && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setLocation("/admin")}
+                      data-testid="button-admin-panel"
+                    >
+                      <Shield className="w-5 h-5 text-primary" />
+                    </Button>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setLocation("/account/settings")}
+                    data-testid="button-settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                </>
               )}
               {!isOwnProfile && (
                 <Button
