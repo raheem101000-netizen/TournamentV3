@@ -1265,6 +1265,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get tournaments where current user has approved registrations
+  app.get("/api/users/me/registered-tournaments", async (req, res) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "You must be logged in" });
+      }
+
+      // Get all registrations for this user
+      const allRegistrations = await storage.getRegistrationsByUserId(userId);
+
+      // Filter to only approved registrations
+      const approvedRegistrations = allRegistrations.filter(r => r.status === "approved");
+
+      // Fetch full tournament details
+      const tournamentIds = Array.from(new Set(approvedRegistrations.map(r => r.tournamentId)));
+      const tournaments = await Promise.all(
+        tournamentIds.map(id => storage.getTournament(id))
+      );
+
+      // Filter out deleted tournaments and add registration info
+      const enrichedTournaments = tournaments
+        .filter((t): t is NonNullable<typeof t> => t !== undefined)
+        .map(tournament => {
+          const registration = approvedRegistrations.find(r => r.tournamentId === tournament.id);
+          return {
+            ...tournament,
+            registeredAt: registration?.createdAt,
+            registrationStatus: registration?.status,
+          };
+        });
+
+      res.json(enrichedTournaments);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Check if tournament is saved by current user
   app.get("/api/tournaments/:id/saved", async (req, res) => {
     try {
@@ -5738,10 +5777,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all servers (admin only)
+  // Get all servers (admin only) - with caching
   app.get("/api/admin/servers", requireAdmin, async (req, res) => {
     try {
+      // Check cache first for faster response
+      const cached = cache.get<any[]>(CACHE_KEYS.SERVERS_LIST);
+      if (cached) {
+        return res.json(cached);
+      }
+
       const servers = await storage.getAllServers();
+
+      // Cache for 60 seconds
+      cache.set(CACHE_KEYS.SERVERS_LIST, servers, 60 * 1000);
+
       res.json(servers);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });

@@ -557,6 +557,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(registrations).where(eq(registrations.tournamentId, tournamentId));
   }
 
+  async getRegistrationsByUserId(userId: string): Promise<Registration[]> {
+    return await db.select().from(registrations).where(eq(registrations.userId, userId));
+  }
+
   async updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined> {
     const [registration] = await db
       .update(registrations)

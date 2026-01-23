@@ -1970,7 +1970,7 @@ function AwardAchievementDialog({
     const customTitle = form.getValues('customTitle');
 
     awardTeamMutation.mutate({
-      teamId: selectedTeam.id,
+      teamProfileId: selectedTeam.id, // Send the team's database ID
       title: selectedAchievement?.isEditable ? customTitle : selectedAchievement?.title,
       description: form.getValues('description'),
       category: achievementId,

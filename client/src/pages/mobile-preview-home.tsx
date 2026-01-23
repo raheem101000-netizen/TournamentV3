@@ -55,8 +55,10 @@ export default function MobilePreviewHome() {
       // 1. Visibility Check
       if (t.visibility === "private") return false;
 
-      // 2. Date Check - Hide past tournaments
-      if (t.startDate && new Date(t.startDate) < new Date()) return false;
+      // 2. Date Check - Hide tournaments that have completely ended
+      // Show tournaments that: have no endDate, OR endDate is in the future, OR status is not 'completed'
+      const now = new Date();
+      if (t.endDate && new Date(t.endDate) < now && t.status === 'completed') return false;
 
       // 3. Search Query Check
       const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
