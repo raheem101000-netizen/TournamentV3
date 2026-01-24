@@ -1665,11 +1665,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tournament not found" });
       }
 
-      // Check permissions
+      // Check permissions: Tournament Organizer OR Server Owner OR Admin
       if (tournament.organizerId !== req.session.userId) {
         const user = await storage.getUser(req.session.userId);
         if (!user?.isAdmin) {
-          return res.status(403).json({ error: "Not authorized to update stats" });
+          // Check if user is the owner of the server hosting the tournament
+          if (!tournament.serverId) {
+            return res.status(403).json({ error: "Not authorized to update stats" });
+          }
+          const server = await storage.getServer(tournament.serverId);
+          if (!server || server.ownerId !== req.session.userId) {
+            return res.status(403).json({ error: "Not authorized to update stats" });
+          }
         }
       }
 
@@ -3951,6 +3958,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const achievements = await storage.getAchievementsByUser(req.params.userId);
       res.json(achievements);
+    } catch (error: any) {
+      logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get achievements for a team
+  app.get("/api/team-profiles/:id/achievements", async (req, res) => {
+    try {
+      const achievementsList = await storage.getAchievementsByTeam(req.params.id);
+      res.json(achievementsList);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       res.status(500).json({ error: error.message });

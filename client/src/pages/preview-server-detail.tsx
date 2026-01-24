@@ -204,7 +204,10 @@ export default function PreviewServerDetail() {
         {/* Chat Area */}
         <div className="flex-1 min-h-0">
           {fullScreenChannel?.type === "announcements" ? (
-            <AnnouncementsChannel channelId={fullScreenChannelId} />
+            <AnnouncementsChannel
+              channelId={fullScreenChannelId}
+              canPost={server?.ownerId === currentUserId || (user as any)?.isAdmin}
+            />
           ) : fullScreenChannel?.type === "tournament_dashboard" ? (
             <TournamentDashboardChannel serverId={serverId!} canManage={isOwner || (user as any)?.isAdmin} />
           ) : (
@@ -808,7 +811,7 @@ export default function PreviewServerDetail() {
           {selectedChannel.type === "announcements" && (
             <AnnouncementsChannel
               channelId={selectedChannel.id}
-              canPost={server?.ownerId === currentUserId}
+              canPost={server?.ownerId === currentUserId || (user as any)?.isAdmin}
             />
           )}
           {selectedChannel.type === "chat" && (

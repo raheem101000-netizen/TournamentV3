@@ -242,6 +242,8 @@ export default function ServerSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/servers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
       toast({
         title: "Server updated",
         description: "Server settings have been successfully updated.",

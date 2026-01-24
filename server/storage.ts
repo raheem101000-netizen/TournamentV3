@@ -247,6 +247,7 @@ export interface IStorage {
   // Achievement operations
   createAchievement(data: InsertAchievement): Promise<Achievement>;
   getAchievementsByUser(userId: string): Promise<Achievement[]>;
+  getAchievementsByTeam(teamProfileId: string): Promise<Achievement[]>;
 
   // Team profile operations
   createTeamProfile(data: InsertTeamProfile): Promise<TeamProfile>;
@@ -1407,6 +1408,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(serverRoles.id, member.roleId));
 
     return role ? [role] : [];
+  }
+
+  async getAchievementsByTeam(teamProfileId: string): Promise<Achievement[]> {
+    return await db.select().from(achievements)
+      .where(eq(achievements.teamProfileId, teamProfileId))
+      .orderBy(achievements.achievedAt);
   }
 
   async updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined> {

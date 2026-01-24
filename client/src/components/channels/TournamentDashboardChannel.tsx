@@ -960,6 +960,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
               <StandingsTable
                 teams={selectedTournamentTeams}
                 isEditable={user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin'}
+                tournamentId={selectedTournament.id}
               />
             ) : (
               <Card className="p-8">

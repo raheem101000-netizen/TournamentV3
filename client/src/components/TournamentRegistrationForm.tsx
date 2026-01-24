@@ -191,7 +191,7 @@ export default function TournamentRegistrationForm({
 
           <div className="flex flex-col gap-2 pt-2">
             <Button
-              onClick={() => setLocation(`/tournament/${tournamentId}/view`)}
+              onClick={() => setLocation(serverId ? `/server/${serverId}` : `/tournament/${tournamentId}/view`)}
               className="w-full"
               data-testid="button-view-tournament"
             >
