@@ -1,3 +1,4 @@
+// Vercel Rebuild Trigger: Restoring Web Stability
 import { useEffect, lazy, Suspense } from "react";
 import { Switch, Route, Link, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
