@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], isLoading } = useQuery<ChannelMessage[]>({
     queryKey: [`/api/channels/${channelId}/messages`],
@@ -161,8 +162,14 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
     new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
   );
 
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [sortedMessages.length, channelId]); // Scroll on new messages or channel change
+
   return (
-    <div className="space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <Megaphone className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold">Server Announcements</h2>
@@ -300,6 +307,7 @@ export default function AnnouncementsChannel({ channelId, canPost = false }: Ann
           </Card>
         ))
       )}
+      <div ref={scrollRef} />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

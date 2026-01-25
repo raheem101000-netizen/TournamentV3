@@ -195,7 +195,7 @@ export default function PreviewServerDetail() {
               className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
               onClick={() => setChannelSettingsOpen(true)}
             >
-              Channel Settings
+              Tournament Settings
             </button>
           ) : (
             <div className="min-w-[60px]" /> /* Spacer to keep title centered */

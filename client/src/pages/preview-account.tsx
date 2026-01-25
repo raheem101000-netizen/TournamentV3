@@ -22,6 +22,7 @@ import type { User, TeamMember } from "@shared/schema";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 import UserProfileModal from "@/components/UserProfileModal";
 import { Gamepad2, AlertTriangle, Clock } from "lucide-react";
+import ImageUploadField from "@/components/ImageUploadField";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,6 +52,7 @@ export default function PreviewAccount() {
   const [editTeamName, setEditTeamName] = useState("");
   const [editTeamBio, setEditTeamBio] = useState("");
   const [editTeamGame, setEditTeamGame] = useState("");
+  const [editTeamLogoUrl, setEditTeamLogoUrl] = useState("");
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editMemberPosition, setEditMemberPosition] = useState("");
   const [editMemberRole, setEditMemberRole] = useState("");
@@ -261,6 +263,7 @@ export default function PreviewAccount() {
       setEditTeamName(selectedTeam.name);
       setEditTeamBio(selectedTeam.bio || "");
       setEditTeamGame(selectedTeam.game || "");
+      setEditTeamLogoUrl(selectedTeam.logoUrl || "");
       setIsEditingTeam(true);
     }
   };
@@ -269,7 +272,12 @@ export default function PreviewAccount() {
     if (selectedTeam) {
       updateTeamMutation.mutate({
         teamId: selectedTeam.id,
-        data: { name: editTeamName, bio: editTeamBio || null, game: editTeamGame || null },
+        data: {
+          name: editTeamName,
+          bio: editTeamBio || null,
+          game: editTeamGame || null,
+          logoUrl: editTeamLogoUrl || null
+        },
       });
     }
   };
@@ -715,15 +723,26 @@ export default function PreviewAccount() {
             <div className="space-y-6">
               <DialogHeader className="space-y-4">
                 <div className="flex flex-col items-center text-center space-y-3">
-                  {selectedTeam.logoUrl ? (
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={selectedTeam.logoUrl} alt={selectedTeam.name} />
-                      <AvatarFallback className="text-2xl">{selectedTeam.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="w-10 h-10 text-primary" />
+                  {isEditingTeam ? (
+                    <div className="w-full max-w-[200px]">
+                      <ImageUploadField
+                        value={editTeamLogoUrl}
+                        onChange={setEditTeamLogoUrl}
+                        label="Team Logo"
+                        placeholder="Upload or paste URL"
+                      />
                     </div>
+                  ) : (
+                    selectedTeam.logoUrl ? (
+                      <Avatar className="w-20 h-20">
+                        <AvatarImage src={selectedTeam.logoUrl} alt={selectedTeam.name} />
+                        <AvatarFallback className="text-2xl">{selectedTeam.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Users className="w-10 h-10 text-primary" />
+                      </div>
+                    )
                   )}
                   <div className="w-full">
                     {isEditingTeam ? (
