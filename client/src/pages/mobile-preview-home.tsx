@@ -193,25 +193,17 @@ export default function MobilePreviewHome() {
               >
                 {/* Portrait Poster Image */}
                 <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
-                  {/* Verified Badge */}
-                  {isServerVerified(tournament.serverId) && (
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`tournament-verified-${tournament.id}`}>
-                      <Star className="w-3 h-3 fill-white" />
-                      Verified
-                    </div>
-                  )}
+                  {/* Top Right Controls: Verified Badge & Favorite Button */}
+                  <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
+                    {/* Verified Badge */}
+                    {isServerVerified(tournament.serverId) && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium shadow-sm" data-testid={`tournament-verified-${tournament.id}`}>
+                        <Star className="w-3 h-3 fill-white" />
+                        Verified
+                      </div>
+                    )}
 
-                  {/* Game Badge - New visual element */}
-                  {tournament.game && (
-                    <div className="absolute top-2 left-2 z-20">
-                      <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
-                        {tournament.game}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Star Button */}
-                  <div className="absolute top-2 right-2 z-20">
+                    {/* Star Button */}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -223,6 +215,15 @@ export default function MobilePreviewHome() {
                       />
                     </Button>
                   </div>
+
+                  {/* Game Badge - New visual element */}
+                  {tournament.game && (
+                    <div className="absolute top-2 left-2 z-20">
+                      <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
+                        {tournament.game}
+                      </Badge>
+                    </div>
+                  )}
 
                   <OptimizedImage
                     src={tournament.imageUrl}

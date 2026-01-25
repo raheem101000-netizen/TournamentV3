@@ -511,7 +511,7 @@ export default function ServerSettings() {
             Only the server owner can access settings.
           </p>
         </div>
-        <Button variant="outline" onClick={() => navigate(`/server/${serverId}`)}>
+        <Button variant="outline" onClick={() => navigate(`/server/${serverId}`, { replace: true })}>
           Back to Server
         </Button>
       </div>
@@ -525,7 +525,7 @@ export default function ServerSettings() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/server/${serverId}`)}
+            onClick={() => navigate(`/server/${serverId}`, { replace: true })}
             data-testid="button-back-to-server"
             className="mb-4"
           >

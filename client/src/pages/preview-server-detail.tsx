@@ -46,6 +46,7 @@ export default function PreviewServerDetail() {
   const [leaveServerDialogOpen, setLeaveServerDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
+  const [isChannelDetailView, setIsChannelDetailView] = useState(false);
 
   const { user } = useAuth();
   const currentUserId = user?.id;
@@ -189,7 +190,7 @@ export default function PreviewServerDetail() {
 
           <span className="font-semibold text-lg">{fullScreenChannel?.name || 'Chat'}</span>
 
-          {(isOwner || (user as any)?.isAdmin) ? (
+          {(isOwner || (user as any)?.isAdmin) && !isChannelDetailView ? (
             <button
               className="text-blue-500 text-lg font-normal min-w-[60px] text-right"
               onClick={() => setChannelSettingsOpen(true)}
@@ -209,7 +210,11 @@ export default function PreviewServerDetail() {
               canPost={server?.ownerId === currentUserId || (user as any)?.isAdmin}
             />
           ) : fullScreenChannel?.type === "tournament_dashboard" ? (
-            <TournamentDashboardChannel serverId={serverId!} canManage={isOwner || (user as any)?.isAdmin} />
+            <TournamentDashboardChannel
+              serverId={serverId!}
+              canManage={isOwner || (user as any)?.isAdmin}
+              onViewModeChange={setIsChannelDetailView}
+            />
           ) : (
             <ChatChannel channelId={fullScreenChannelId} isPreview={false} />
           )}

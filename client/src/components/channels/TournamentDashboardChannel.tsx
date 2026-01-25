@@ -70,9 +70,10 @@ interface TournamentDashboardChannelProps {
 interface TournamentDashboardChannelProps {
   serverId: string;
   canManage?: boolean;
+  onViewModeChange?: (isDetailView: boolean) => void;
 }
 
-export default function TournamentDashboardChannel({ serverId, canManage = false }: TournamentDashboardChannelProps) {
+export default function TournamentDashboardChannel({ serverId, canManage = false, onViewModeChange }: TournamentDashboardChannelProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAwardAchievementDialogOpen, setIsAwardAchievementDialogOpen] = useState(false);
@@ -93,6 +94,11 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
   const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Notify parent of view mode changes
+  useEffect(() => {
+    onViewModeChange?.(!!selectedTournamentId);
+  }, [selectedTournamentId, onViewModeChange]);
 
   // Need to wait for selectedTournament to be loaded to determine ownership accurately
   // For now, checks will be done inside the render with the selectedTournament data

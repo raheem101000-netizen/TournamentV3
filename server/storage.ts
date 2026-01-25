@@ -247,7 +247,7 @@ export interface IStorage {
   // Achievement operations
   createAchievement(data: InsertAchievement): Promise<Achievement>;
   getAchievementsByUser(userId: string): Promise<Achievement[]>;
-  getAchievementsByTeam(teamProfileId: string): Promise<Achievement[]>;
+  getAchievementsByTeam(teamProfileId: string): Promise<any[]>;
 
   // Team profile operations
   createTeamProfile(data: InsertTeamProfile): Promise<TeamProfile>;
@@ -1098,10 +1098,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAchievementsByUser(userId: string): Promise<any[]> {
+    console.log(`[DEBUG] getAchievementsByUser called for userId: ${userId}`);
     const achievementsList = await db.select({
       id: achievements.id,
       userId: achievements.userId,
       serverId: achievements.serverId,
+      serverName: servers.name,
       title: achievements.title,
       description: achievements.description,
       iconUrl: achievements.iconUrl,
@@ -1112,23 +1114,25 @@ export class DatabaseStorage implements IStorage {
       category: achievements.category,
       type: achievements.type,
       awardedBy: achievements.awardedBy,
+      awardedByName: users.displayName,
+      awardedByUsername: users.username,
+      awardedByFullName: users.fullName,
       createdAt: achievements.createdAt,
     }).from(achievements)
+      .leftJoin(users, eq(achievements.awardedBy, users.id))
+      .leftJoin(servers, eq(achievements.serverId, servers.id))
       .where(eq(achievements.userId, userId))
       .orderBy(achievements.achievedAt);
 
-    // Fetch server names for achievements that have a serverId
-    const withServerNames = await Promise.all(
-      achievementsList.map(async (ach) => {
-        if (ach.serverId) {
-          const [server] = await db.select().from(servers).where(eq(servers.id, ach.serverId));
-          return { ...ach, serverName: server?.name };
-        }
-        return ach;
-      })
-    );
+    // Filter out achievements where the server has been deleted (orphan records)
+    const filteredAchievements = achievementsList.filter(a => {
+      // Keep achievements that are not server-specific (global) or where server still exists
+      return !a.serverId || (a.serverId && a.serverName);
+    });
 
-    return withServerNames;
+    console.log(`[DEBUG] Returning ${filteredAchievements.length} valid achievements for user ${userId} (filtered out ${achievementsList.length - filteredAchievements.length} orphans)`);
+
+    return filteredAchievements;
   }
 
   // Team profile operations
@@ -1410,10 +1414,45 @@ export class DatabaseStorage implements IStorage {
     return role ? [role] : [];
   }
 
-  async getAchievementsByTeam(teamProfileId: string): Promise<Achievement[]> {
-    return await db.select().from(achievements)
+  async getAchievementsByTeam(teamProfileId: string): Promise<any[]> {
+    const achievementsList = await db.select({
+      id: achievements.id,
+      userId: achievements.userId,
+      teamProfileId: achievements.teamProfileId,
+      serverId: achievements.serverId,
+      title: achievements.title,
+      description: achievements.description,
+      iconUrl: achievements.iconUrl,
+      reward: achievements.reward,
+      game: achievements.game,
+      region: achievements.region,
+      achievedAt: achievements.achievedAt,
+      category: achievements.category,
+      type: achievements.type,
+      awardedBy: achievements.awardedBy,
+      awardedByName: users.displayName,
+      awardedByUsername: users.username,
+      awardedByFullName: users.fullName,
+      createdAt: achievements.createdAt,
+    }).from(achievements)
+      .leftJoin(users, eq(achievements.awardedBy, users.id))
       .where(eq(achievements.teamProfileId, teamProfileId))
       .orderBy(achievements.achievedAt);
+
+    // Fetch server names for achievements that have a serverId
+    const withServerNames = await Promise.all(
+      achievementsList.map(async (ach) => {
+        if (ach.serverId) {
+          const [server] = await db.select().from(servers).where(eq(servers.id, ach.serverId));
+          console.log(`[DEBUG-TEAM-ACHIEVEMENT] achId=${ach.id} serverId=${ach.serverId} -> foundServer=${!!server}, name=${server?.name}`);
+          return { ...ach, serverName: server?.name };
+        }
+        return ach;
+      })
+    );
+
+
+    return withServerNames;
   }
 
   async updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined> {
@@ -1545,8 +1584,43 @@ export class DatabaseStorage implements IStorage {
     return perm || undefined;
   }
 
-  async getAllAchievements(): Promise<Achievement[]> {
-    return await db.select().from(achievements).orderBy(achievements.achievedAt);
+  async getAllAchievements(): Promise<any[]> {
+    const achievementsList = await db.select({
+      id: achievements.id,
+      userId: achievements.userId,
+      teamProfileId: achievements.teamProfileId,
+      serverId: achievements.serverId,
+      title: achievements.title,
+      description: achievements.description,
+      iconUrl: achievements.iconUrl,
+      reward: achievements.reward,
+      game: achievements.game,
+      region: achievements.region,
+      achievedAt: achievements.achievedAt,
+      category: achievements.category,
+      type: achievements.type,
+      awardedBy: achievements.awardedBy,
+      awardedByName: users.displayName,
+      awardedByUsername: users.username,
+      awardedByFullName: users.fullName,
+      createdAt: achievements.createdAt,
+    }).from(achievements)
+      .leftJoin(users, eq(achievements.awardedBy, users.id))
+      .orderBy(achievements.achievedAt);
+
+    // Process achievements to use the best name for awarder
+    return achievementsList.map(ach => {
+      const result: any = { ...ach };
+
+      // Determine the best name to display for the awarder
+      if (ach.awardedBy) {
+        // Use displayName if available, otherwise username, otherwise fullName
+        const awarderName = ach.awardedByName || ach.awardedByUsername || ach.awardedByFullName || ach.awardedBy;
+        result.awardedBy = awarderName;
+      }
+
+      return result;
+    });
   }
 
   async deleteAchievement(achievementId: string): Promise<void> {

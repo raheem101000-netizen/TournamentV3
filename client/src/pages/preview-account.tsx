@@ -118,6 +118,12 @@ export default function PreviewAccount() {
     enabled: !!selectedTeam,
   });
 
+  // Fetch team achievements
+  const { data: teamAchievements = [] } = useQuery<any[]>({
+    queryKey: [`/api/team-profiles/${selectedTeam?.id}/achievements`],
+    enabled: !!selectedTeam,
+  });
+
   // Search users query for adding members
   const { data: searchResults = [], isLoading: isSearching } = useQuery<any[]>({
     queryKey: ["/api/users/search", memberSearchQuery],
@@ -681,7 +687,9 @@ export default function PreviewAccount() {
                 {selectedAchievement.awardedBy && (
                   <div className="space-y-1">
                     <h4 className="text-xs font-semibold text-muted-foreground">Awarded By</h4>
-                    <p className="text-sm text-muted-foreground">@{selectedAchievement.awardedBy}</p>
+                    <p className="text-sm text-muted-foreground">
+                      @{selectedAchievement.awardedByUsername || selectedAchievement.awardedByName || "Admin"}
+                    </p>
                   </div>
                 )}
 
@@ -871,6 +879,42 @@ export default function PreviewAccount() {
                     )}
                   </div>
                 )}
+
+                {/* Team Achievements Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Achievements
+                  </h4>
+                  {teamAchievements.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No achievements yet</p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {teamAchievements.map((achievement) => {
+                        // Use category mapping if iconUrl is missing/different
+                        const iconKey = achievement.iconUrl || achievement.category || "champion";
+                        const IconComponent = getAchievementIcon(iconKey);
+                        const colorClass = getAchievementColor(iconKey);
+
+                        return (
+                          <div
+                            key={achievement.id}
+                            className="flex flex-col items-center justify-center p-2 bg-muted/30 rounded-lg text-center gap-1 hover:bg-muted/50 transition-colors cursor-pointer"
+                            title={`${achievement.title} - ${achievement.game || 'General'}`}
+                            onClick={() => setSelectedAchievement(achievement)}
+                          >
+                            <div className={`p-1.5 rounded-full bg-background ${colorClass}`}>
+                              <IconComponent className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] font-medium leading-tight line-clamp-2 w-full">
+                              {achievement.title}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
                 {/* Team Members Section */}
                 <div className="space-y-3">
