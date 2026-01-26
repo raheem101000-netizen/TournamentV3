@@ -71,11 +71,18 @@ export default function PreviewOrganizerAward() {
 
   // Award achievement mutation
   const awardMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/achievements", data);
-      return response;
-    },
-    onSuccess: () => {
+    // Determine endpoint based on data structure
+    const endpoint = data.teamProfileId ? "/api/achievements/team" : "/api/achievements";
+    const response = await apiRequest("POST", endpoint, data);
+    return response;
+  },
+    onSuccess: (data, variables) => {
+      // Invalidate specific queries based on what was updated
+      if (variables.userId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${variables.userId}/achievements`] });
+      } else if (variables.teamProfileId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/team-profiles/${variables.teamProfileId}/achievements`] });
+      }
       toast({
         title: "Success",
         description: "Achievement awarded successfully!",
@@ -100,235 +107,345 @@ export default function PreviewOrganizerAward() {
     },
   });
 
-  const handleAward = () => {
-    const achievementData = achievementTypes.find(a => a.id === selectedAchievement);
-    const payload = {
-      userId: selectedRecipientId,
-      title: achievementData?.name || "Achievement",
-      description: message || achievementData?.description || "",
-      type: recipientType === "player" ? "solo" : "team",
-      awardedBy: "organizer",
-    };
-    console.log("[AWARD-ACHIEVEMENT] Sending payload:", payload);
-    awardMutation.mutate(payload);
+const handleAward = () => {
+  const achievementData = achievementTypes.find(a => a.id === selectedAchievement);
+
+  // Construct payload based on recipient type
+  let payload: any = {
+    title: achievementData?.name || "Achievement",
+    description: message || achievementData?.description || "",
+    type: recipientType === "player" ? "solo" : "team",
+    awardedBy: "organizer",
+    category: achievementData?.name || "General", // Adding standard category
+    iconUrl: "", // Optional icon URL
   };
 
-  const selectedAchievementData = achievementTypes.find(a => a.id === selectedAchievement);
-  const isFormValid = selectedRecipientId && selectedAchievement;
-  const players = searchResults || [];
-
-  // Check for organizer permissions
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ["/api/auth/me"],
-  });
-
-  if (!currentUser) return null;
-
-  // Strict access Control: Only admins or users with explicit capability
-  if (!currentUser.isAdmin && !(currentUser as any).canIssueAchievements) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <Shield className="w-12 h-12 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Access Denied</h1>
-        <p className="text-muted-foreground">You do not have permission to access the Organizer Panel.</p>
-        <Button onClick={() => setLocation("/account")} variant="outline">
-          Back to Account
-        </Button>
-      </div>
-    );
+  if (recipientType === "player") {
+    payload.userId = selectedRecipientId;
+  } else {
+    payload.teamProfileId = selectedRecipientId;
+    // Add required fields for team achievements
+    payload.serverId = null;
   }
 
+  console.log("[AWARD-ACHIEVEMENT] Sending payload:", payload);
+  awardMutation.mutate(payload);
+};
+
+const selectedAchievementData = achievementTypes.find(a => a.id === selectedAchievement);
+const isFormValid = selectedRecipientId && selectedAchievement;
+const players = searchResults || [];
+
+// Check for organizer permissions
+const { data: currentUser } = useQuery<User>({
+  queryKey: ["/api/auth/me"],
+});
+
+if (!currentUser) return null;
+
+// Strict access Control: Only admins or users with explicit capability
+if (!currentUser.isAdmin && !(currentUser as any).canIssueAchievements) {
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setLocation("/account")}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold">Award Achievement</h1>
-          </div>
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <Shield className="w-12 h-12 text-muted-foreground" />
+      <h1 className="text-2xl font-bold">Access Denied</h1>
+      <p className="text-muted-foreground">You do not have permission to access the Organizer Panel.</p>
+      <Button onClick={() => setLocation("/account")} variant="outline">
+        Back to Account
+      </Button>
+    </div>
+  );
+}
+
+return (
+  <div className="flex flex-col min-h-screen bg-background pb-20">
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => setLocation("/account")}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <Shield className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold">Award Achievement</h1>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
+    <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Organizer Panel
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Award verified achievements to players and teams. All awards are permanent and publicly visible.
+          </p>
+        </CardHeader>
+      </Card>
+
+      <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              Organizer Panel
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Award verified achievements to players and teams. All awards are permanent and publicly visible.
-            </p>
-          </CardHeader>
-        </Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Award Type</Label>
+              <Select value={recipientType} onValueChange={(v) => setRecipientType(v as "player" | "team")}>
+                <SelectTrigger data-testid="select-recipient-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="player">Individual Player</SelectItem>
+                  <SelectItem value="team">Team</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Award Type</Label>
-                <Select value={recipientType} onValueChange={(v) => setRecipientType(v as "player" | "team")}>
-                  <SelectTrigger data-testid="select-recipient-type">
-                    <SelectValue />
+            <div className="space-y-2">
+              <Label>{recipientType === "player" ? "Search & Select Player" : "Select Team"}</Label>
+              {recipientType === "player" ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Type player @username..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSelectedRecipient("");
+                        setSelectedRecipientId("");
+                      }}
+                      className="pl-10"
+                      data-testid="input-search-player"
+                    />
+                  </div>
+                  {(searchQuery || selectedRecipient) && (
+                    <div className="border rounded-lg max-h-48 overflow-y-auto">
+                      {searchLoading ? (
+                        <div className="p-3 text-center text-muted-foreground flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Searching...
+                        </div>
+                      ) : players.length > 0 ? (
+                        players.map((player) => (
+                          <button
+                            key={player.id}
+                            onClick={() => {
+                              setSelectedRecipient(player.username);
+                              setSelectedRecipientId(player.id);
+                              setSearchQuery("");
+                            }}
+                            className="w-full px-3 py-2 text-left hover:bg-accent border-b last:border-b-0 flex items-center gap-2 transition-colors"
+                            data-testid={`player-option-${player.id}`}
+                          >
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={player.avatarUrl || undefined} />
+                              <AvatarFallback>{player.username.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">@{player.username}</p>
+                              {player.displayName && (
+                                <p className="text-xs text-muted-foreground">{player.displayName}</p>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-sm text-muted-foreground">
+                          No players found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {selectedRecipient && (
+                    <div className="p-3 bg-accent rounded-lg flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium">Selected: @{selectedRecipient}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                  <SelectTrigger data-testid="select-recipient">
+                    <SelectValue placeholder="Choose a team..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="player">Individual Player</SelectItem>
-                    <SelectItem value="team">Team</SelectItem>
+                    <SelectItem value="team-1">Shadow Wolves</SelectItem>
+                    <SelectItem value="team-2">Storm Breakers</SelectItem>
+                    <SelectItem value="team-3">Fire Dragons</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2">
-                <Label>{recipientType === "player" ? "Search & Select Player" : "Select Team"}</Label>
-                {recipientType === "player" ? (
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Type player @username..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          setSelectedRecipient("");
-                          setSelectedRecipientId("");
-                        }}
-                        className="pl-10"
-                        data-testid="input-search-player"
-                      />
+        <div className="space-y-3">
+          <Label>Choose Achievement</Label>
+          <div className="space-y-2">
+            {achievementTypes.map((achievement) => {
+              const Icon = achievement.icon;
+              const isSelected = selectedAchievement === achievement.id;
+
+              return (
+                <Card
+                  key={achievement.id}
+                  className={`hover-elevate cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''
+                    }`}
+                  onClick={() => setSelectedAchievement(achievement.id)}
+                  data-testid={`achievement-option-${achievement.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-lg ${rarityColors[achievement.rarity]} shrink-0`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-sm">{achievement.name}</h4>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {achievement.rarity}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-5 h-5 text-primary shrink-0" />
+                      )}
                     </div>
-                    {(searchQuery || selectedRecipient) && (
-                      <div className="border rounded-lg max-h-48 overflow-y-auto">
-                        {searchLoading ? (
-                          <div className="p-3 text-center text-muted-foreground flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Searching...
-                          </div>
-                        ) : players.length > 0 ? (
-                          players.map((player) => (
-                            <button
-                              key={player.id}
-                              onClick={() => {
-                                setSelectedRecipient(player.username);
-                                setSelectedRecipientId(player.id);
-                                setSearchQuery("");
-                              }}
-                              className="w-full px-3 py-2 text-left hover:bg-accent border-b last:border-b-0 flex items-center gap-2 transition-colors"
-                              data-testid={`player-option-${player.id}`}
-                            >
-                              <Avatar className="w-6 h-6">
-                                <AvatarImage src={player.avatarUrl || undefined} />
-                                <AvatarFallback>{player.username.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">@{player.username}</p>
-                                {player.displayName && (
-                                  <p className="text-xs text-muted-foreground">{player.displayName}</p>
-                                )}
-                              </div>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-3 text-center text-sm text-muted-foreground">
-                            No players found
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {selectedRecipient && (
-                      <div className="p-3 bg-accent rounded-lg flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-sm font-medium">Selected: @{selectedRecipient}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
-                    <SelectTrigger data-testid="select-recipient">
-                      <SelectValue placeholder="Choose a team..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="team-1">Shadow Wolves</SelectItem>
-                      <SelectItem value="team-2">Storm Breakers</SelectItem>
-                      <SelectItem value="team-3">Fire Dragons</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
 
-          <div className="space-y-3">
-            <Label>Choose Achievement</Label>
-            <div className="space-y-2">
-              {achievementTypes.map((achievement) => {
-                const Icon = achievement.icon;
-                const isSelected = selectedAchievement === achievement.id;
+        <Card>
+          <CardContent className="pt-6 space-y-2">
+            <Label htmlFor="message">Message (Optional)</Label>
+            <Textarea
+              id="message"
+              placeholder="Add a congratulatory message or note..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              data-testid="input-message"
+            />
+            <p className="text-xs text-muted-foreground">
+              This message will be visible to the recipient but not shown publicly.
+            </p>
+          </CardContent>
+        </Card>
 
-                return (
-                  <Card
-                    key={achievement.id}
-                    className={`hover-elevate cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''
-                      }`}
-                    onClick={() => setSelectedAchievement(achievement.id)}
-                    data-testid={`achievement-option-${achievement.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-lg ${rarityColors[achievement.rarity]} shrink-0`}>
-                          <Icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-sm">{achievement.name}</h4>
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {achievement.rarity}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{achievement.description}</p>
-                        </div>
-                        {isSelected && (
-                          <Check className="w-5 h-5 text-primary shrink-0" />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!isFormValid || awardMutation.isPending}
+          onClick={() => setShowConfirm(true)}
+          data-testid="button-award"
+        >
+          {awardMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Awarding...
+            </>
+          ) : (
+            <>
+              <Shield className="w-4 h-4 mr-2" />
+              Award Achievement
+            </>
+          )}
+        </Button>
+
+        <Card className="p-4 border-amber-500/50 bg-amber-500/10">
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Important</p>
+              <p className="text-amber-800 dark:text-amber-200">
+                Achievements are permanent and cannot be revoked. Only award achievements that have been legitimately earned.
+              </p>
             </div>
           </div>
+        </Card>
+      </div>
+    </main>
 
-          <Card>
-            <CardContent className="pt-6 space-y-2">
-              <Label htmlFor="message">Message (Optional)</Label>
-              <Textarea
-                id="message"
-                placeholder="Add a congratulatory message or note..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={4}
-                data-testid="input-message"
-              />
-              <p className="text-xs text-muted-foreground">
-                This message will be visible to the recipient but not shown publicly.
-              </p>
-            </CardContent>
-          </Card>
+    <BottomNavigation />
 
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={!isFormValid || awardMutation.isPending}
-            onClick={() => setShowConfirm(true)}
-            data-testid="button-award"
-          >
+    <Particles
+      particleCount={150}
+      particleSpread={15}
+      speed={0.05}
+      particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
+      alphaParticles={false}
+      particleBaseSize={200}
+      cameraDistance={10}
+      sizeRandomness={0.5}
+      disableRotation={false}
+      className="fixed inset-0 z-50 pointer-events-none"
+    />
+
+    {/* Confirmation Dialog */}
+    <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Confirm Achievement Award</DialogTitle>
+          <DialogDescription>
+            Please review the details before awarding this achievement.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {selectedAchievementData && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className={`p-4 rounded-lg ${rarityColors[selectedAchievementData.rarity]}`}>
+                    <selectedAchievementData.icon className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{selectedAchievementData.name}</h4>
+                    <Badge variant="outline" className="text-xs capitalize mt-1">
+                      {selectedAchievementData.rarity}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-4 border-t">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Recipient:</span>
+                    <span className="font-medium">
+                      {recipientType === "player"
+                        ? `@${selectedRecipient}`
+                        : "Team"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="font-medium capitalize">{recipientType}</span>
+                  </div>
+                  {message && (
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground mb-1">Message:</p>
+                      <p className="text-sm italic">"{message}"</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowConfirm(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleAward} disabled={awardMutation.isPending} data-testid="button-confirm-award">
             {awardMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -337,128 +454,30 @@ export default function PreviewOrganizerAward() {
             ) : (
               <>
                 <Shield className="w-4 h-4 mr-2" />
-                Award Achievement
+                Confirm Award
               </>
             )}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-          <Card className="p-4 border-amber-500/50 bg-amber-500/10">
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Important</p>
-                <p className="text-amber-800 dark:text-amber-200">
-                  Achievements are permanent and cannot be revoked. Only award achievements that have been legitimately earned.
-                </p>
-              </div>
-            </div>
-          </Card>
+    {/* Success Dialog */}
+    <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+      <DialogContent className="max-w-md">
+        <div className="flex flex-col items-center text-center space-y-4 py-6">
+          <div className="p-4 rounded-full bg-green-500/20">
+            <Check className="w-12 h-12 text-green-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold mb-2">Achievement Awarded!</h3>
+            <p className="text-sm text-muted-foreground">
+              The achievement has been successfully awarded and is now visible on the recipient's profile.
+            </p>
+          </div>
         </div>
-      </main>
-
-      <BottomNavigation />
-
-      <Particles
-        particleCount={150}
-        particleSpread={15}
-        speed={0.05}
-        particleColors={['#8b5cf6', '#a78bfa', '#c4b5fd']}
-        alphaParticles={false}
-        particleBaseSize={200}
-        cameraDistance={10}
-        sizeRandomness={0.5}
-        disableRotation={false}
-        className="fixed inset-0 z-50 pointer-events-none"
-      />
-
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Achievement Award</DialogTitle>
-            <DialogDescription>
-              Please review the details before awarding this achievement.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {selectedAchievementData && (
-              <Card>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-4 rounded-lg ${rarityColors[selectedAchievementData.rarity]}`}>
-                      <selectedAchievementData.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{selectedAchievementData.name}</h4>
-                      <Badge variant="outline" className="text-xs capitalize mt-1">
-                        {selectedAchievementData.rarity}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-4 border-t">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Recipient:</span>
-                      <span className="font-medium">
-                        {recipientType === "player"
-                          ? `@${selectedRecipient}`
-                          : "Team"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="font-medium capitalize">{recipientType}</span>
-                    </div>
-                    {message && (
-                      <div className="pt-2">
-                        <p className="text-xs text-muted-foreground mb-1">Message:</p>
-                        <p className="text-sm italic">"{message}"</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAward} disabled={awardMutation.isPending} data-testid="button-confirm-award">
-              {awardMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Awarding...
-                </>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4 mr-2" />
-                  Confirm Award
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Dialog */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent className="max-w-md">
-          <div className="flex flex-col items-center text-center space-y-4 py-6">
-            <div className="p-4 rounded-full bg-green-500/20">
-              <Check className="w-12 h-12 text-green-500" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2">Achievement Awarded!</h3>
-              <p className="text-sm text-muted-foreground">
-                The achievement has been successfully awarded and is now visible on the recipient's profile.
-              </p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+      </DialogContent>
+    </Dialog>
+  </div>
+);
 }

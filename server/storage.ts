@@ -1436,7 +1436,12 @@ export class DatabaseStorage implements IStorage {
       createdAt: achievements.createdAt,
     }).from(achievements)
       .leftJoin(users, eq(achievements.awardedBy, users.id))
-      .where(eq(achievements.teamProfileId, teamProfileId))
+      .where(
+        and(
+          eq(achievements.teamProfileId, teamProfileId),
+          isNull(achievements.userId) // Only fetch the main team achievement, not member copies
+        )
+      )
       .orderBy(achievements.achievedAt);
 
     // Fetch server names for achievements that have a serverId
