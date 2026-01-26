@@ -1,6 +1,6 @@
-import { Trophy, Medal, Award, Target, Shield, Zap, Star } from "lucide-react";
+import { Trophy, Medal, Award, Target, Shield, Zap, Star, Users } from "lucide-react";
 
-export function getAchievementIcon(iconUrl: string) {
+export function getAchievementIcon(iconUrl: string | null | undefined, title?: string) {
   const iconMap: { [key: string]: any } = {
     "champion": Trophy,
     "runner-up": Medal,
@@ -10,8 +10,25 @@ export function getAchievementIcon(iconUrl: string) {
     "best-defense": Shield,
     "rising-star": Zap,
     "verified-star": Star,
+    "team-victory": Users,
+    "top-performer": Award
   };
-  return iconMap[iconUrl] || Trophy;
+
+  // Try direct match
+  if (iconUrl && iconMap[iconUrl]) return iconMap[iconUrl];
+
+  // Try matching by title
+  if (title) {
+    const normalizeTitle = title.toLowerCase().replace(/\s+/g, '-');
+    if (iconMap[normalizeTitle]) return iconMap[normalizeTitle];
+
+    // Partial matches
+    if (normalizeTitle.includes('champion') || normalizeTitle.includes('winner')) return Trophy;
+    if (normalizeTitle.includes('runner') || normalizeTitle.includes('second')) return Medal;
+    if (normalizeTitle.includes('mvp')) return Star;
+  }
+
+  return Trophy;
 }
 
 export function getAchievementColor(iconUrl: string) {

@@ -117,7 +117,7 @@ const handleAward = () => {
     type: recipientType === "player" ? "solo" : "team",
     awardedBy: "organizer",
     category: achievementData?.name || "General", // Adding standard category
-    iconUrl: "", // Optional icon URL
+    iconUrl: selectedAchievement, // Use the selected achievement ID as the icon key
   };
 
   if (recipientType === "player") {

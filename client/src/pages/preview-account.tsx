@@ -546,8 +546,8 @@ export default function PreviewAccount() {
               <h3 className="text-lg font-semibold">Achievements</h3>
               <div className="grid grid-cols-3 gap-3">
                 {userAchievements.map((achievement: any) => {
-                  const IconComponent = getAchievementIcon(achievement.iconUrl);
-                  const colorClass = getAchievementColor(achievement.iconUrl);
+                  const IconComponent = getAchievementIcon(achievement.iconUrl, achievement.title);
+                  const colorClass = getAchievementColor(achievement.iconUrl || achievement.title?.toLowerCase().replace(/\s+/g, '-') || "");
                   const getMedalNumber = () => {
                     if (achievement.iconUrl === "runner-up") return "2";
                     if (achievement.iconUrl === "third-place") return "3";
@@ -588,9 +588,12 @@ export default function PreviewAccount() {
                               data-testid={`button-server-link-${achievement.id}`}
                             >
                               <span className="block truncate">{achievement.serverName}</span>
+                              <span className="block truncate">{achievement.serverName}</span>
                             </Button>
-                          ) : (
+                          ) : achievement.serverId ? (
                             <p className="text-xs text-destructive text-center">Server no longer exists</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground text-center">Official Award</p>
                           )}
                         </div>
                       </CardContent>
@@ -908,27 +911,47 @@ export default function PreviewAccount() {
                   {teamAchievements.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No achievements yet</p>
                   ) : (
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-3">
                       {teamAchievements.map((achievement) => {
-                        // Use category mapping if iconUrl is missing/different
-                        const iconKey = achievement.iconUrl || achievement.category || "champion";
-                        const IconComponent = getAchievementIcon(iconKey);
-                        const colorClass = getAchievementColor(iconKey);
+                        const IconComponent = getAchievementIcon(achievement.iconUrl, achievement.title);
+                        const colorClass = getAchievementColor(achievement.iconUrl || achievement.title?.toLowerCase().replace(/\s+/g, '-') || "");
 
                         return (
-                          <div
+                          <Card
                             key={achievement.id}
-                            className="flex flex-col items-center justify-center p-2 bg-muted/30 rounded-lg text-center gap-1 hover:bg-muted/50 transition-colors cursor-pointer"
-                            title={`${achievement.title} - ${achievement.game || 'General'}`}
+                            className="hover-elevate cursor-pointer overflow-hidden"
                             onClick={() => setSelectedAchievement(achievement)}
+                            data-testid={`team-achievement-card-${achievement.id}`}
                           >
-                            <div className={`p-1.5 rounded-full bg-background ${colorClass}`}>
-                              <IconComponent className="w-5 h-5" />
-                            </div>
-                            <span className="text-[10px] font-medium leading-tight line-clamp-2 w-full">
-                              {achievement.title}
-                            </span>
-                          </div>
+                            <CardContent className="p-4 flex flex-col items-center text-center space-y-2 overflow-hidden">
+                              <div className="relative inline-flex items-center justify-center">
+                                <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                              </div>
+                              <div className="w-full min-w-0 flex flex-col items-center gap-1.5">
+                                <p className="font-semibold text-sm line-clamp-2 text-center">{achievement.title}</p>
+                                {achievement.game && <p className="text-xs text-muted-foreground text-center">{achievement.game}</p>}
+                                {achievement.serverName ? (
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground text-center"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (achievement.serverId) {
+                                        setLocation(`/server/${achievement.serverId}`);
+                                      }
+                                    }}
+                                  >
+                                    <span className="block truncate">{achievement.serverName}</span>
+                                  </Button>
+                                ) : achievement.serverId ? (
+                                  <p className="text-xs text-destructive text-center">Server no longer exists</p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground text-center">Official Award</p>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
                         );
                       })}
                     </div>
