@@ -238,7 +238,7 @@ export default function PreviewOrganizerAward() {
                             <button
                               key={player.id}
                               onClick={() => {
-                                setSelectedRecipient(player.username);
+                                setSelectedRecipient(player.displayName || player.username);
                                 setSelectedRecipientId(player.id);
                                 setSearchQuery("");
                               }}
@@ -247,13 +247,10 @@ export default function PreviewOrganizerAward() {
                             >
                               <Avatar className="w-6 h-6">
                                 <AvatarImage src={player.avatarUrl || undefined} />
-                                <AvatarFallback>{player.username.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{(player.displayName || player.username).charAt(0)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <p className="font-medium text-sm">@{player.username}</p>
-                                {player.displayName && (
-                                  <p className="text-xs text-muted-foreground">{player.displayName}</p>
-                                )}
+                                <p className="font-medium text-sm">{player.displayName || player.username}</p>
                               </div>
                             </button>
                           ))
@@ -267,7 +264,7 @@ export default function PreviewOrganizerAward() {
                     {selectedRecipient && (
                       <div className="p-3 bg-accent rounded-lg flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-sm font-medium">Selected: @{selectedRecipient}</span>
+                        <span className="text-sm font-medium">Selected: {selectedRecipient}</span>
                       </div>
                     )}
                   </div>
@@ -424,7 +421,7 @@ export default function PreviewOrganizerAward() {
                       <span className="text-muted-foreground">Recipient:</span>
                       <span className="font-medium">
                         {recipientType === "player"
-                          ? `@${selectedRecipient}`
+                          ? selectedRecipient
                           : "Team"}
                       </span>
                     </div>

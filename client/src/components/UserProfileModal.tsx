@@ -250,7 +250,6 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
               </Avatar>
               <div className="flex-1">
                 <h2 className="text-2xl font-bold">{profileData.displayName || profileData.username}</h2>
-                <p className="text-sm text-muted-foreground">@{profileData.username}</p>
                 {profileData.email && (
                   <p className="text-sm text-muted-foreground">{profileData.email}</p>
                 )}

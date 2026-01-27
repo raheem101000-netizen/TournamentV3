@@ -302,7 +302,7 @@ export default function PreviewAccount() {
       <div className="flex flex-col min-h-screen pb-20">
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
+            <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `${viewedUserData?.displayName || displayUser}`}</h1>
             <div className="flex items-center gap-2">
               {isOwnProfile && (
                 <>
@@ -358,7 +358,6 @@ export default function PreviewAccount() {
 
                     <div className="space-y-2 w-full">
                       <h2 className="text-2xl font-bold">{currentUser.displayName || currentUser.username}</h2>
-                      <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
 
                       {/* Profile ID */}
                       {currentUser.profileId && (
@@ -587,7 +586,6 @@ export default function PreviewAccount() {
                               }}
                               data-testid={`button-server-link-${achievement.id}`}
                             >
-                              <span className="block truncate">{achievement.serverName}</span>
                               <span className="block truncate">{achievement.serverName}</span>
                             </Button>
                           ) : achievement.serverId ? (
