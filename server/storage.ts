@@ -253,6 +253,7 @@ export interface IStorage {
   createTeamProfile(data: InsertTeamProfile): Promise<TeamProfile>;
   getTeamProfile(id: string): Promise<TeamProfile | undefined>;
   getTeamProfilesByOwner(ownerId: string): Promise<TeamProfile[]>;
+  getTeamProfilesByMember(userId: string): Promise<TeamProfile[]>;
   updateTeamProfile(id: string, data: Partial<TeamProfile>): Promise<TeamProfile | undefined>;
   deleteTeamProfile(id: string): Promise<void>;
 
@@ -1148,6 +1149,16 @@ export class DatabaseStorage implements IStorage {
 
   async getTeamProfilesByOwner(ownerId: string): Promise<TeamProfile[]> {
     return await db.select().from(teamProfiles).where(eq(teamProfiles.ownerId, ownerId));
+  }
+
+  async getTeamProfilesByMember(userId: string): Promise<TeamProfile[]> {
+    const rows = await db
+      .select()
+      .from(teamProfiles)
+      .innerJoin(teamMembers, eq(teamProfiles.id, teamMembers.teamId))
+      .where(eq(teamMembers.userId, userId));
+
+    return rows.map(row => row.team_profiles);
   }
 
   async updateTeamProfile(id: string, data: Partial<TeamProfile>): Promise<TeamProfile | undefined> {

@@ -70,6 +70,11 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
     },
   });
 
+  const { data: teams = [], isLoading: teamsLoading } = useQuery<any[]>({
+    queryKey: [`/api/users/${userId}/team-profiles`],
+    enabled: !!userId && open,
+  });
+
   const handleAddFriend = async () => {
     if (!profileData || !currentUser) return;
 
@@ -276,6 +281,27 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
               <div>
                 <h3 className="text-sm font-semibold mb-2">Bio</h3>
                 <p className="text-sm text-foreground">{profileData.bio}</p>
+              </div>
+            )}
+
+            {/* Teams */}
+            {!teamsLoading && teams.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Teams</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {teams.map((team: any) => (
+                    <div key={team.id} className="flex gap-3 p-3 rounded-lg bg-muted/50 items-center">
+                      <Avatar className="h-8 w-8 border border-primary/20">
+                        <AvatarImage src={team.logoUrl} />
+                        <AvatarFallback>{team.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm">{team.name}</h4>
+                        <p className="text-xs text-muted-foreground">{team.totalMembers} Members</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

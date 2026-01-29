@@ -127,8 +127,8 @@ export default function TournamentRegistrationForm({
         });
       } else {
         toast({
-          title: "Error",
-          description: errorMessage || "Failed to register",
+          title: "Registration Failed",
+          description: errorMessage || "Failed to register. Please try again.",
           variant: "destructive",
         });
       }

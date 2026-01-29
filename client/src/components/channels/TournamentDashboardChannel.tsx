@@ -212,6 +212,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
   const { data: registrations = [] } = useQuery<any[]>({
     queryKey: [`/api/tournaments/${selectedTournamentId}/registrations`],
     enabled: !!selectedTournamentId,
+    refetchInterval: 5000,
   });
 
   // Check if current user has saved this tournament

@@ -4090,7 +4090,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:ownerId/team-profiles", async (req, res) => {
     try {
-      const teamProfiles = await storage.getTeamProfilesByOwner(req.params.ownerId);
+      const [ownedTeams, memberTeams] = await Promise.all([
+        storage.getTeamProfilesByOwner(req.params.ownerId),
+        storage.getTeamProfilesByMember(req.params.ownerId)
+      ]);
+
+      // Merge and deduplicate by ID
+      const allTeamsMap = new Map();
+      [...ownedTeams, ...memberTeams].forEach(team => allTeamsMap.set(team.id, team));
+      const teamProfiles = Array.from(allTeamsMap.values());
+
       // Add actual member count for each team
       const profilesWithCounts = await Promise.all(
         teamProfiles.map(async (profile) => {

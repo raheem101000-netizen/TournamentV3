@@ -118,11 +118,27 @@ export default function RichMatchChat({
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
+  // Fetch match details if not provided fully via props
+  const { data: matchData } = useQuery<any>({
+    queryKey: [`/api/matches/${matchId}`],
+    enabled: !!matchId,
+    staleTime: 60000,
+  });
+
+  // Use props first, then fall back to fetched data
+  const finalTeam1Name = team1Name !== "Team 1" ? team1Name : (matchData?.team1?.name || "Team 1");
+  const finalTeam2Name = team2Name !== "Team 2" ? team2Name : (matchData?.team2?.name || "Team 2");
+  const finalTeam1Id = team1Id || matchData?.team1Id;
+  const finalTeam2Id = team2Id || matchData?.team2Id;
+  const finalWinnerId = winnerId || matchData?.winnerId;
+  // If we fetched the match, we might know if the user is an organizer derived from tournament data, 
+  // but for now relying on passed `canManage` or if the user is admin.
+
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
-    refetchInterval: 10000, // Reduced from 3s to 10s to prevent performance issues
-    staleTime: 5000, // Data is fresh for 5s
+    refetchInterval: 5000, // Polling for new messages
+    staleTime: 1000,
   });
 
   // Auto-scroll to latest message when messages load or change
@@ -291,7 +307,7 @@ export default function RichMatchChat({
       return await apiRequest("POST", `/api/matches/${matchId}/winner`, { winnerId });
     },
     onSuccess: (data, winnerId) => {
-      const winnerName = winnerId === team1Id ? team1Name : team2Name;
+      const winnerName = winnerId === finalTeam1Id ? finalTeam1Name : finalTeam2Name;
       toast({
         title: "Winner Selected",
         description: `${winnerName} has been set as the winner!`,
@@ -672,7 +688,7 @@ export default function RichMatchChat({
             </div>
           </ScrollArea>
 
-          {canManage && team1Id && team2Id && (
+          {canManage && finalTeam1Id && finalTeam2Id && (
             <div className="border-t pt-3 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
               <div className="flex gap-2">
@@ -683,16 +699,16 @@ export default function RichMatchChat({
                   data-testid="button-team1-wins"
                 >
                   <Trophy className="w-3 h-3 mr-1" />
-                  {team1Name}
+                  {finalTeam1Name}
                 </Button>
                 <Button
-                  onClick={() => setWinnerMutation.mutate(team2Id)}
+                  onClick={() => setWinnerMutation.mutate(finalTeam2Id)}
                   disabled={setWinnerMutation.isPending}
                   className="flex-1 text-xs"
                   data-testid="button-team2-wins"
                 >
                   <Trophy className="w-3 h-3 mr-1" />
-                  {team2Name}
+                  {finalTeam2Name}
                 </Button>
               </div>
             </div>

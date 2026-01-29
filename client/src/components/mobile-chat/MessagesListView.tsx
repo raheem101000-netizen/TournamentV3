@@ -166,6 +166,7 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         onSuccess: (thread) => {
             setIsNewChatOpen(false)
             onSelectChat(thread.id)
+            refetchThreads()
         }
     })
 
@@ -176,6 +177,8 @@ export function MessagesListView({ onSelectChat }: MessagesListViewProps) {
         },
         onSuccess: () => {
             refetchSearch()
+            queryClient.invalidateQueries({ queryKey: ["/api/users/search"] })
+            queryClient.invalidateQueries({ queryKey: ["/api/friend-requests/pending"] })
         }
     })
 
