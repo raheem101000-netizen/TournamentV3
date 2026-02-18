@@ -94,14 +94,12 @@ export default function TournamentRegistrationForm({
       return res; // apiRequest already returns the parsed JSON data
     },
     onSuccess: async () => {
-      // Auto-join the tournament's server if serverId is provided
       if (serverId) {
         try {
           await apiRequest('POST', `/api/servers/${serverId}/join`);
           queryClient.invalidateQueries({ queryKey: ['/api/my-servers'] });
           queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
         } catch (error) {
-          // Silently fail if already a member or other non-critical error
           console.warn('Server join attempt:', error);
         }
       }
@@ -110,9 +108,10 @@ export default function TournamentRegistrationForm({
         title: "Success!",
         description: "Registration submitted successfully",
       });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/tournaments/${tournamentId}/registrations`],
-      });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/registrations`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/teams`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       form.reset();
       onRegistrationSuccess?.();
     },
