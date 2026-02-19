@@ -67,7 +67,9 @@ export default function ServerPreview() {
         description: "You've successfully joined the server.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'servers'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
       setLocation(`/server/${serverId}`);
     },
     onError: (error: Error) => {

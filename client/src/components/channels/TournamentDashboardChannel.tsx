@@ -227,6 +227,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/saved`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me/saved-tournaments'] });
       toast({
         title: "Tournament saved",
         description: "This tournament has been added to your saved list.",
@@ -247,6 +248,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/saved`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me/saved-tournaments'] });
       toast({
         title: "Tournament removed",
         description: "This tournament has been removed from your saved list.",

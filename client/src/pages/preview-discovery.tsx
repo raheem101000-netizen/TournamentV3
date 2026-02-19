@@ -147,6 +147,8 @@ export default function PreviewDiscovery() {
         title: "Joined server!",
         description: "You've successfully joined the server.",
       });
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
       queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
       // Navigate to the server detail page
