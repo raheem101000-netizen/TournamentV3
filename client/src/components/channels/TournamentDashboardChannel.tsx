@@ -447,11 +447,11 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
         awardedBy: user?.id,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       toast({ title: "Achievement Awarded!", description: "The achievement has been awarded successfully." });
       achievementForm.reset();
       setIsAwardAchievementDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedTournament?.organizerId}/achievements`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${variables.playerId}/achievements`] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -1504,6 +1504,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
           form={achievementForm}
           onSubmit={(data) => awardAchievementMutation.mutate(data)}
           isPending={awardAchievementMutation.isPending}
+          tournamentId={selectedTournamentId}
         />
       </div >
     );
@@ -1602,6 +1603,7 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
         form={achievementForm}
         onSubmit={(data) => awardAchievementMutation.mutate(data)}
         isPending={awardAchievementMutation.isPending}
+        tournamentId={selectedTournamentId}
       />
 
       {/* Delete Tournament Confirmation Dialog */}
@@ -1902,6 +1904,7 @@ interface AwardAchievementDialogProps {
   form: any;
   onSubmit: (data: z.infer<typeof awardAchievementSchema>) => void;
   isPending: boolean;
+  tournamentId?: string | null;
 }
 
 function AwardAchievementDialog({
@@ -1909,7 +1912,8 @@ function AwardAchievementDialog({
   onOpenChange,
   form,
   onSubmit,
-  isPending
+  isPending,
+  tournamentId
 }: AwardAchievementDialogProps) {
   const [awardType, setAwardType] = useState<'individual' | 'team'>('individual');
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
@@ -1936,13 +1940,13 @@ function AwardAchievementDialog({
 
   // Team search query
   const { data: teamSuggestions = [], isLoading: isSearchingTeams } = useQuery<any[]>({
-    queryKey: ['/api/teams/search', teamSearchQuery],
+    queryKey: ['/api/teams/search', teamSearchQuery, tournamentId],
     queryFn: async () => {
-      if (teamSearchQuery.length < 2) return [];
-      const res = await fetch(`/api/teams/search?q=${encodeURIComponent(teamSearchQuery)}`);
+      if (!tournamentId || teamSearchQuery.length < 2) return [];
+      const res = await fetch(`/api/teams/search?q=${encodeURIComponent(teamSearchQuery)}&tournamentId=${encodeURIComponent(tournamentId)}`);
       return res.json();
     },
-    enabled: teamSearchQuery.length >= 2 && awardType === 'team',
+    enabled: !!tournamentId && teamSearchQuery.length >= 2 && awardType === 'team',
   });
 
   // Team award mutation
@@ -1981,6 +1985,7 @@ function AwardAchievementDialog({
 
     awardTeamMutation.mutate({
       teamProfileId: selectedTeam.id, // Send the team's database ID
+      tournamentId,
       title: selectedAchievement?.isEditable ? customTitle : selectedAchievement?.title,
       description: form.getValues('description'),
       category: achievementId,
@@ -2018,12 +2023,27 @@ function AwardAchievementDialog({
               type="button"
               variant={awardType === 'team' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setAwardType('team')}
+              disabled={!tournamentId}
+              onClick={() => {
+                if (!tournamentId) {
+                  toast({
+                    title: "Select a tournament first",
+                    description: "Team awards are limited to teams registered in a specific tournament.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setAwardType('team');
+              }}
               className="flex-1"
             >
               Team
             </Button>
           </div>
+
+          {!tournamentId && (
+            <p className="text-xs text-muted-foreground">Team awards are only available from a specific tournament view.</p>
+          )}
 
           <Form {...form}>
             <form onSubmit={awardType === 'individual' ? form.handleSubmit(onSubmit) : (e) => { e.preventDefault(); handleTeamSubmit(); }} className="space-y-4">

@@ -930,7 +930,7 @@ export default function PreviewAccount() {
                                 {achievement.game && <p className="text-xs text-muted-foreground text-center">{achievement.game}</p>}
                                 {achievement.serverName ? (
                                   <Button
-                                    variant="link"
+                                    variant="ghost"
                                     size="sm"
                                     className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground text-center"
                                     onClick={(e) => {

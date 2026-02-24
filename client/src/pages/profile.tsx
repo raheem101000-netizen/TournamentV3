@@ -231,73 +231,71 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Teams Section */}
+        <div className="space-y-4 animate-slide-up [animation-delay:150ms]">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            Teams
+            {teams.length > 0 && <Badge variant="outline" className="ml-2 glass">{teams.length}</Badge>}
+          </h2>
+
+          {!teamsLoading && teams.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {teams.map((team) => (
+                <div key={team.id} className="glass-card p-4 rounded-xl flex items-center gap-4 hover:border-primary/50 group cursor-pointer" onClick={() => setLocation(`/team/${team.id}`)}>
+                  <Avatar className="h-12 w-12 border-2 border-primary/20">
+                    <AvatarImage src={team.logoUrl} />
+                    <AvatarFallback>{team.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-bold text-base">{team.name}</h4>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      <span>{team.totalMembers} Members</span>
+                      <span>•</span>
+                      <span>{team.totalWins || 0} Wins</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !teamsLoading && (
+            <div className="glass-card p-6 rounded-xl text-center">
+              <p className="text-muted-foreground">No teams joined yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Achievements Section */}
+        <div className="space-y-4 animate-slide-up [animation-delay:200ms]">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            Achievements
+            {achievements.length > 0 && <Badge variant="outline" className="ml-2 glass">{achievements.length}</Badge>}
+          </h2>
+
+          {!achievementsLoading && achievements.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {achievements.map((achievement) => (
+                <div key={achievement.id} className="glass-card p-4 rounded-xl flex items-start gap-4 hover:border-primary/50 group">
+                  <div className="text-3xl p-3 bg-secondary/50 rounded-lg group-hover:bg-primary/10 transition-colors">
+                    {achievement.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm mb-1">{achievement.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-snug">{achievement.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Card className="glass border-dashed border-2">
+              <CardContent className="py-12 text-center">
+                <div className="text-4xl mb-4 opacity-20">🏆</div>
+                <p className="text-muted-foreground font-medium">No achievements yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Join tournaments to earn trophies!</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </main>
     </div>
-
-        {/* Teams Section */ }
-  <div className="space-y-4 animate-slide-up [animation-delay:150ms]">
-    <h2 className="text-xl font-bold flex items-center gap-2">
-      Teams
-      {teams.length > 0 && <Badge variant="outline" className="ml-2 glass">{teams.length}</Badge>}
-    </h2>
-
-    {!teamsLoading && teams.length > 0 ? (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {teams.map((team) => (
-          <div key={team.id} className="glass-card p-4 rounded-xl flex items-center gap-4 hover:border-primary/50 group cursor-pointer" onClick={() => setLocation(`/team/${team.id}`)}>
-            <Avatar className="h-12 w-12 border-2 border-primary/20">
-              <AvatarImage src={team.logoUrl} />
-              <AvatarFallback>{team.name[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h4 className="font-bold text-base">{team.name}</h4>
-              <div className="flex gap-2 text-xs text-muted-foreground">
-                <span>{team.totalMembers} Members</span>
-                <span>•</span>
-                <span>{team.totalWins || 0} Wins</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : !teamsLoading && (
-      <div className="glass-card p-6 rounded-xl text-center">
-        <p className="text-muted-foreground">No teams joined yet.</p>
-      </div>
-    )}
-  </div>
-
-  {/* Achievements Section */ }
-  <div className="space-y-4 animate-slide-up [animation-delay:200ms]">
-    <h2 className="text-xl font-bold flex items-center gap-2">
-      Achievements
-      {achievements.length > 0 && <Badge variant="outline" className="ml-2 glass">{achievements.length}</Badge>}
-    </h2>
-
-    {!achievementsLoading && achievements.length > 0 ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {achievements.map((achievement) => (
-          <div key={achievement.id} className="glass-card p-4 rounded-xl flex items-start gap-4 hover:border-primary/50 group">
-            <div className="text-3xl p-3 bg-secondary/50 rounded-lg group-hover:bg-primary/10 transition-colors">
-              {achievement.icon}
-            </div>
-            <div>
-              <h4 className="font-bold text-sm mb-1">{achievement.title}</h4>
-              <p className="text-xs text-muted-foreground leading-snug">{achievement.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <Card className="glass border-dashed border-2">
-        <CardContent className="py-12 text-center">
-          <div className="text-4xl mb-4 opacity-20">🏆</div>
-          <p className="text-muted-foreground font-medium">No achievements yet</p>
-          <p className="text-xs text-muted-foreground mt-1">Join tournaments to earn trophies!</p>
-        </CardContent>
-      </Card>
-    )}
-  </div>
-      </main >
-    </div >
   );
 }

@@ -93,25 +93,38 @@ export default function TournamentRegistrationForm({
       });
       return res; // apiRequest already returns the parsed JSON data
     },
-    onSuccess: async () => {
+    onSuccess: async (registration: any) => {
       if (serverId) {
         try {
           await apiRequest('POST', `/api/servers/${serverId}/join`);
-          queryClient.invalidateQueries({ queryKey: ['/api/my-servers'] });
-          queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+          await queryClient.invalidateQueries({ queryKey: ['/api/my-servers'] });
+          await queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
         } catch (error) {
           console.warn('Server join attempt:', error);
         }
       }
 
+      queryClient.setQueryData([`/api/tournaments/${tournamentId}/registrations`], (current: any[] | undefined) => {
+        if (!current) return registration ? [registration] : [];
+        if (!registration?.id) return current;
+        if (current.some((item) => item?.id === registration.id)) return current;
+        return [...current, registration];
+      });
+
+      setShowAlreadyRegistered(true);
+
       toast({
         title: "Success!",
         description: "Registration submitted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/registrations`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/teams`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/registrations`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/teams`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] }),
+      ]);
+
       form.reset();
       onRegistrationSuccess?.();
     },

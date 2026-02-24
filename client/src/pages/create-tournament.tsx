@@ -72,17 +72,25 @@ export default function CreateTournament() {
       const res = await apiRequest('POST', '/api/tournaments', data);
       return res;
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       toast({
         title: "Success!",
         description: "Tournament created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-      queryClient.invalidateQueries({
+
+      queryClient.setQueryData(["/api/tournaments"], (current: any[] | undefined) => {
+        if (!current) return [data];
+        const withoutDuplicate = current.filter((t) => t?.id !== data?.id);
+        return [data, ...withoutDuplicate];
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      await queryClient.invalidateQueries({
         predicate: (query) =>
           typeof query.queryKey[0] === 'string' &&
           query.queryKey[0].includes("achievements"),
       });
+
       setLocation("/");
     },
     onError: (error: any) => {

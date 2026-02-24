@@ -6,6 +6,7 @@ const ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://46.62.229.59
 const API_KEY = process.env.SKYVIEW_API_KEY || 'sk_live_Gu_Zs_rpwYdRXl-WB1fTg62RF5k99HzR';
 const SERVICE_NAME = 'tourni-app';
 const TENANT_ID = 'Tourni1010'; // <--- 🔴 REQUIRED FOR SKYVIEW
+const FLUSH_TIMEOUT_MS = Number(process.env.SKYVIEW_FLUSH_TIMEOUT_MS || 400);
 
 // --- IMPORTANT ROUTES TO TRACE ---
 // Critical, High, and Medium priority routes (all write operations)
@@ -145,14 +146,30 @@ export async function flush() {
 
   const headers = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
   const send = async (path: string, payload: any) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FLUSH_TIMEOUT_MS);
+
     try {
-      const res = await fetch(`${ENDPOINT}${path}`, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const res = await fetch(`${ENDPOINT}${path}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
       if (!res.ok) {
         const text = await res.text();
         console.error(`[SkyView] API Error ${res.status}: ${text}`);
       }
     }
-    catch (e) { console.error('[SkyView] Network Error:', e); }
+    catch (e: any) {
+      if (e?.name === 'AbortError') {
+        console.warn(`[SkyView] Request timeout after ${FLUSH_TIMEOUT_MS}ms: ${path}`);
+      } else {
+        console.error('[SkyView] Network Error:', e);
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
   };
 
   // SEND TRACES

@@ -164,6 +164,40 @@ async function createMatchThreadsForAllMembers(
   }
 }
 
+async function canAccessMatch(userId: string, matchId: string): Promise<boolean> {
+  const match = await storage.getMatch(matchId);
+  if (!match) return false;
+
+  const user = await storage.getUser(userId);
+  if (user?.isAdmin || user?.role === "admin") return true;
+
+  const participantIds = new Set<string>();
+
+  if (match.team1Id) {
+    const team1Members = await storage.getMembersByTeam(match.team1Id);
+    for (const member of team1Members) participantIds.add(member.userId);
+  }
+
+  if (match.team2Id) {
+    const team2Members = await storage.getMembersByTeam(match.team2Id);
+    for (const member of team2Members) participantIds.add(member.userId);
+  }
+
+  if (participantIds.has(userId)) return true;
+
+  const tournament = await storage.getTournament(match.tournamentId);
+  if (!tournament) return false;
+
+  if (tournament.organizerId === userId) return true;
+
+  if (tournament.serverId) {
+    const server = await storage.getServer(tournament.serverId);
+    if (server?.ownerId === userId) return true;
+  }
+
+  return false;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // SkyView Tracing Middleware
   // Must be first to capture all requests
@@ -398,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  wss.on("connection", (ws, req) => {
+  wss.on("connection", async (ws, req) => {
     const url = new URL(req.url || "", `http://${req.headers.host}`);
     const matchId = url.searchParams.get("matchId");
     const channelId = url.searchParams.get("channelId");
@@ -480,6 +514,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     // Handle match connections (existing functionality)
     else if (matchId) {
+      const hasMatchAccess = await canAccessMatch(userInfo.userId, matchId);
+      if (!hasMatchAccess) {
+        ws.send(JSON.stringify({ error: "Forbidden" }));
+        ws.close(1008, "Forbidden");
+        return;
+      }
+
       if (!matchConnections.has(matchId)) {
         matchConnections.set(matchId, new Set());
       }
@@ -737,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
@@ -748,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
@@ -761,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metric('login_failures_total', 1);
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
@@ -771,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log('WARN', 'Login failed - email not verified', { email: validatedData.email, timings });
         metric('login_duration_ms', Date.now() - startTime);
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(403).json({
           error: "Please verify your email before logging in",
           unverified: true,
@@ -812,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       metric('login_bcrypt_ms', timings['bcrypt_compare_ms']);
       metric('login_session_ms', timings['session_save_ms']);
       endTrace('OK');
-      await flush();
+      void flush().catch(console.error);
 
       res.json({
         message: "Login successful",
@@ -833,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       metric('login_failures_total', 1);
       metric('login_duration_ms', Date.now() - startTime);
       endTrace('ERROR');
-      await flush();
+      void flush().catch(console.error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid input data" });
       }
@@ -1084,7 +1125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       const tournaments = await storage.getAllTournaments();
-      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, 300 * 1000); // 5 minutes cache
+      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, 300); // 5 minutes cache
       log('INFO', 'Tournaments fetched from DB', { count: tournaments.length });
       endTrace('OK');
       res.json(tournaments);
@@ -1327,7 +1368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session?.userId) {
         log('WARN', 'Tournament creation unauthorized - not logged in');
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(401).json({ error: "You must be logged in to create a tournament" });
       }
 
@@ -1449,13 +1490,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log('INFO', 'Tournament created', { tournamentId: tournament.id, name: tournament.name });
       metric('tournaments_created_total', 1);
       endTrace('OK');
-      await flush();
+      void flush().catch(console.error);
       res.status(201).json(tournament);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Tournament creation failed', { error: error.message });
       endTrace('ERROR');
-      await flush();
+      void flush().catch(console.error);
       console.error('[DEBUG] Tournament creation error:', error);
       if (error.errors) {
         console.error('[DEBUG] Zod validation errors:', JSON.stringify(error.errors, null, 2));
@@ -1760,6 +1801,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/matches/:id", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const hasMatchAccess = await canAccessMatch(req.session.userId, req.params.id);
+      if (!hasMatchAccess) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       const match = await storage.getMatch(req.params.id);
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
@@ -2431,6 +2481,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Match details endpoint (for 1v1 tournament match screen)
   app.get("/api/tournaments/:tournamentId/matches/:matchId/details", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const hasMatchAccess = await canAccessMatch(req.session.userId, req.params.matchId);
+      if (!hasMatchAccess) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       const match = await storage.getMatch(req.params.matchId);
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
@@ -2461,7 +2520,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes for message inbox match participants (OLD SYSTEM - KEEP FOR MESSAGE INBOX COMPATIBILITY)
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
       const matchId = req.params.matchId;
+      const hasMatchAccess = await canAccessMatch(req.session.userId, matchId);
+      if (!hasMatchAccess) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       console.log(`[DASHBOARD-MATCH-CHAT-GET] Fetching messages for match: ${matchId}`);
       const messages = await storage.getChatMessagesByMatch(matchId);
       console.log(`[DASHBOARD-MATCH-CHAT-GET] Found ${messages.length} raw messages`);
@@ -2534,14 +2602,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/matches/:matchId/messages", async (req, res) => {
     try {
-      const matchId = req.params.matchId;
-      console.log(`[DASHBOARD-MATCH-CHAT-POST] Received message for match: ${matchId}`, JSON.stringify(req.body));
-
-      // PERMANENT: Validate userId is provided to prevent send failures
-      if (!req.body.userId) {
-        console.error(`[DASHBOARD-MATCH-CHAT-POST] Missing userId in request body`);
-        return res.status(400).json({ error: "userId is required to send a message" });
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
+
+      const matchId = req.params.matchId;
+      const hasMatchAccess = await canAccessMatch(req.session.userId, matchId);
+      if (!hasMatchAccess) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      console.log(`[DASHBOARD-MATCH-CHAT-POST] Received message for match: ${matchId}`, JSON.stringify(req.body));
 
       // PERMANENT: Validate message content exists
       if (!req.body.message?.trim() && !req.body.imageUrl) {
@@ -2552,6 +2623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertChatMessageSchema.parse({
         ...req.body,
         matchId: matchId,
+        userId: req.session.userId,
       });
       console.log(`[DASHBOARD-MATCH-CHAT-POST] Validated data:`, JSON.stringify(validatedData));
 
@@ -2772,7 +2844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         log('WARN', 'Registration attempt - not authenticated');
         endTrace('ERROR');
-        await flush();
+        void flush().catch(console.error);
         return res.status(401).json({ error: "You must be logged in to register" });
       }
 
@@ -2915,7 +2987,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log('INFO', 'Registration successful', { tournamentId: req.params.tournamentId, registrationId: registration.id });
       metric('registrations_total', 1);
       endTrace('OK');
-      await flush();
+      void flush().catch(console.error);
       res.status(201).json(registration);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
@@ -2932,7 +3004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       endTrace('ERROR');
-      await flush();
+      void flush().catch(console.error);
       res.status(400).json({ error: error.message });
     }
   });
@@ -3864,7 +3936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bulk Team Achievement - creates achievement for team AND distributes to all members
   app.post("/api/achievements/team", async (req, res) => {
     try {
-      const { teamProfileId, title, description, iconUrl, reward, game, region, serverId, category, awardedBy } = req.body;
+      const { teamProfileId, title, description, iconUrl, reward, game, region, serverId, category, awardedBy, tournamentId } = req.body;
 
       if (!teamProfileId) {
         return res.status(400).json({ error: "Team Profile ID is required" });
@@ -3876,6 +3948,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamProfile = await storage.getTeamProfile(teamProfileId);
       if (!teamProfile) {
         return res.status(404).json({ error: "Team profile not found" });
+      }
+
+      if (tournamentId) {
+        const tournamentRegistrations = await storage.getRegistrationsByTournament(tournamentId);
+        const isTeamRegisteredForTournament = tournamentRegistrations.some(
+          (registration) => registration.teamProfileId === teamProfileId && registration.status !== "rejected"
+        );
+
+        if (!isTeamRegisteredForTournament) {
+          return res.status(403).json({ error: "Team is not registered for this tournament" });
+        }
       }
 
       console.log("[TEAM_ACHIEVEMENT] Found team:", teamProfile.name);
@@ -3996,12 +4079,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams/search", async (req, res) => {
     try {
       const query = (req.query.q as string || '').toLowerCase().trim();
+      const tournamentId = (req.query.tournamentId as string | undefined)?.trim();
 
       if (query.length < 2) {
         return res.json([]);
       }
 
       console.log("[TEAM_SEARCH] Searching for:", query);
+
+      let allowedTeamProfileIds: Set<string> | null = null;
+      if (tournamentId) {
+        const tournamentRegistrations = await storage.getRegistrationsByTournament(tournamentId);
+        const eligibleIds = tournamentRegistrations
+          .filter((r) => r.status !== "rejected" && !!r.teamProfileId)
+          .map((r) => r.teamProfileId as string);
+        allowedTeamProfileIds = new Set(eligibleIds);
+      }
 
       // Get all users to look up owners later
       const allUsers = await storage.getAllUsers();
@@ -4014,6 +4107,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const user of allUsers.slice(0, 100)) { // Limit to prevent too many queries
         const userTeams = await storage.getTeamProfilesByOwner(user.id);
         for (const team of userTeams) {
+          if (allowedTeamProfileIds && !allowedTeamProfileIds.has(team.id)) {
+            continue;
+          }
+
           if (
             team.name.toLowerCase().includes(query) ||
             (team.profileId && team.profileId.toLowerCase().includes(query))
@@ -5136,6 +5233,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { matchId } = req.params;
+      const hasMatchAccess = await canAccessMatch(req.session.userId, matchId);
+      if (!hasMatchAccess) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
 
       // Try to find existing thread for this match using storage
       const threads = await storage.getAllMessageThreads();
