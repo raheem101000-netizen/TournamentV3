@@ -167,7 +167,7 @@ export default function PreviewMyServers() {
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-2xl font-bold">My Servers</h1>
+              <h1 className="text-2xl font-bold">My Page</h1>
               <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
                 <Plus className="w-4 h-4 mr-2" />
                 Create
