@@ -7,7 +7,7 @@ import { Plus, Users, Trophy, Server as ServerIcon, Search, Crown, Shield, Star 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import type { Server, ServerRole, Tournament } from "@shared/schema";
+import type { Server, Tournament } from "@shared/schema";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,11 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import ImageUploadField from "@/components/ImageUploadField";
 import TournamentCard from "@/components/TournamentCard";
 
-type ServerFilter = "all" | "owned" | "member" | "roles" | "tournaments";
-
-interface ServerWithRoles extends Server {
-  userRoles?: string[];
-}
+type ServerFilter = "all" | "tournaments";
 
 export default function PreviewMyServers() {
   const { user } = useAuth();
@@ -45,12 +41,6 @@ export default function PreviewMyServers() {
   // Fetch servers where user is a member
   const { data: memberServersData, isLoading: memberLoading } = useQuery<Server[]>({
     queryKey: [`/api/users/${user?.id}/servers`],
-    enabled: !!user?.id,
-  });
-
-  // Fetch server roles for current user
-  const { data: userRolesData } = useQuery<ServerRole[]>({
-    queryKey: [`/api/users/${user?.id}/roles`],
     enabled: !!user?.id,
   });
 
@@ -143,21 +133,7 @@ export default function PreviewMyServers() {
   });
 
   const myServers = memberServersData || [];
-  const userRoles = userRolesData || [];
-
-  // Get unique server IDs where user has roles
-  const serverIdsWithRoles = new Set(userRoles.map(role => role.serverId));
-
-  // Separate servers into owned, member, and role-based servers
-  const ownedServers = myServers.filter(server => server.ownerId === user?.id);
-  const memberServers = myServers.filter(server => server.ownerId !== user?.id && !serverIdsWithRoles.has(server.id));
-  const roleServers = myServers.filter(server => serverIdsWithRoles.has(server.id)).map(server => ({
-    ...server,
-    userRoles: userRoles.filter(r => r.serverId === server.id).map(r => r.name)
-  }));
-
-  // Filter servers based on selection
-  const displayedServers = filter === "owned" ? ownedServers : filter === "member" ? memberServers : filter === "roles" ? roleServers : myServers;
+  const displayedServers = myServers;
 
   const isLoading = memberLoading;
 
@@ -181,24 +157,6 @@ export default function PreviewMyServers() {
                 data-testid="filter-all"
               >
                 All Servers ({myServers.length})
-              </Badge>
-              <Badge
-                variant={filter === "owned" ? "default" : "outline"}
-                className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
-                onClick={() => setFilter("owned")}
-                data-testid="filter-owned"
-              >
-                <Crown className="w-3 h-3 mr-1" />
-                Owned ({ownedServers.length})
-              </Badge>
-              <Badge
-                variant={filter === "member" ? "default" : "outline"}
-                className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
-                onClick={() => setFilter("member")}
-                data-testid="filter-member"
-              >
-                <Users className="w-3 h-3 mr-1" />
-                Member ({memberServers.length})
               </Badge>
               <Badge
                 variant={filter === "tournaments" ? "default" : "outline"}
