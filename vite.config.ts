@@ -31,7 +31,33 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "wouter",
+      "@tanstack/react-query",
+      "framer-motion",
+      "lucide-react",
+      "clsx",
+      "tailwind-merge",
+      "class-variance-authority",
+      "date-fns",
+      "recharts",
+      "zod",
+      "@hookform/resolvers/zod",
+      "react-hook-form",
+    ],
+  },
   server: {
+    warmup: {
+      clientFiles: [
+        "./src/main.tsx",
+        "./src/App.tsx",
+        "./src/pages/preview-my-servers.tsx",
+      ],
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
