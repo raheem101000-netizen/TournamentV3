@@ -32,3 +32,18 @@
 - Added server-side authorization checks for match access across match details, match metadata, match messages, match thread lookup, and WebSocket match chat connections.
 - Scoped team search in the award dialog to `tournamentId` and added backend validation so team achievements cannot be awarded to teams not registered in that tournament context.
 - Verified with `npm run check` (passes).
+
+## Discovery Card Sizing Sync (2026-03-02)
+
+- [completed] Compare `/discovery` and `/` card layout classes
+- [completed] Update discovery server grid to match home card sizing behavior
+- [in_progress] Run `npm run check` to validate no type or build regressions
+- [pending] Add review notes for this sizing sync
+
+## My Page Section Scroll Isolation (2026-03-02)
+
+- [completed] Inspect `/myservers` layout and identify why page-level scrolling still occurs
+- [completed] Refactor `/myservers` container sizing so the viewport itself does not scroll
+- [completed] Keep independent scroll for Servers and Tournaments columns (matching current tournaments section behavior)
+- [in_progress] Run `npm run check` to confirm no regressions
+- [pending] Add review notes and validation outcome

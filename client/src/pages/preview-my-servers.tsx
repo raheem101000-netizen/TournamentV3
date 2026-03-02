@@ -3,7 +3,7 @@ import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Server as ServerIcon, Search, Crown, Star } from "lucide-react";
+import { Plus, Users, Server as ServerIcon, Search, Crown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
@@ -32,6 +32,7 @@ export default function PreviewMyServers() {
   const [serverIconUrl, setServerIconUrl] = useState("");
   const [serverBackgroundUrl, setServerBackgroundUrl] = useState("");
   const [createServerStep, setCreateServerStep] = useState(1);
+  const [tournamentFilter, setTournamentFilter] = useState<"registered" | "saved">("registered");
 
   // Fetch servers where user is a member
   const { data: memberServersData, isLoading: memberLoading } = useQuery<Server[]>({
@@ -104,38 +105,16 @@ export default function PreviewMyServers() {
     createServerMutation.mutate();
   };
 
-  const clearSavedTournamentsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('DELETE', '/api/users/me/saved-tournaments');
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me/saved-tournaments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
-      toast({
-        title: "Saved tournaments cleared",
-        description: "All your saved tournaments have been removed.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to clear saved tournaments",
-        variant: "destructive",
-      });
-    }
-  });
-
   const myServers = memberServersData || [];
 
   return (
-    <MobileLayout>
-      <div className="flex flex-col min-h-screen bg-background pb-20 relative">
+    <MobileLayout disableContentBottomPadding>
+      <div className="flex h-dvh flex-col overflow-hidden bg-background relative">
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-lg mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
+            <div className="relative flex items-center justify-center">
               <h1 className="text-2xl font-bold">My Page</h1>
-              <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
+              <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server" className="absolute right-0">
                 <Plus className="w-4 h-4 mr-2" />
                 Create
               </Button>
@@ -143,145 +122,119 @@ export default function PreviewMyServers() {
           </div>
         </header>
 
-        <main className="container max-w-lg mx-auto px-4 py-4 space-y-6">
+        <main className="flex flex-1 min-h-0 gap-3 px-3 py-4 pb-24 overflow-hidden">
 
-          {/* All Servers Section */}
-          <div>
-            <div className="flex items-center justify-between border-b-2 border-foreground mb-4 pb-1">
-              <h2 className="text-lg font-bold">Servers</h2>
-              <Badge variant="secondary" className="text-xs">
-                {myServers.length}
-              </Badge>
+          {/* Left: Servers — scrollable */}
+          <div className="w-1/3 flex flex-col min-w-0 min-h-0">
+            <div className="flex items-center justify-between border-b-2 border-foreground mb-3 pb-1">
+              <h2 className="text-sm font-bold">Servers</h2>
+              <Badge variant="secondary" className="text-xs">{myServers.length}</Badge>
             </div>
 
-            {memberLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <p className="text-muted-foreground">Loading...</p>
-              </div>
-            ) : myServers.length > 0 ? (
-              <div className="space-y-4">
-                {myServers.map((server, i) => {
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+              {memberLoading ? (
+                <p className="text-muted-foreground text-xs text-center pt-8">Loading...</p>
+              ) : myServers.length > 0 ? (
+                myServers.map((server, i) => {
                   const isOwned = server.ownerId === user?.id;
                   return (
                     <Link key={server.id} href={`/server/${server.id}`}>
                       <Card
                         variant="glass"
-                        className="p-4 hover-elevate cursor-pointer relative"
+                        className="p-2.5 hover-elevate cursor-pointer"
                         data-testid={isOwned ? `server-owned-${server.id}` : `server-member-${server.id}`}
                       >
-                        {(server as any).isVerified === 1 && (
-                          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`server-verified-${server.id}`}>
-                            <Star className="w-3 h-3 fill-white" />
-                            Verified
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-14 h-14">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
                             <AvatarImage
                               src={server.iconUrl || undefined}
                               alt={server.name}
                               loading={i < 4 ? "eager" : "lazy"}
                             />
-                            <AvatarFallback className="text-xl font-semibold">
+                            <AvatarFallback className="text-sm font-semibold">
                               {server.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-lg truncate">
-                                {server.name}
-                              </h3>
-                              {isOwned && (
-                                <Badge variant="secondary" className="flex-shrink-0">
-                                  <Crown className="w-3 h-3 mr-1" />
-                                  Owner
-                                </Badge>
-                              )}
+                            <div className="flex items-center gap-1">
+                              <h3 className="font-semibold text-xs truncate">{server.name}</h3>
+                              {isOwned && <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" />}
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                <span>{server.memberCount || 0} members</span>
-                              </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Users className="w-3 h-3" />
+                              <span>{server.memberCount || 0}</span>
                             </div>
                           </div>
                         </div>
                       </Card>
                     </Link>
                   );
-                })}
+                })
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <ServerIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-xs text-muted-foreground mb-2">No servers yet</p>
+                  <Link href="/discovery">
+                    <Button size="sm" data-testid="button-go-to-discovery">
+                      <Search className="w-3 h-3 mr-1" />
+                      Discover
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Tournaments with filter pills */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+
+            {/* Filter pills — like home page "All Games" row */}
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar flex-shrink-0">
+              <Button
+                variant={tournamentFilter === "registered" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTournamentFilter("registered")}
+                className="rounded-full h-8 text-xs whitespace-nowrap"
+              >
+                Registered
+                {registeredTournaments && registeredTournaments.length > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 text-xs px-1 py-0 h-4">{registeredTournaments.length}</Badge>
+                )}
+              </Button>
+              <Button
+                variant={tournamentFilter === "saved" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTournamentFilter("saved")}
+                className="rounded-full h-8 text-xs whitespace-nowrap"
+              >
+                Saved
+                {savedTournaments && savedTournaments.length > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 text-xs px-1 py-0 h-4">{savedTournaments.length}</Badge>
+                )}
+              </Button>
+            </div>
+
+            {/* Grid — 2 per row, scrolls down */}
+            {(tournamentFilter === "registered" ? registeredTournaments?.length : savedTournaments?.length) ? (
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                <div className="grid grid-cols-2 gap-2">
+                  {(tournamentFilter === "registered" ? registeredTournaments || [] : savedTournaments || []).map((tournament) => (
+                    <TournamentCard
+                      key={tournament.id}
+                      tournament={tournament}
+                      onView={(id) => setLocation(`/tournament/${id}/view`)}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <ServerIcon className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">No servers yet</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                  Join a server from the Discovery page to get started!
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <p className="text-sm text-muted-foreground">
+                  {tournamentFilter === "registered" ? "No registered tournaments" : "No saved tournaments"}
                 </p>
-                <Link href="/discovery">
-                  <Button data-testid="button-go-to-discovery">
-                    <Search className="w-4 h-4 mr-2" />
-                    Discover Servers
-                  </Button>
-                </Link>
               </div>
             )}
           </div>
-
-          {/* Registered Tournaments Section */}
-          {registeredTournaments && registeredTournaments.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between border-b-2 border-foreground mb-4 pb-1">
-                <h2 className="text-lg font-bold">Registered Tournaments</h2>
-                <Badge variant="secondary" className="text-xs">
-                  Active ({registeredTournaments.length})
-                </Badge>
-              </div>
-              <div className="space-y-4">
-                {registeredTournaments.map((tournament) => (
-                  <TournamentCard
-                    key={tournament.id}
-                    tournament={tournament}
-                    onView={(id) => setLocation(`/tournament/${id}/view`)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Saved Tournaments Section */}
-          {savedTournaments && savedTournaments.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between border-b-2 border-foreground mb-4 pb-1">
-                <h2 className="text-lg font-bold">Saved Tournaments</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs text-muted-foreground hover:text-destructive"
-                  onClick={() => {
-                    if (confirm("Are you sure you want to remove all saved tournaments?")) {
-                      clearSavedTournamentsMutation.mutate();
-                    }
-                  }}
-                  disabled={clearSavedTournamentsMutation.isPending}
-                >
-                  Clear All
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {savedTournaments.map((tournament) => (
-                  <TournamentCard
-                    key={tournament.id}
-                    tournament={tournament}
-                    onView={(id) => setLocation(`/tournament/${id}/view`)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
         </main>
 
