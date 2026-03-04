@@ -222,7 +222,14 @@ export default function PreviewMyServers() {
                     <TournamentCard
                       key={tournament.id}
                       tournament={tournament}
-                      onView={(id) => setLocation(`/tournament/${id}/view`)}
+                      onView={() => {
+                        if (tournamentFilter === "registered" && tournament.serverId) {
+                          setLocation(`/server/${tournament.serverId}`);
+                          return;
+                        }
+
+                        setLocation(`/tournament/${tournament.id}/view`);
+                      }}
                     />
                   ))}
                 </div>

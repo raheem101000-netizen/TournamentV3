@@ -3,11 +3,11 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { FEATURE_MESSAGES_ENABLED } from "@/config/features";
 
-const navItems = [
+const baseNavItems = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/discovery", icon: Compass, label: "Discovery" },
-  { path: "/messages", icon: MessageCircle, label: "Messages" },
   { path: "/myservers", icon: Server, label: "My page" },
   { path: "/account", icon: User, label: "Account" },
 ];
@@ -18,9 +18,19 @@ export function BottomNavigation() {
 
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/message-threads/unread-count"],
-    enabled: !!user,
+    enabled: !!user && FEATURE_MESSAGES_ENABLED,
     refetchInterval: 30000,
   });
+
+  const navItems = FEATURE_MESSAGES_ENABLED
+    ? [
+        baseNavItems[0],
+        baseNavItems[1],
+        { path: "/messages", icon: MessageCircle, label: "Messages" },
+        baseNavItems[2],
+        baseNavItems[3],
+      ]
+    : baseNavItems;
 
   const unreadCount = unreadData?.count || 0;
 

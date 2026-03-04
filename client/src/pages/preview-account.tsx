@@ -25,6 +25,7 @@ import { Gamepad2, AlertTriangle, Clock } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FEATURE_MESSAGES_ENABLED } from "@/config/features";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -408,9 +409,11 @@ export default function PreviewAccount() {
                       <Users className="w-4 h-4 mr-2" />
                       Add Friend
                     </Button>
-                    <Button variant="outline" className="flex-1" data-testid="button-message">
-                      Message
-                    </Button>
+                    {FEATURE_MESSAGES_ENABLED && (
+                      <Button variant="outline" className="flex-1" data-testid="button-message">
+                        Message
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

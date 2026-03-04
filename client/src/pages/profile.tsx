@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft, MessageSquare, UserPlus, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FEATURE_MESSAGES_ENABLED } from "@/config/features";
 
 interface UserProfile {
   id: string;
@@ -40,7 +41,6 @@ export default function Profile() {
     if (!userProfile) return;
 
     try {
-      // Create or get message thread
       const response = await fetch("/api/message-threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,7 +54,6 @@ export default function Profile() {
       if (!response.ok) throw new Error("Failed to create message thread");
       const thread = await response.json();
 
-      // Navigate to messages with this thread selected
       setLocation(`/messages?threadId=${thread.id}`);
       toast({
         title: "Opening message thread",
@@ -184,10 +183,12 @@ export default function Profile() {
 
             {!isOwnProfile && (
               <div className="flex gap-3 w-full md:w-auto mt-4 md:mt-0">
-                <Button onClick={handleMessage} className="flex-1 md:flex-none shadow-lg shadow-primary/20 transition-all hover:scale-105">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
+                {FEATURE_MESSAGES_ENABLED && (
+                  <Button onClick={handleMessage} className="flex-1 md:flex-none shadow-lg shadow-primary/20 transition-all hover:scale-105">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                )}
                 <Button
                   onClick={handleAddFriend}
                   disabled={isFriendRequestSent}

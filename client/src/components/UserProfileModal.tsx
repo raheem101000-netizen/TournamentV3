@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
+import { FEATURE_MESSAGES_ENABLED } from "@/config/features";
 
 interface UserProfileModalProps {
   userId: string | null;
@@ -262,14 +263,16 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
             {/* Action Buttons */}
             {currentUser?.id !== userId && (
               <div className="flex gap-2">
-                <Button
-                  onClick={handleMessageProfile}
-                  className="flex-1"
-                  data-testid="button-message-profile-user"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
+                {FEATURE_MESSAGES_ENABLED && (
+                  <Button
+                    onClick={handleMessageProfile}
+                    className="flex-1"
+                    data-testid="button-message-profile-user"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                )}
                 {renderFriendButton()}
               </div>
             )}

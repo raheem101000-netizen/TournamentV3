@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,24 +74,6 @@ export default function PreviewDiscovery() {
     },
   });
 
-  const joinServerMutation = useMutation({
-    mutationFn: async (serverId: string) => {
-      if (!user?.id) throw new Error("You must be logged in to join a server");
-      return await apiRequest('POST', `/api/servers/${serverId}/join`, { userId: user.id });
-    },
-    onSuccess: (_data, serverId) => {
-      toast({ title: "Joined server!", description: "You've successfully joined the server." });
-      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/servers`] });
-      setLocation(`/server/${serverId}`);
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to join server", description: error.message || "Please try again later.", variant: "destructive" });
-    },
-  });
-
   const handleCreateServer = () => {
     if (!serverName.trim()) {
       toast({ title: "Server name required", description: "Please enter a name for your server.", variant: "destructive" });
@@ -99,7 +82,7 @@ export default function PreviewDiscovery() {
     createServerMutation.mutate();
   };
 
-  const serverCards = (servers || []).map((s) => ({
+  const serverCards = (servers || []).map((s: any) => ({
     id: s.id,
     name: s.name,
     description: s.description || "No description",
@@ -109,6 +92,7 @@ export default function PreviewDiscovery() {
     memberCount: s.memberCount || 0,
     categories: s.gameTags && s.gameTags.length > 0 ? s.gameTags : ["Gaming"],
     isVerified: (s as any).isVerified === 1,
+    ownerAvatarUrl: s.ownerAvatarUrl || null,
   }));
 
   const displayServers = serverCards.filter(server => {
@@ -117,7 +101,7 @@ export default function PreviewDiscovery() {
     return (
       server.name.toLowerCase().includes(query) ||
       server.description.toLowerCase().includes(query) ||
-      server.categories.some(cat => cat.toLowerCase().includes(query))
+      server.categories.some((cat: string) => cat.toLowerCase().includes(query))
     );
   });
 
@@ -162,11 +146,23 @@ export default function PreviewDiscovery() {
           </div>
         </header>
 
-        {/* Server grid — same style as home page tournament grid */}
+        {/* Server grid */}
         <main className="px-4 py-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading servers...</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="aspect-[16/9] w-full" />
+                  <div className="px-4 pb-4 pt-0">
+                    <Skeleton className="w-10 h-10 rounded-full -mt-5" />
+                    <div className="mt-2 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : displayServers.length === 0 ? (
             <div className="text-center py-12">
@@ -175,7 +171,7 @@ export default function PreviewDiscovery() {
               <p className="text-sm text-muted-foreground mt-2">Be the first to create one!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {displayServers.map((server) => (
                 <Card
                   key={server.id}
@@ -183,14 +179,9 @@ export default function PreviewDiscovery() {
                   data-testid={`server-card-${server.id}`}
                   onClick={() => setLocation(`/server/${server.id}/preview`)}
                 >
-                  {/* Tall portrait image — matching home page tournament poster */}
-                  <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
-                    {/* Top row: game tag left, verified right */}
-                    <div className="absolute top-2 left-2 z-20">
-                      <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
-                        {server.categories[0]}
-                      </Badge>
-                    </div>
+                  {/* Banner image — 16:9 landscape */}
+                  <div className="relative aspect-[16/9] bg-gradient-to-br from-primary/30 to-primary/10">
+                    {/* Verified badge */}
                     {server.isVerified && (
                       <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium" data-testid={`server-verified-${server.id}`}>
                         <Star className="w-3 h-3 fill-white" />
@@ -204,39 +195,45 @@ export default function PreviewDiscovery() {
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       thumbnailSize="lg"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-
-                    {/* Member count at bottom — like entry fee pill on home */}
-                    <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col items-center">
-                      <div className="flex items-center gap-1 text-white/90 font-semibold text-sm bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                        <Users className="w-3.5 h-3.5" />
-                        {server.memberCount.toLocaleString()} members
-                      </div>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                   </div>
 
-                  {/* Card content — matching home page layout below image */}
-                  <div className="p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-7 h-7 flex-shrink-0 border border-border">
-                        {server.logo && <AvatarImage src={server.logo} alt={server.name} />}
-                        <AvatarFallback className="text-xs font-semibold">{server.logoFallback}</AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-bold text-sm leading-tight truncate" data-testid={`server-name-${server.id}`}>
+                  {/* Card content with overlapping avatar */}
+                  <div className="relative px-4 pb-4 pt-0">
+                    {/* Owner avatar overlapping banner */}
+                    <Avatar className="w-10 h-10 -mt-5 border-[3px] border-card bg-card flex-shrink-0 shadow-md">
+                      {server.ownerAvatarUrl ? (
+                        <AvatarImage src={server.ownerAvatarUrl} alt={server.name} />
+                      ) : server.logo ? (
+                        <AvatarImage src={server.logo} alt={server.name} />
+                      ) : null}
+                      <AvatarFallback className="text-xs font-bold">{server.logoFallback}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="mt-2 space-y-1.5">
+                      {/* Server name */}
+                      <h3 className="font-bold text-base leading-tight truncate" data-testid={`server-name-${server.id}`}>
                         {server.name}
                       </h3>
+
+                      {/* Description */}
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {server.description}
+                      </p>
+
+                      {/* Stats row */}
+                      <div className="flex items-center gap-3 pt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                          {server.memberCount.toLocaleString()} Members
+                        </span>
+                        {server.categories[0] && (
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                            {server.categories[0]}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <Button
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        joinServerMutation.mutate(server.id);
-                      }}
-                      disabled={joinServerMutation.isPending}
-                      data-testid={`button-join-server-${server.id}`}
-                    >
-                      {joinServerMutation.isPending ? "Joining..." : "Join Server"}
-                    </Button>
                   </div>
                 </Card>
               ))}

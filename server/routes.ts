@@ -1,7 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { createProxyMiddleware } from "http-proxy-middleware";
+// Dynamic import - http-proxy-middleware hangs on import with Node v25+
+const getProxyMiddleware = async () => {
+  const { createProxyMiddleware } = await import("http-proxy-middleware");
+  return createProxyMiddleware;
+};
 import { unsign } from "cookie-signature";
 import { randomUUID } from "crypto";
 import { randomBytes } from "crypto";
@@ -338,14 +342,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/*', writeRateLimiter);
   app.delete('/api/*', writeRateLimiter);
 
-  app.use('/expo-app', createProxyMiddleware({
-    target: 'http://127.0.0.1:8081',
-    changeOrigin: true,
-    ws: true,
-    pathRewrite: {
-      '^/expo-app': ''
-    }
-  }));
+  // Lazy-load proxy middleware to avoid blocking startup on Node v25+
+  getProxyMiddleware().then(createProxyMiddleware => {
+    app.use('/expo-app', createProxyMiddleware({
+      target: 'http://127.0.0.1:8081',
+      changeOrigin: true,
+      ws: true,
+      pathRewrite: {
+        '^/expo-app': ''
+      }
+    }));
+  }).catch(err => {
+    console.warn('[proxy] Failed to load http-proxy-middleware:', err.message);
+  });
   const httpServer = createServer(app);
   const wss = new WebSocketServer({
     noServer: true
@@ -1124,11 +1133,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTrace('OK');
         return res.json(cached);
       }
-      const tournaments = await storage.getAllTournaments();
-      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, tournaments, 300); // 5 minutes cache
-      log('INFO', 'Tournaments fetched from DB', { count: tournaments.length });
+      const allTournaments = await storage.getAllTournaments();
+
+      // Enrich with organizer avatar
+      const organizerIds = Array.from(new Set(allTournaments.map(t => t.organizerId).filter((id): id is string => !!id)));
+      let organizerMap: Record<string, { avatarUrl?: string | null; username?: string }> = {};
+      if (organizerIds.length > 0) {
+        const { users } = await import("../shared/schema.js");
+        const { inArray } = await import("drizzle-orm");
+        const { db } = await import("./db.js");
+        const organizers = await db.select({ id: users.id, avatarUrl: users.avatarUrl, username: users.username }).from(users).where(inArray(users.id, organizerIds));
+        organizerMap = Object.fromEntries(organizers.map(u => [u.id, u]));
+      }
+
+      const enrichedTournaments = allTournaments.map(t => ({
+        ...t,
+        organizerAvatarUrl: t.organizerId ? organizerMap[t.organizerId]?.avatarUrl ?? null : null,
+      }));
+
+      cache.set(CACHE_KEYS.TOURNAMENTS_PUBLIC, enrichedTournaments, 300); // 5 minutes cache
+      log('INFO', 'Tournaments fetched from DB', { count: enrichedTournaments.length });
       endTrace('OK');
-      res.json(tournaments);
+      res.json(enrichedTournaments);
     } catch (error: any) {
       logError(error, { endpoint: req?.method + " " + req?.path, userId: req?.session?.userId });
       log('ERROR', 'Failed to fetch tournaments', { error: error.message });
@@ -3301,14 +3327,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // OPTIMIZED: Fetch servers and member counts in parallel batch queries
-      const [servers, memberCounts] = await Promise.all([
+      const [allServers, memberCounts] = await Promise.all([
         storage.getAllServers(),
         storage.getServerMemberCounts()
       ]);
 
-      const serversWithMemberCount = servers.map((server) => ({
+      // Enrich with owner avatar
+      const ownerIds = Array.from(new Set(allServers.map(s => s.ownerId).filter((id): id is string => !!id)));
+      let ownerMap: Record<string, { avatarUrl?: string | null; username?: string }> = {};
+      if (ownerIds.length > 0) {
+        const { users } = await import("../shared/schema.js");
+        const { inArray } = await import("drizzle-orm");
+        const { db } = await import("./db.js");
+        const owners = await db.select({ id: users.id, avatarUrl: users.avatarUrl, username: users.username }).from(users).where(inArray(users.id, ownerIds));
+        ownerMap = Object.fromEntries(owners.map(u => [u.id, u]));
+      }
+
+      const serversWithMemberCount = allServers.map((server) => ({
         ...server,
         memberCount: memberCounts[server.id] || 0,
+        ownerAvatarUrl: server.ownerId ? ownerMap[server.ownerId]?.avatarUrl ?? null : null,
       }));
 
       // Increase cache TTL to 5 minutes (was 60s)

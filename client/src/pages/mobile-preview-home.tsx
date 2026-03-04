@@ -1,23 +1,19 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Calendar, Users, Trophy, DollarSign, Star, Info, Search, Filter, Gamepad2, Laptop, MapPin } from "lucide-react";
+import { Calendar, Users, Trophy, DollarSign, Star, Info, Search, Gamepad2, Laptop, MapPin, SlidersHorizontal, X } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { Tournament, Server } from "@shared/schema";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+type EnrichedTournament = Tournament & { organizerAvatarUrl?: string | null };
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,11 +21,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function MobilePreviewHome() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [gameFilter, setGameFilter] = useState<string>("all");
+  const [selectedGames, setSelectedGames] = useState<string[]>([]);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: tournaments, isLoading } = useQuery<Tournament[]>({
+  const { data: tournaments, isLoading } = useQuery<EnrichedTournament[]>({
     queryKey: ["/api/tournaments"],
   });
 
@@ -43,11 +40,32 @@ export default function MobilePreviewHome() {
     enabled: !!user,
   });
 
+  useEffect(() => {
+    if (!filtersExpanded) return;
+
+    const closeFiltersOnScroll = () => setFiltersExpanded(false);
+    window.addEventListener("scroll", closeFiltersOnScroll, true);
+
+    return () => {
+      window.removeEventListener("scroll", closeFiltersOnScroll, true);
+    };
+  }, [filtersExpanded]);
+
   const uniqueGames = useMemo(() => {
     if (!tournaments) return [];
-    const games = new Set(tournaments.map(t => t.game).filter(Boolean));
+    const games = new Set(
+      tournaments
+        .map((t) => t.game)
+        .filter((game): game is string => typeof game === "string" && game.length > 0)
+    );
     return Array.from(games);
   }, [tournaments]);
+
+  const toggleGameSelection = (game: string) => {
+    setSelectedGames((prev) =>
+      prev.includes(game) ? prev.filter((value) => value !== game) : [...prev, game]
+    );
+  };
 
   const filteredTournaments = useMemo(() => {
     if (!tournaments) return [];
@@ -65,13 +83,12 @@ export default function MobilePreviewHome() {
         t.game?.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      // 4. Game Filter Check
-
-      if (gameFilter !== "all" && t.game !== gameFilter) return false;
+      // 4. Game Filter Check (multi-select)
+      if (selectedGames.length > 0 && (!t.game || !selectedGames.includes(t.game))) return false;
 
       return true;
     });
-  }, [tournaments, searchQuery, gameFilter, savedTournaments]);
+  }, [tournaments, searchQuery, selectedGames]);
 
   const isServerVerified = (serverId: string | null | undefined) => {
     if (!serverId || !servers) return false;
@@ -133,27 +150,54 @@ export default function MobilePreviewHome() {
             />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             <Button
-              variant={gameFilter === "all" ? "default" : "outline"}
+              variant={filtersExpanded || selectedGames.length > 0 ? "default" : "outline"}
               size="sm"
-              onClick={() => setGameFilter("all")}
               className="rounded-full h-8 text-xs whitespace-nowrap"
+              onClick={() => setFiltersExpanded((prev) => !prev)}
+              data-testid="button-game-filters"
             >
-              All Games
+              <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
+              Filter
+              {selectedGames.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                  {selectedGames.length}
+                </Badge>
+              )}
             </Button>
 
-            {uniqueGames.map((game) => (
+            {filtersExpanded && selectedGames.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-[11px] whitespace-nowrap"
+                onClick={() => setSelectedGames([])}
+              >
+                Clear
+              </Button>
+            )}
+
+            {(filtersExpanded ? uniqueGames : selectedGames.slice(0, 3)).map((game) => (
               <Button
                 key={game}
-                variant={gameFilter === game ? "default" : "outline"}
+                type="button"
+                variant={selectedGames.includes(game) ? "default" : "outline"}
                 size="sm"
-                onClick={() => setGameFilter(game!)}
+                onClick={() => toggleGameSelection(game)}
                 className="rounded-full h-8 text-xs whitespace-nowrap"
               >
                 {game}
+                {selectedGames.includes(game) && !filtersExpanded && <X className="w-3 h-3 ml-1" />}
               </Button>
             ))}
+
+            {!filtersExpanded && selectedGames.length > 3 && (
+              <Badge variant="outline" className="rounded-full h-8 px-2 text-[11px] whitespace-nowrap">
+                +{selectedGames.length - 3}
+              </Badge>
+            )}
+
           </div>
         </div>
 
@@ -172,12 +216,14 @@ export default function MobilePreviewHome() {
             Array.from({ length: 3 }).map((_, i) => (
               <Card key={i} className="overflow-hidden">
                 <Skeleton className="aspect-square w-full" />
-                <div className="p-3 space-y-3">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4 mx-auto" />
-                    <Skeleton className="h-3 w-1/2 mx-auto" />
+                <div className="px-4 pb-4 pt-0">
+                  <Skeleton className="w-10 h-10 rounded-full -mt-5" />
+                  <div className="mt-2 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-3">
                     <Skeleton className="h-9 flex-1" />
                     <Skeleton className="h-9 w-9" />
                   </div>
@@ -193,17 +239,14 @@ export default function MobilePreviewHome() {
               >
                 {/* Portrait Poster Image */}
                 <div className="relative aspect-square bg-gradient-to-br from-primary/30 to-primary/10">
-                  {/* Top Right Controls: Verified Badge & Favorite Button */}
+                  {/* Top Right: Verified + Save */}
                   <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
-                    {/* Verified Badge */}
                     {isServerVerified(tournament.serverId) && (
                       <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white text-xs font-medium shadow-sm" data-testid={`tournament-verified-${tournament.id}`}>
                         <Star className="w-3 h-3 fill-white" />
                         Verified
                       </div>
                     )}
-
-                    {/* Star Button */}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -216,7 +259,7 @@ export default function MobilePreviewHome() {
                     </Button>
                   </div>
 
-                  {/* Game Badge - New visual element */}
+                  {/* Game badge top-left */}
                   {tournament.game && (
                     <div className="absolute top-2 left-2 z-20">
                       <Badge variant="secondary" className="bg-black/60 hover:bg-black/70 text-white backdrop-blur-sm border-0 text-[10px] px-2 h-5">
@@ -230,7 +273,7 @@ export default function MobilePreviewHome() {
                     alt={tournament.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     thumbnailSize="lg"
-                    priority={index < 3} // Priority load first 3 images for LCP
+                    priority={index < 3}
                     fallback={
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
                         <div className="relative">
@@ -246,7 +289,7 @@ export default function MobilePreviewHome() {
                   {/* Dark gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
 
-                  {/* Prize & Entry Fee */}
+                  {/* Prize & Entry Fee overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center">
                     {tournament.prizeReward && (
                       <div
@@ -269,40 +312,53 @@ export default function MobilePreviewHome() {
                   </div>
                 </div>
 
-                {/* Card Content */}
-                <div className="p-3 space-y-3">
-                  <div className="text-center">
-                    <h3 className="font-bold text-base leading-tight mb-1 truncate px-1" title={tournament.name} data-testid={`tournament-name-${tournament.id}`}>
+                {/* Card content with overlapping avatar */}
+                <div className="relative px-4 pb-4 pt-0">
+                  {/* Organizer avatar overlapping poster */}
+                  <Avatar className="w-10 h-10 -mt-5 border-[3px] border-card bg-card shadow-md">
+                    {tournament.organizerAvatarUrl && (
+                      <AvatarImage src={tournament.organizerAvatarUrl} alt={tournament.organizerName || "Organizer"} />
+                    )}
+                    <AvatarFallback className="text-xs font-bold">
+                      {tournament.organizerName?.[0]?.toUpperCase() || <Trophy className="w-4 h-4 text-primary" />}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="mt-2 space-y-1.5">
+                    <h3 className="font-bold text-base leading-tight truncate" title={tournament.name} data-testid={`tournament-name-${tournament.id}`}>
                       {tournament.name}
                     </h3>
 
-                    {/* Date and Time Info */}
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {tournament.startDate
-                            ? new Date(tournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                            : 'TBA'
-                          }
+                    {/* Description: platform, region, format */}
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {[tournament.platform, tournament.region, tournament.format?.replace('_', ' ')].filter(Boolean).join(' · ') || 'Tournament details TBA'}
+                    </p>
+
+                    {/* Stats row */}
+                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 pt-1 text-xs text-muted-foreground">
+                      {tournament.prizeReward && (
+                        <span className="flex items-center gap-1 text-amber-400 font-semibold" data-testid={`tournament-prize-inline-${tournament.id}`}>
+                          <Trophy className="w-3 h-3" />
+                          {tournament.prizeReward}
                         </span>
-                      </div>
-                      <span className="text-muted-foreground/30">•</span>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        <span data-testid={`tournament-time-${tournament.id}`}>
-                          {tournament.startDate
-                            ? new Date(tournament.startDate).toLocaleTimeString(undefined, {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })
-                            : 'TBD'}
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {tournament.startDate
+                          ? new Date(tournament.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                          : 'TBA'}
+                      </span>
+                      {tournament.entryFee && (
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {tournament.entryFee}
                         </span>
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  {/* Action buttons */}
+                  <div className="flex gap-2 mt-3">
                     <Button
                       className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-9 text-xs font-semibold shadow-sm"
                       onClick={() => handleJoinTournament(tournament.id)}
@@ -330,10 +386,10 @@ export default function MobilePreviewHome() {
           <div className="text-center py-20 bg-muted/20 rounded-lg border border-dashed">
             <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
             <p className="text-muted-foreground font-medium">No tournaments found</p>
-            {(searchQuery || gameFilter !== "all") && (
+            {(searchQuery || selectedGames.length > 0) && (
               <Button
                 variant="ghost"
-                onClick={() => { setSearchQuery(""); setGameFilter("all"); }}
+                onClick={() => { setSearchQuery(""); setSelectedGames([]); }}
                 className="mt-2 text-xs"
               >
                 Clear filters

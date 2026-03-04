@@ -47,3 +47,56 @@
 - [completed] Keep independent scroll for Servers and Tournaments columns (matching current tournaments section behavior)
 - [in_progress] Run `npm run check` to confirm no regressions
 - [pending] Add review notes and validation outcome
+
+## Discover Filter Packaging (2026-03-03)
+
+- [completed] Replace always-visible game pill row with a single expandable filters button
+- [completed] Convert game filtering from single-select to multi-select
+- [completed] Show compact selected-game chips when collapsed to keep selected filters visible
+- [completed] Auto-close expanded filters panel on scroll so only selected summary remains
+- [completed] Run `npm run check` and capture review notes
+
+### Batch Review
+
+- Updated `/` discover filter UX in `client/src/pages/mobile-preview-home.tsx` to keep an inline horizontal pill row, with `Filter` as the lead chip.
+- `Filter` now toggles horizontal expansion to the right, showing all game chips in-row (multi-select), matching the original side-flow interaction.
+- Collapsed mode keeps only selected chips (plus `+N` overflow) next to `Filter`, and scroll auto-collapses back to this compact state.
+- Verified with `npm run check` (passes).
+
+## Hide Messaging Entry Points (2026-03-03)
+
+- [completed] Remove Messages tab from bottom navigation
+- [completed] Remove message CTA from account/profile surfaces
+- [completed] Run `npm run check` and verify no type regressions
+
+### Batch Review
+
+- Removed the `Messages` nav item from `client/src/components/BottomNavigation.tsx` so messaging is no longer visible in primary navigation.
+- Removed message action buttons from `client/src/pages/preview-account.tsx`, `client/src/components/UserProfileModal.tsx`, and `client/src/pages/profile.tsx` while keeping friend actions intact.
+- Verified with `npm run check` (passes).
+
+## Messaging Feature Flag (2026-03-03)
+
+- [completed] Add a central frontend feature flag for messaging visibility
+- [completed] Restore message UI codepaths behind the new flag for quick re-enable later
+- [completed] Keep messaging hidden while preserving implementation code
+- [completed] Run `npm run check` and verify no regressions
+
+### Batch Review
+
+- Added `client/src/config/features.ts` with `FEATURE_MESSAGES_ENABLED = false` as the single switch.
+- Reintroduced message-related UI/actions in nav and profile surfaces, but gated all of them with `FEATURE_MESSAGES_ENABLED`.
+- Messaging remains hidden now, and can be restored later by flipping one flag instead of rebuilding deleted code.
+- Verified with `npm run check` (passes).
+
+## My Page Registered Tournament Navigation (2026-03-03)
+
+- [completed] Update registered tournament "View Tournament" action to avoid registration page
+- [completed] Route registered tournaments to dashboard context when available
+- [completed] Run `npm run check` and verify no regressions
+
+### Batch Review
+
+- Updated `client/src/pages/preview-my-servers.tsx` so `Registered` list cards route to `/server/:serverId` when the tournament has a server.
+- Added fallback routing to `/tournament/:id/view` for cases without `serverId` and for saved tournaments.
+- Verified with `npm run check` (passes).
