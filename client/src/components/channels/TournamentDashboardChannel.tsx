@@ -493,6 +493,26 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
     setActiveTab("overview");
   };
 
+  // Check if the current user is a participant in any match of this tournament
+  const isMatchParticipant = (() => {
+    if (!user?.id || !selectedTournamentMatches.length || !selectedTournamentTeams.length) return false;
+    // Get all team IDs involved in matches
+    const matchTeamIds = new Set<string>();
+    for (const match of selectedTournamentMatches) {
+      if (match.team1Id) matchTeamIds.add(match.team1Id);
+      if (match.team2Id) matchTeamIds.add(match.team2Id);
+    }
+    // Check if current user is a member of any of those teams
+    return selectedTournamentTeams.some((team: any) =>
+      matchTeamIds.has(team.id) &&
+      team.members?.some((m: any) => m.userId === user.id)
+    );
+  })();
+
+  // Only admin, owner/organizer, or match participants can see match chat
+  const canAccessMatchChat = !!user?.isAdmin || user?.role === 'admin' ||
+    user?.id === selectedTournament?.organizerId || isServerOwner || isMatchParticipant;
+
   const handleBackToList = () => {
     setSelectedTournamentId(null);
     setActiveTab("overview");
@@ -606,7 +626,9 @@ export default function TournamentDashboardChannel({ serverId, canManage = false
             <TabsTrigger value="overview" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Overview</TabsTrigger>
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
-            <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
+            {canAccessMatchChat && (
+              <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
+            )}
             {(user?.id === selectedTournament.organizerId || isServerOwner || !!user?.isAdmin || user?.role === 'admin') && (
               <>
                 <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Create Match</TabsTrigger>

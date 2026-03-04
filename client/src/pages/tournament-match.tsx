@@ -341,23 +341,32 @@ export default function TournamentMatch() {
           </CardContent>
         </Card>
 
-        {/* Match Chat - Links to Inbox */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display">Match Chat</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Chat about this match with team members. All messages with usernames and avatars are fully clickable and link to user profiles.
-            </p>
-            <Button
-              onClick={navigateToMatchChat}
-              data-testid="button-open-match-chat"
-            >
-              Open Match Chat in Inbox
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Match Chat - Links to Inbox (only visible to admin, organizer, or match participants) */}
+        {(() => {
+          const isAdmin = !!(currentUser as any)?.isAdmin || (currentUser as any)?.role === 'admin';
+          const isOrganizer = currentUser?.id === tournament.organizerId;
+          const isPlayer = [team1, team2].some((team) =>
+            team?.members?.some((m) => m.userId === currentUser?.id)
+          );
+          return (isAdmin || isOrganizer || isPlayer) ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-display">Match Chat</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Chat about this match with team members. All messages with usernames and avatars are fully clickable and link to user profiles.
+                </p>
+                <Button
+                  onClick={navigateToMatchChat}
+                  data-testid="button-open-match-chat"
+                >
+                  Open Match Chat in Inbox
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null;
+        })()}
       </div>
     </div>
   );
