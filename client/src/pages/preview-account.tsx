@@ -593,9 +593,8 @@ export default function PreviewAccount() {
                             </Button>
                           ) : achievement.serverId ? (
                             <p className="text-xs text-destructive text-center">Server no longer exists</p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground text-center">Official Award</p>
-                          )}
+                          ) : null}
+                          <p className="text-xs text-muted-foreground text-center">Team Award</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -947,9 +946,8 @@ export default function PreviewAccount() {
                                   </Button>
                                 ) : achievement.serverId ? (
                                   <p className="text-xs text-destructive text-center">Server no longer exists</p>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground text-center">Official Award</p>
-                                )}
+                                ) : null}
+                                <p className="text-xs text-muted-foreground text-center">Team Award</p>
                               </div>
                             </CardContent>
                           </Card>

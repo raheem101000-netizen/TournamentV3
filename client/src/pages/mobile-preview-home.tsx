@@ -315,14 +315,32 @@ export default function MobilePreviewHome() {
                 {/* Card content with overlapping avatar */}
                 <div className="relative px-4 pb-4 pt-0">
                   {/* Organizer avatar overlapping poster */}
-                  <Avatar className="w-10 h-10 -mt-5 border-[3px] border-card bg-card shadow-md">
-                    {tournament.organizerAvatarUrl && (
-                      <AvatarImage src={tournament.organizerAvatarUrl} alt={tournament.organizerName || "Organizer"} />
-                    )}
-                    <AvatarFallback className="text-xs font-bold">
-                      {tournament.organizerName?.[0]?.toUpperCase() || <Trophy className="w-4 h-4 text-primary" />}
-                    </AvatarFallback>
-                  </Avatar>
+                  {tournament.serverId ? (
+                    <button
+                      type="button"
+                      className="-mt-5 rounded-full cursor-pointer transition-all hover:ring-2 hover:ring-primary/60 hover:ring-offset-1"
+                      onClick={() => setLocation(`/server/${tournament.serverId}`)}
+                      aria-label={`Open server details for ${tournament.name}`}
+                    >
+                      <Avatar className="w-10 h-10 border-[3px] border-card bg-card shadow-md">
+                        {tournament.organizerAvatarUrl && (
+                          <AvatarImage src={tournament.organizerAvatarUrl} alt={tournament.organizerName || "Organizer"} />
+                        )}
+                        <AvatarFallback className="text-xs font-bold">
+                          {tournament.organizerName?.[0]?.toUpperCase() || <Trophy className="w-4 h-4 text-primary" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  ) : (
+                    <Avatar className="w-10 h-10 -mt-5 border-[3px] border-card bg-card shadow-md">
+                      {tournament.organizerAvatarUrl && (
+                        <AvatarImage src={tournament.organizerAvatarUrl} alt={tournament.organizerName || "Organizer"} />
+                      )}
+                      <AvatarFallback className="text-xs font-bold">
+                        {tournament.organizerName?.[0]?.toUpperCase() || <Trophy className="w-4 h-4 text-primary" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
 
                   <div className="mt-2 space-y-1.5">
                     <h3 className="font-bold text-base leading-tight truncate" title={tournament.name} data-testid={`tournament-name-${tournament.id}`}>

@@ -122,16 +122,16 @@ export default function PreviewMyServers() {
           </div>
         </header>
 
-        <main className="flex flex-1 min-h-0 gap-3 px-3 py-4 pb-24 overflow-hidden">
+        <main className="flex flex-1 min-h-0 gap-2 px-2 py-3 pb-24 overflow-hidden">
 
           {/* Left: Servers — scrollable */}
-          <div className="w-1/3 flex flex-col min-w-0 min-h-0">
-            <div className="flex items-center justify-between border-b-2 border-foreground mb-3 pb-1">
-              <h2 className="text-sm font-bold">Servers</h2>
-              <Badge variant="secondary" className="text-xs">{myServers.length}</Badge>
+          <div className="w-[30%] flex flex-col min-w-0 min-h-0">
+            <div className="flex items-center justify-between border-b-2 border-foreground mb-2 pb-1">
+              <h2 className="text-xs font-bold">Servers</h2>
+              <Badge variant="secondary" className="text-[10px] px-1 h-4">{myServers.length}</Badge>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-0.5 no-scrollbar">
               {memberLoading ? (
                 <p className="text-muted-foreground text-xs text-center pt-8">Loading...</p>
               ) : myServers.length > 0 ? (
@@ -141,27 +141,27 @@ export default function PreviewMyServers() {
                     <Link key={server.id} href={`/server/${server.id}`}>
                       <Card
                         variant="glass"
-                        className="p-2.5 hover-elevate cursor-pointer"
+                        className="p-2 hover-elevate cursor-pointer"
                         data-testid={isOwned ? `server-owned-${server.id}` : `server-member-${server.id}`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-10 h-10 flex-shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <Avatar className="w-8 h-8 flex-shrink-0">
                             <AvatarImage
                               src={server.iconUrl || undefined}
                               alt={server.name}
                               loading={i < 4 ? "eager" : "lazy"}
                             />
-                            <AvatarFallback className="text-sm font-semibold">
+                            <AvatarFallback className="text-[10px] font-semibold">
                               {server.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1">
-                              <h3 className="font-semibold text-xs truncate">{server.name}</h3>
-                              {isOwned && <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" />}
+                            <div className="flex items-center gap-0.5">
+                              <h3 className="font-semibold text-[11px] truncate">{server.name}</h3>
+                              {isOwned && <Crown className="w-2.5 h-2.5 text-yellow-500 flex-shrink-0" />}
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Users className="w-3 h-3" />
+                            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                              <Users className="w-2.5 h-2.5" />
                               <span>{server.memberCount || 0}</span>
                             </div>
                           </div>
@@ -172,10 +172,10 @@ export default function PreviewMyServers() {
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <ServerIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground mb-2">No servers yet</p>
+                  <ServerIcon className="w-6 h-6 text-muted-foreground mb-2" />
+                  <p className="text-[10px] text-muted-foreground mb-2">No servers yet</p>
                   <Link href="/discovery">
-                    <Button size="sm" data-testid="button-go-to-discovery">
+                    <Button size="sm" className="h-7 text-[10px] px-2" data-testid="button-go-to-discovery">
                       <Search className="w-3 h-3 mr-1" />
                       Discover
                     </Button>
@@ -188,28 +188,28 @@ export default function PreviewMyServers() {
           {/* Right: Tournaments with filter pills */}
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 
-            {/* Filter pills — like home page "All Games" row */}
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar flex-shrink-0">
+            {/* Filter pills */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 no-scrollbar flex-shrink-0">
               <Button
                 variant={tournamentFilter === "registered" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTournamentFilter("registered")}
-                className="rounded-full h-8 text-xs whitespace-nowrap"
+                className="rounded-full h-7 text-[10px] px-2.5 whitespace-nowrap"
               >
                 Registered
                 {registeredTournaments && registeredTournaments.length > 0 && (
-                  <Badge variant="secondary" className="ml-1.5 text-xs px-1 py-0 h-4">{registeredTournaments.length}</Badge>
+                  <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0 h-3.5">{registeredTournaments.length}</Badge>
                 )}
               </Button>
               <Button
                 variant={tournamentFilter === "saved" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTournamentFilter("saved")}
-                className="rounded-full h-8 text-xs whitespace-nowrap"
+                className="rounded-full h-7 text-[10px] px-2.5 whitespace-nowrap"
               >
                 Saved
                 {savedTournaments && savedTournaments.length > 0 && (
-                  <Badge variant="secondary" className="ml-1.5 text-xs px-1 py-0 h-4">{savedTournaments.length}</Badge>
+                  <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0 h-3.5">{savedTournaments.length}</Badge>
                 )}
               </Button>
             </div>
@@ -217,11 +217,12 @@ export default function PreviewMyServers() {
             {/* Grid — 2 per row, scrolls down */}
             {(tournamentFilter === "registered" ? registeredTournaments?.length : savedTournaments?.length) ? (
               <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   {(tournamentFilter === "registered" ? registeredTournaments || [] : savedTournaments || []).map((tournament) => (
                     <TournamentCard
                       key={tournament.id}
                       tournament={tournament}
+                      compact
                       onView={() => {
                         if (tournamentFilter === "registered" && tournament.serverId) {
                           setLocation(`/server/${tournament.serverId}`);
@@ -236,7 +237,7 @@ export default function PreviewMyServers() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {tournamentFilter === "registered" ? "No registered tournaments" : "No saved tournaments"}
                 </p>
               </div>
