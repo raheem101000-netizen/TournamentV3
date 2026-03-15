@@ -76,14 +76,6 @@ app.use((req, res, next) => {
       host: "0.0.0.0",
     }, () => {
       log(`serving on port ${port}`);
-
-      // SkyView Confirmation Log
-      console.log('🔭 SkyView Observability: ACTIVE');
-      console.log('   Tenant ID: Tourni1010');
-      console.log('   Service: tourni1010-backend');
-
-      // Initialize global error tracking
-      initGlobalErrorTracking();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

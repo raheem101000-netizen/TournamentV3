@@ -48,6 +48,8 @@ export default defineConfig({
       "zod",
       "@hookform/resolvers/zod",
       "react-hook-form",
+      // WebGL particles library - pre-bundle to avoid separate scan on startup
+      "ogl",
     ],
   },
   server: {

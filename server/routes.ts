@@ -2,6 +2,9 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 // Dynamic import - http-proxy-middleware hangs on import with Node v25+
+// Import is deferred until the first actual proxy request (not at startup)
+let _proxyMiddlewareInstance: ReturnType<typeof import("http-proxy-middleware")["createProxyMiddleware"]> | null = null;
+let _proxyMiddlewarePromise: Promise<void> | null = null;
 const getProxyMiddleware = async () => {
   const { createProxyMiddleware } = await import("http-proxy-middleware");
   return createProxyMiddleware;
@@ -342,18 +345,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/*', writeRateLimiter);
   app.delete('/api/*', writeRateLimiter);
 
-  // Lazy-load proxy middleware to avoid blocking startup on Node v25+
-  getProxyMiddleware().then(createProxyMiddleware => {
-    app.use('/expo-app', createProxyMiddleware({
-      target: 'http://127.0.0.1:8081',
-      changeOrigin: true,
-      ws: true,
-      pathRewrite: {
-        '^/expo-app': ''
+  // Lazy-load proxy middleware on first request to avoid blocking startup on Node v25+
+  app.use('/expo-app', async (req, res, next) => {
+    if (!_proxyMiddlewareInstance) {
+      if (!_proxyMiddlewarePromise) {
+        _proxyMiddlewarePromise = getProxyMiddleware().then(createProxyMiddleware => {
+          _proxyMiddlewareInstance = createProxyMiddleware({
+            target: 'http://127.0.0.1:8081',
+            changeOrigin: true,
+            ws: true,
+            pathRewrite: { '^/expo-app': '' }
+          });
+        }).catch(err => {
+          console.warn('[proxy] Failed to load http-proxy-middleware:', err.message);
+          _proxyMiddlewarePromise = null;
+        });
       }
-    }));
-  }).catch(err => {
-    console.warn('[proxy] Failed to load http-proxy-middleware:', err.message);
+      await _proxyMiddlewarePromise;
+    }
+    if (_proxyMiddlewareInstance) {
+      return (_proxyMiddlewareInstance as any)(req, res, next);
+    }
+    next();
   });
   const httpServer = createServer(app);
   const wss = new WebSocketServer({

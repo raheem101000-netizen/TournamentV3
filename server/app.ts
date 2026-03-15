@@ -30,7 +30,7 @@ export function createApp() {
         store: new PgSession({
             pool: pool,
             tableName: 'session',
-            createTableIfMissing: true,
+            createTableIfMissing: false,
         }),
         secret: SESSION_SECRET,
         resave: false,
